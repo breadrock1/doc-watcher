@@ -1,4 +1,4 @@
-module notifier
+module doc-notifier
 
 go 1.21
 

@@ -6,10 +6,15 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"notifier/cmd"
-	"notifier/internal/pkg/reader"
-	"notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/reader"
+	"doc-notifier/internal/pkg/sender"
 )
+
+type Options struct {
+	SearcherAddress  string
+	AssistantAddress string
+	WatchDirectories []string
+}
 
 type NotifyWatcher struct {
 	directories []string
@@ -18,7 +23,7 @@ type NotifyWatcher struct {
 	reader      *reader.FileReader
 }
 
-func New(cmdOpts *cmd.Options) *NotifyWatcher {
+func New(cmdOpts *Options) *NotifyWatcher {
 	fileReader := reader.New()
 	fileSender := sender.New(cmdOpts.SearcherAddress, cmdOpts.AssistantAddress)
 	notifyWatcher, err := fsnotify.NewWatcher()

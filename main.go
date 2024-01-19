@@ -1,7 +1,7 @@
 package main
 
 import (
-	"notifier/cmd"
+	"doc-notifier/cmd"
 )
 
 func main() {
