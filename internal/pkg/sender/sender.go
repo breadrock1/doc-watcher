@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"notifier/internal/pkg/reader"
+	"doc-notifier/internal/pkg/reader"
 )
 
 const SearcherURL = "/searcher/document/new"
