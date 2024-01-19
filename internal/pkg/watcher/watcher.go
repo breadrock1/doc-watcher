@@ -6,9 +6,8 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"notifier/cmd"
-	"notifier/internal/pkg/reader"
-	"notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/reader"
+	"doc-notifier/internal/pkg/sender"
 )
 
 type NotifyWatcher struct {

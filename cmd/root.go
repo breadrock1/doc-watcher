@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"notifier/internal/pkg/watcher"
+	"doc-notifier/internal/pkg/watcher"
 )
 
 type Options struct {
