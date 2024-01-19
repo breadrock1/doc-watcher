@@ -9,12 +9,6 @@ import (
 	"doc-notifier/internal/pkg/watcher"
 )
 
-type Options struct {
-	SearcherAddress  string
-	AssistantAddress string
-	WatchDirectories []string
-}
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "internal",
@@ -29,11 +23,13 @@ var rootCmd = &cobra.Command{
 		watcherPath, _ := cmd.Flags().GetStringArray("watcher-path")
 		fmt.Println(assistantAddr, searcherAddr, watcherPath)
 
-		watcher.New(&Options{
+		service := watcher.New(&watcher.Options{
 			SearcherAddress:  searcherAddr,
 			AssistantAddress: assistantAddr,
 			WatchDirectories: watcherPath,
 		})
+
+		service.RunWatcher()
 	},
 }
 
