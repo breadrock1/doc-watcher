@@ -93,13 +93,39 @@ func (nw *NotifyWatcher) switchEventCase(event fsnotify.Event) {
 
 func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
 	if entity, err := nw.sender.RecognizeFileData(document.DocumentPath); err == nil {
-		nw.reader.SetEntityData(document, entity)
+		nw.reader.SetContentData(document, entity)
 		nw.reader.ComputeMd5Hash(document)
 		nw.reader.ComputeSsdeepHash(document)
-		if err = nw.sender.StoreDocument(document); err != nil {
-			log.Println("Failed while storing document: ", err)
-			return err
+
+		tokenVectors := nw.sender.ComputeContentTokens(document)
+		for chunkIndex, chunkData := range tokenVectors.ChunkedText {
+			contentData := strings.Join(chunkData, " ")
+			nw.reader.SetContentData(document, contentData)
+
+			contentVector := tokenVectors.Vectors[chunkIndex]
+			nw.reader.SetContentVector(document, contentVector)
+
+			nw.reader.ComputeUuid(document)
+			nw.reader.ComputeContentMd5Hash(document)
+			if err = nw.sender.StoreDocument(document); err != nil {
+				log.Println("Failed while storing document: ", err)
+				continue
+			}
 		}
+
+		// TODO: Split text to chunks myself.
+		//for _, content := range nw.reader.SplitContent(entity, 1000) {
+		//	nw.reader.SetContentData(document, content)
+		//	contentTokens := nw.sender.ComputeContentTokens(document)
+		//
+		//	nw.reader.SetContentVector(document, contentTokens)
+		//	nw.reader.ComputeUuid(document)
+		//	nw.reader.ComputeContentMd5Hash(document)
+		//	if err = nw.sender.StoreDocument(document); err != nil {
+		//		log.Println("Failed while storing document: ", err)
+		//		continue
+		//	}
+		//}
 	}
 	return nil
 }
