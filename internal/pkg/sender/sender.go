@@ -2,32 +2,46 @@ package sender
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/reader"
 	"encoding/json"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
-
-	"doc-notifier/internal/pkg/reader"
 )
 
 const SearcherURL = "/searcher/document/new"
-const AssistantURL = "/api/assistant/extract-file/"
+const EmbeddingsURL = "/api/v1/get_text_vectors"
+const RecognitionURL = "/api/assistant/extract-file/"
 
 type FileSender struct {
-	AssistantAddress string
-	SearcherAddress  string
+	OrcServiceAddress string
+	SearcherAddress   string
+	LlmServiceAddress string
 }
 
-type DocumentText struct {
+type TokenizedVectors struct {
+	Chunks      int         `json:"chunks"`
+	ChunkedText [][]string  `json:"chunked_text"`
+	Vectors     [][]float64 `json:"vectors"`
+}
+
+type DocumentForm struct {
 	Context string `json:"context"`
 }
 
-func New(searcherAddr string, assistantAddr string) *FileSender {
+type TokenizerForm struct {
+	Text              string `json:"text"`
+	ChunkSize         int    `json:"chunk_size"`
+	ReturnChunkedText bool   `json:"return_chunked_text"`
+}
+
+func New(searcherAddr string, assistantAddr string, llmAddress string) *FileSender {
 	return &FileSender{
-		AssistantAddress: assistantAddr,
-		SearcherAddress:  searcherAddr,
+		OrcServiceAddress: assistantAddr,
+		SearcherAddress:   searcherAddr,
+		LlmServiceAddress: llmAddress,
 	}
 }
 
@@ -56,6 +70,42 @@ func (s *FileSender) StoreDocument(document *reader.Document) error {
 
 	log.Println(resp.StatusCode, resp.Body)
 	return nil
+}
+
+func (s *FileSender) ComputeContentTokens(document *reader.Document) *TokenizedVectors {
+	textVectors := &TokenizerForm{
+		Text:              document.Content,
+		ChunkSize:         len(document.Content),
+		ReturnChunkedText: true,
+	}
+
+	jsonData, err := json.Marshal(textVectors)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	body := bytes.NewBuffer(jsonData)
+	targetAddress := s.LlmServiceAddress + EmbeddingsURL
+	req, err := http.NewRequest("POST", targetAddress, body)
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		log.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer func() { _ = resp.Body.Close() }()
+	if err != nil {
+		log.Println("Error making request:", err)
+		return nil
+	}
+
+	bodyData, err := io.ReadAll(resp.Body)
+	var resTest = &TokenizedVectors{}
+	_ = json.Unmarshal(bodyData, resTest)
+	return resTest
 }
 
 func (s *FileSender) RecognizeFileData(filePath string) (string, error) {
@@ -91,15 +141,13 @@ func (s *FileSender) RecognizeFileData(filePath string) (string, error) {
 	}
 
 	bodyData, err := io.ReadAll(resp.Body)
-	var resTest = struct {
-		Context string `json:"context"`
-	}{}
-	_ = json.Unmarshal(bodyData, &resTest)
+	var resTest = &DocumentForm{}
+	_ = json.Unmarshal(bodyData, resTest)
 	return resTest.Context, nil
 }
 
 func (s *FileSender) sendRequest(body *bytes.Buffer, writer *multipart.Writer) (*http.Response, error) {
-	targetUrl := s.AssistantAddress + AssistantURL
+	targetUrl := s.OrcServiceAddress + RecognitionURL
 	req, err := http.NewRequest("POST", targetUrl, body)
 	if err != nil {
 		log.Println("Error creating request:", err)
