@@ -1,19 +1,20 @@
 package watcher
 
 import (
-	"log"
-	"path/filepath"
-
-	"github.com/fsnotify/fsnotify"
-
+	"doc-notifier/internal/pkg/llm"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
+	"github.com/fsnotify/fsnotify"
+	"log"
+	"path/filepath"
+	"strings"
 )
 
 type Options struct {
-	SearcherAddress  string
-	AssistantAddress string
-	WatchDirectories []string
+	DocSearchAddress  string
+	OcrServiceAddress string
+	LlmServiceAddress string
+	WatchDirectories  []string
 }
 
 type NotifyWatcher struct {
@@ -21,11 +22,18 @@ type NotifyWatcher struct {
 	watcher     *fsnotify.Watcher
 	sender      *sender.FileSender
 	reader      *reader.FileReader
+	llm         *llm.Tokenizer
 }
 
 func New(cmdOpts *Options) *NotifyWatcher {
+	llmService := &llm.Tokenizer{}
 	fileReader := reader.New()
-	fileSender := sender.New(cmdOpts.SearcherAddress, cmdOpts.AssistantAddress)
+	fileSender := sender.New(
+		cmdOpts.DocSearchAddress,
+		cmdOpts.OcrServiceAddress,
+		cmdOpts.LlmServiceAddress,
+	)
+
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal("Stopped watching: ", err)
@@ -36,6 +44,7 @@ func New(cmdOpts *Options) *NotifyWatcher {
 		watcher:     notifyWatcher,
 		sender:      fileSender,
 		reader:      fileReader,
+		llm:         llmService,
 	}
 }
 
@@ -69,7 +78,9 @@ func (nw *NotifyWatcher) appendDirectories() {
 		if err != nil {
 			msg := "Failed while append directory to watcher: "
 			log.Println(msg, err)
+			continue
 		}
+		log.Println("Added dir to watch: ", watchDir)
 	}
 }
 
@@ -82,7 +93,7 @@ func (nw *NotifyWatcher) switchEventCase(event fsnotify.Event) {
 	}
 
 	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-		log.Println("Caught event: ", event.Op)
+		log.Println("Caught fs-event: ", event.Op)
 		triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
 		for _, document := range triggeredFiles {
 			document := document
