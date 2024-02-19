@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 
 RUN rm -rf .env && go mod download
-RUN  go build -o ./internal internal/internal
+RUN go build -o fs-notifier .
 
 EXPOSE 2550
 
