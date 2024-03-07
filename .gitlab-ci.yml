@@ -1,0 +1,15 @@
+before_script:
+  - echo "start job at :" `date`
+  - echo "workspace is:" `pwd`
+
+after_script:
+  - echo "done job at :" `date`
+
+stages:
+  - build
+Linux build:
+  stage: build
+  tags:
+    - linux
+  script:    
+    GOOS=linux GOARCH=amd64 go build -o doc-notifier .
