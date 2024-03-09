@@ -39,7 +39,7 @@ func UploadFile(c echo.Context) error {
 	return nil
 }
 
-const UploadHtmlForm = `
+const UploadHTMLForm = `
 <!doctype html>
 <html lang="en">
 <head>
@@ -58,5 +58,5 @@ const UploadHtmlForm = `
 `
 
 func UploadFileForm(c echo.Context) error {
-	return c.HTML(http.StatusOK, UploadHtmlForm)
+	return c.HTML(http.StatusOK, UploadHTMLForm)
 }

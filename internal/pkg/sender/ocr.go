@@ -11,7 +11,7 @@ import (
 
 const RecognitionURL = "/api/v1/extract_text"
 
-//const RecognitionURL = "/api/assistant/extract-file/"
+// const RecognitionURL = "/api/assistant/extract-file/"
 
 func (fs *FileSender) ReadRawFileData(filePath string) (string, error) {
 	bytesData, err := os.ReadFile(filePath)
@@ -49,9 +49,9 @@ func (fs *FileSender) RecognizeFileData(filePath string) (string, error) {
 		return "", err
 	}
 
-	targetUrl := fs.OrcServiceAddress + RecognitionURL
+	targetURL := fs.OrcServiceAddress + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
-	respData, err := fs.sendRequest(&reqBody, &targetUrl)
+	respData, err := fs.sendRequest(&reqBody, &targetURL)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err

@@ -10,7 +10,7 @@ import (
 const SearcherURL = "/document/new"
 
 type DocumentForm struct {
-	//Context string `json:"text"`
+	// Context string `json:"text"`
 	Context string `json:"context"`
 }
 
@@ -22,9 +22,9 @@ func (fs *FileSender) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetUrl := fs.SearcherAddress + SearcherURL
+	targetURL := fs.SearcherAddress + SearcherURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
-	_, err = fs.sendRequest(reqBody, &targetUrl)
+	_, err = fs.sendRequest(reqBody, &targetURL)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return err

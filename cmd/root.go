@@ -9,7 +9,7 @@ import (
 
 var serviceOptions *options.Options
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "internal",
 	Short: "Launch internal service to load endpoints from watcher directory",
@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 		Launch internal service to load endpoints from watcher directory.
 	`,
 
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		fromEnv, _ := cmd.Flags().GetBool("from-env")
 
 		var parseErr error
