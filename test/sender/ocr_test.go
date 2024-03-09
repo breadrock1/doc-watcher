@@ -4,6 +4,7 @@ import (
 	"context"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/test/mocked"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -45,7 +46,7 @@ func TestRecognizeFileData(t *testing.T) {
 	}
 
 	t.Run("Recognize file data", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -61,7 +62,7 @@ func TestRecognizeFileData(t *testing.T) {
 	})
 
 	t.Run("Caught error while recognize non existing file", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -77,7 +78,7 @@ func TestRecognizeFileData(t *testing.T) {
 	})
 
 	t.Run("Caught error while recognize directory as file", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -98,7 +99,7 @@ func TestRecognizeFileData(t *testing.T) {
 			OrcServiceAddress: "http://localhost:8080",
 		}
 
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -121,7 +122,7 @@ func TestStoreDocument(t *testing.T) {
 	}
 
 	t.Run("Store Document", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -138,7 +139,7 @@ func TestStoreDocument(t *testing.T) {
 	})
 
 	t.Run("Caught error while storing file", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -160,7 +161,7 @@ func TestStoreDocument(t *testing.T) {
 			OrcServiceAddress: "http://localhost:8080",
 		}
 
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -184,7 +185,7 @@ func TestComputeContentTokens(t *testing.T) {
 	}
 
 	t.Run("Compute tokens", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -206,7 +207,7 @@ func TestComputeContentTokens(t *testing.T) {
 	})
 
 	t.Run("Caught error while computing tokens", func(t *testing.T) {
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
@@ -228,7 +229,7 @@ func TestComputeContentTokens(t *testing.T) {
 			LlmServiceAddress: "http://localhost:3451",
 		}
 
-		e := CreateMockedServer()
+		e := mocked.CreateMockedServer()
 		go func() {
 			_ = e.Start("localhost:3451")
 		}()
