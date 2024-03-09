@@ -7,6 +7,7 @@ import (
 )
 
 const TestcaseDirPath = "../../testcases/"
+const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
 	watch := watcher.New(false, false, "", "", "", []string{})
@@ -23,8 +24,7 @@ func TestWatcherManager(t *testing.T) {
 	})
 
 	t.Run("Append multiple dirs to watch", func(t *testing.T) {
-		dirs := []string{TestcaseDirPath}
-		dirs = append(dirs, TestcaseDirPath+"../indexer")
+		dirs := []string{TestcaseDirPath, IndexerDirPath}
 		err := watch.AppendDirectories(dirs)
 		assert.NoError(t, err, "Failed while appending dir to watch")
 

@@ -8,7 +8,6 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 type NotifyWatcher struct {
@@ -64,13 +63,10 @@ func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
 }
 
 func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
-	mu := &sync.Mutex{}
 	var collectedErrs []string
 	for _, watchDir := range directories {
 		if err := consumer(watchDir); err != nil {
-			mu.Lock()
 			collectedErrs = append(collectedErrs, err.Error())
-			mu.Unlock()
 			continue
 		}
 	}
