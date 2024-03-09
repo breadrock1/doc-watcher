@@ -36,9 +36,9 @@ func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
 		nw.reader.SetContentData(document, contentData)
 		if nw.storeChunksFlag {
 			return nw.loadChunkedDocument(document)
-		} else {
-			return nw.loadFullDocument(document)
 		}
+
+		return nw.loadFullDocument(document)
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
 func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 	nw.reader.ComputeMd5Hash(document)
 	nw.reader.ComputeSsdeepHash(document)
-	nw.reader.ComputeUuid(document)
+	nw.reader.ComputeUUID(document)
 	nw.reader.ComputeContentMd5Hash(document)
 	nw.reader.SetContentVector(document, []float64{})
 
@@ -73,7 +73,7 @@ func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
 		contentVector := tokenVectors.Vectors[chunkIndex]
 		nw.reader.SetContentVector(document, contentVector)
 
-		nw.reader.ComputeUuid(document)
+		nw.reader.ComputeUUID(document)
 		nw.reader.ComputeContentMd5Hash(document)
 		if err := nw.sender.StoreDocument(document); err != nil {
 			log.Println("Failed while storing document: ", err)

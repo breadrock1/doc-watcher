@@ -53,9 +53,9 @@ func (fs *FileSender) ComputeContentTokens(document *reader.Document) (*Tokenize
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetUrl := fs.LlmServiceAddress + EmbeddingsURL
+	targetURL := fs.LlmServiceAddress + EmbeddingsURL
 	log.Printf("Sending file %s to extract tokens", document.DocumentPath)
-	respData, err := fs.sendRequest(reqBody, &targetUrl)
+	respData, err := fs.sendRequest(reqBody, &targetURL)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return tokenizedVector, err
