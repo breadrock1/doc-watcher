@@ -1,12 +1,18 @@
-FROM golang:1.21
+FROM golang:1.21-alpine as builder
 
 WORKDIR /app
 
 COPY . .
 
-RUN rm -rf .env && go mod download
-RUN  go build -o ./internal internal/internal
+RUN rm -rf .env && go mod download && go build -o doc-notifier .
 
-EXPOSE 2550
+FROM golang:1.21-alpine
 
-CMD ["./fs-notifier"]
+WORKDIR /app
+
+COPY --from=builder /app/doc-notifier .
+RUN mkdir indexer && mkdir upload
+
+CMD ["/app/doc-notifier", "-e"]
+
+EXPOSE 2893
