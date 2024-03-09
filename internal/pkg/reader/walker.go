@@ -10,6 +10,7 @@ import (
 )
 
 func (f *FileReader) ParseCaughtFiles(filePath string) []*Document {
+	mu := &sync.Mutex{}
 	var customList []*Document
 
 	wg := &sync.WaitGroup{}
@@ -22,7 +23,9 @@ func (f *FileReader) ParseCaughtFiles(filePath string) []*Document {
 
 			if doc, err := ParseFile(filePath); err == nil {
 				log.Println("Caught parsed document: ", doc.DocumentName)
+				mu.Lock()
 				customList = append(customList, doc)
+				mu.Unlock()
 				return
 			}
 
