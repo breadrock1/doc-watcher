@@ -1,37 +1,31 @@
 package watcher
 
 import (
-	"doc-notifier/internal/pkg/llm"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
+	"errors"
 	"github.com/fsnotify/fsnotify"
 	"log"
 	"path/filepath"
 	"strings"
 )
 
-type Options struct {
-	DocSearchAddress  string
-	OcrServiceAddress string
-	LlmServiceAddress string
-	WatchDirectories  []string
-}
-
 type NotifyWatcher struct {
-	directories []string
-	watcher     *fsnotify.Watcher
-	sender      *sender.FileSender
-	reader      *reader.FileReader
-	llm         *llm.Tokenizer
+	storeChunksFlag bool
+	readRawFileFlag bool
+	directories     []string
+	watcher         *fsnotify.Watcher
+	sender          *sender.FileSender
+	reader          *reader.FileReader
 }
 
-func New(cmdOpts *Options) *NotifyWatcher {
-	llmService := &llm.Tokenizer{}
+func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs []string) *NotifyWatcher {
 	fileReader := reader.New()
 	fileSender := sender.New(
-		cmdOpts.DocSearchAddress,
-		cmdOpts.OcrServiceAddress,
-		cmdOpts.LlmServiceAddress,
+		searchAddr,
+		ocrAddr,
+		llmAddr,
+		rawFlag,
 	)
 
 	notifyWatcher, err := fsnotify.NewWatcher()
@@ -40,19 +34,49 @@ func New(cmdOpts *Options) *NotifyWatcher {
 	}
 
 	return &NotifyWatcher{
-		directories: cmdOpts.WatchDirectories,
-		watcher:     notifyWatcher,
-		sender:      fileSender,
-		reader:      fileReader,
-		llm:         llmService,
+		readRawFileFlag: rawFlag,
+		storeChunksFlag: storeFlag,
+		directories:     watchDirs,
+		watcher:         notifyWatcher,
+		sender:          fileSender,
+		reader:          fileReader,
 	}
 }
 
 func (nw *NotifyWatcher) RunWatcher() {
 	defer func() { _ = nw.watcher.Close() }()
 	go nw.parseEventSlot()
-	nw.appendDirectories()
+	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-make(chan interface{})
+}
+
+func (nw *NotifyWatcher) WatchedDirsList() []string {
+	return nw.watcher.WatchList()
+}
+
+func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.watcher.Add)
+}
+
+func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.watcher.Remove)
+}
+
+func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
+	var collectedErrs []string
+	for _, watchDir := range directories {
+		if err := consumer(watchDir); err != nil {
+			collectedErrs = append(collectedErrs, err.Error())
+			continue
+		}
+	}
+
+	if len(collectedErrs) > 0 {
+		msg := strings.Join(collectedErrs, "\n")
+		return errors.New(msg)
+	}
+
+	return nil
 }
 
 func (nw *NotifyWatcher) parseEventSlot() {
@@ -62,7 +86,9 @@ func (nw *NotifyWatcher) parseEventSlot() {
 			if !ok {
 				return
 			}
-			nw.switchEventCase(event)
+
+			nw.switchEventCase(&event)
+
 		case err, ok := <-nw.watcher.Errors:
 			if !ok {
 				return
@@ -72,71 +98,15 @@ func (nw *NotifyWatcher) parseEventSlot() {
 	}
 }
 
-func (nw *NotifyWatcher) appendDirectories() {
-	for _, watchDir := range nw.directories {
-		err := nw.watcher.Add(watchDir)
-		if err != nil {
-			msg := "Failed while append directory to watcher: "
-			log.Println(msg, err)
-			continue
-		}
-		log.Println("Added dir to watch: ", watchDir)
-	}
-}
-
-func (nw *NotifyWatcher) switchEventCase(event fsnotify.Event) {
-	absFilePath, err := filepath.Abs(event.Name)
-	if err != nil {
-		msg := "Failed while getting abs path of file: "
-		log.Println(msg, err)
-		return
-	}
-
+func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
 	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-		log.Println("Caught fs-event: ", event.Op)
+		absFilePath, err := filepath.Abs(event.Name)
+		if err != nil {
+			log.Println("Failed while getting abs path of file: ", err)
+			return
+		}
+
 		triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
-		for _, document := range triggeredFiles {
-			document := document
-			go func() { _ = nw.processTriggeredFile(document) }()
-		}
+		nw.storeExtractedDocuments(triggeredFiles)
 	}
-}
-
-func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
-	if entity, err := nw.sender.RecognizeFileData(document.DocumentPath); err == nil {
-		nw.reader.SetContentData(document, entity)
-		nw.reader.ComputeMd5Hash(document)
-		nw.reader.ComputeSsdeepHash(document)
-
-		tokenVectors := nw.sender.ComputeContentTokens(document)
-		for chunkIndex, chunkData := range tokenVectors.ChunkedText {
-			contentData := strings.Join(chunkData, " ")
-			nw.reader.SetContentData(document, contentData)
-
-			contentVector := tokenVectors.Vectors[chunkIndex]
-			nw.reader.SetContentVector(document, contentVector)
-
-			nw.reader.ComputeUuid(document)
-			nw.reader.ComputeContentMd5Hash(document)
-			if err = nw.sender.StoreDocument(document); err != nil {
-				log.Println("Failed while storing document: ", err)
-				continue
-			}
-		}
-
-		// TODO: Split text to chunks myself.
-		//for _, content := range nw.reader.SplitContent(entity, 1000) {
-		//	nw.reader.SetContentData(document, content)
-		//	contentTokens := nw.sender.ComputeContentTokens(document)
-		//
-		//	nw.reader.SetContentVector(document, contentTokens)
-		//	nw.reader.ComputeUuid(document)
-		//	nw.reader.ComputeContentMd5Hash(document)
-		//	if err = nw.sender.StoreDocument(document); err != nil {
-		//		log.Println("Failed while storing document: ", err)
-		//		continue
-		//	}
-		//}
-	}
-	return nil
 }
