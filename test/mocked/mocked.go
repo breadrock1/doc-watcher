@@ -1,4 +1,4 @@
-package sender
+package mocked
 
 import (
 	"doc-notifier/internal/pkg/reader"
