@@ -30,34 +30,36 @@ func LoadFromEnv() (*Options, error) {
 
 	storeChunksTmp, envExists := os.LookupEnv("IS_LOAD_CHUNKS")
 	if !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing IS_LOAD_CHUNKS env variable")
 	}
 	if storeChunksFlag, parseErr = strconv.ParseBool(storeChunksTmp); parseErr != nil {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing IS_LOAD_CHUNKS env variable")
 	}
 
 	readRawFileTmp, envExists := os.LookupEnv("READ_RAW_FILE")
 	if !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing READ_RAW_FILE env variable")
 	}
-	readRawFileFlag, parseErr = strconv.ParseBool(readRawFileTmp)
+	if readRawFileFlag, parseErr = strconv.ParseBool(readRawFileTmp); parseErr != nil {
+		return nil, errors.New("failed while parsing READ_RAW_FILE env variable")
+	}
 
-	if serverAddr, envExists = os.LookupEnv("host-address"); !envExists {
-		return nil, errors.New("")
+	if serverAddr, envExists = os.LookupEnv("HOST_ADDRESS"); !envExists {
+		return nil, errors.New("failed while parsing HOST_ADDRESS env variable")
 	}
 	if llmAddr, envExists = os.LookupEnv("LLM_ADDRESS"); !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing LLM_ADDRESS env variable")
 	}
 	if ocrAddr, envExists = os.LookupEnv("OCR_ADDRESS"); !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing OCR_ADDRESS env variable")
 	}
 	if docSearchAddr, envExists = os.LookupEnv("DOC_ADDRESS"); !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing DOC_ADDRESS env variable")
 	}
 
 	watcherPathTmp, envExists := os.LookupEnv("WATCHER_DIR_PATHS")
 	if !envExists {
-		return nil, errors.New("")
+		return nil, errors.New("failed while parsing WATCHER_DIR_PATHS env variable")
 	}
 	watcherPath = strings.Split(watcherPathTmp, ",")
 

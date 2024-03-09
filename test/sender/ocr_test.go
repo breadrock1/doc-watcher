@@ -11,6 +11,10 @@ import (
 )
 
 const TestcaseDirPath = "../../testcases/"
+const TestcaseOtherDirPath = "../../testcases/directory/"
+const TestcaseAnyFilePath = TestcaseOtherDirPath + "any.txt"
+const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
+const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "test_file_2.txt"
 
 func TestReadRawFileData(t *testing.T) {
 	fileSender := &sender.FileSender{
@@ -51,7 +55,7 @@ func TestRecognizeFileData(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		data, err := fileSender.RecognizeFileData(TestcaseDirPath + "directory/test_file_1.txt")
+		data, err := fileSender.RecognizeFileData(TestcaseFilePath)
 
 		assert.NoError(t, err, "Returned non null error pointer")
 		assert.Equal(t, data, "test_file_1", "Returned non equal file data")
@@ -67,7 +71,7 @@ func TestRecognizeFileData(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		data, err := fileSender.RecognizeFileData(TestcaseDirPath + "directory/any.txt")
+		data, err := fileSender.RecognizeFileData(TestcaseAnyFilePath)
 
 		assert.Error(t, err, "Returned non null error pointer")
 		assert.Empty(t, data, "Returned non equal file data")
@@ -83,7 +87,7 @@ func TestRecognizeFileData(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		data, err := fileSender.RecognizeFileData(TestcaseDirPath + "directory")
+		data, err := fileSender.RecognizeFileData(TestcaseOtherDirPath)
 
 		assert.Error(t, err, "Returned non null error pointer")
 		assert.Empty(t, data, "Returned non equal file data")
@@ -104,7 +108,7 @@ func TestRecognizeFileData(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		data, err := _fileSender.RecognizeFileData(TestcaseDirPath + "directory/test_file_1.txt")
+		data, err := _fileSender.RecognizeFileData(TestcaseFilePath)
 
 		assert.Error(t, err, "Returned non null error pointer")
 		assert.Empty(t, data, "Returned non equal file data")
@@ -127,7 +131,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_1.txt")
+		document, parseErr := reader.ParseFile(TestcaseFilePath)
 		storeErr := fileSender.StoreDocument(document)
 
 		assert.NoError(t, parseErr, "Returned error while parsing file")
@@ -144,7 +148,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_2.txt")
+		document, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
 		storeErr := fileSender.StoreDocument(document)
 
 		assert.NoError(t, parseErr, "Returned non null error pointer")
@@ -166,7 +170,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_1.txt")
+		document, parseErr := reader.ParseFile(TestcaseFilePath)
 		storeErr := _fileSender.StoreDocument(document)
 
 		assert.NoError(t, parseErr, "Returned non null error pointer")
@@ -190,7 +194,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_1.txt")
+		document, parseErr := reader.ParseFile(TestcaseFilePath)
 		document.Content = "test_file_1"
 		document.DocumentName = "test_file_1.txt"
 		tokens, computeErr := fileSender.ComputeContentTokens(document)
@@ -212,7 +216,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_2.txt")
+		document, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
 		_, computeErr := fileSender.ComputeContentTokens(document)
 
 		assert.NoError(t, parseErr, "Returned error while parsing file")
@@ -234,7 +238,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseDirPath + "directory/test_file_2.txt")
+		document, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
 		_, computeErr := _fileSender.ComputeContentTokens(document)
 
 		assert.NoError(t, parseErr, "Returned error while parsing file")
