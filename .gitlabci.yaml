@@ -1,0 +1,31 @@
+before_script:
+  - echo "start job at :" `date`
+  - echo "workspace is:" `pwd`
+
+after_script:
+  - echo "done job at :" `date`
+
+stages:
+  - build
+  - lint
+  - test
+  - deployci
+  - deployqa
+  - prod
+
+build:
+  stage: build
+  tags:
+    - linux
+  script:
+    - GOOS=linux GOARCH=amd64 go build -o doc-notifier
+
+lint:
+  stage: lint
+  script:
+    - golangci-lint run $(git add ls-files | grep *.go)
+
+test:
+  stage: test
+  script:
+    - for test_module in $(git ls-files test); do go test -v -count=1 -race $test_module; done
