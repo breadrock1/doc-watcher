@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"doc-notifier/internal/pkg/server/endpoints"
 	"doc-notifier/internal/pkg/watcher"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 type EchoServer struct {
 	options *ServerOptions
+	server  *echo.Echo
 	watcher *watcher.NotifyWatcher
 }
 
@@ -20,24 +22,28 @@ func New(options *ServerOptions, nw *watcher.NotifyWatcher) *EchoServer {
 }
 
 func (s *EchoServer) RunServer() {
-	e := echo.New()
+	s.server = echo.New()
 
 	// Just store watcher service ptr to get functionality access.
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	s.server.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Set("Watcher", s.watcher)
 			return next(c)
 		}
 	})
 
-	e.POST("/attach", endpoints.AttachDirectories)
-	e.POST("/detach", endpoints.DetachDirectories)
-	e.GET("/watcher", endpoints.WatchedDirsList)
+	s.server.POST("/attach", endpoints.AttachDirectories)
+	s.server.POST("/detach", endpoints.DetachDirectories)
+	s.server.GET("/watcher", endpoints.WatchedDirsList)
 
-	e.POST("/download", endpoints.DownloadFile)
-	e.POST("/upload", endpoints.UploadFile)
-	e.GET("/upload", endpoints.UploadFileForm)
+	s.server.POST("/download", endpoints.DownloadFile)
+	s.server.POST("/upload", endpoints.UploadFile)
+	s.server.GET("/upload", endpoints.UploadFileForm)
 
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
-	_ = e.Start(address)
+	_ = s.server.Start(address)
+}
+
+func (s *EchoServer) StopServer() {
+	_ = s.server.Shutdown(context.Background())
 }

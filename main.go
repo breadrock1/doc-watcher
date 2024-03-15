@@ -5,6 +5,9 @@ import (
 	"doc-notifier/internal/pkg/options"
 	"doc-notifier/internal/pkg/server"
 	"doc-notifier/internal/pkg/watcher"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -19,10 +22,14 @@ func main() {
 		serviceOptions.WatchDirectories,
 	)
 	go watcherService.RunWatcher()
+	defer watcherService.StopWatcher()
 
 	serverOptions := options.ParseServerAddress(serviceOptions.ServerAddress)
 	httpServer := server.New(serverOptions, watcherService)
 	go httpServer.RunServer()
+	defer httpServer.StopServer()
 
-	<-make(chan interface{})
+	killSignal := make(chan os.Signal, 1)
+	signal.Notify(killSignal, syscall.SIGINT, syscall.SIGKILL, syscall.SIGABRT)
+	<-killSignal
 }
