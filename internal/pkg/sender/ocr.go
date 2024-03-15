@@ -13,6 +13,11 @@ const RecognitionURL = "/api/v1/extract_text"
 
 // const RecognitionURL = "/api/assistant/extract-file/"
 
+type DocumentForm struct {
+	// Context string `json:"text"`
+	Context string `json:"context"`
+}
+
 func (fs *FileSender) ReadRawFileData(filePath string) (string, error) {
 	bytesData, err := os.ReadFile(filePath)
 	if err != nil {

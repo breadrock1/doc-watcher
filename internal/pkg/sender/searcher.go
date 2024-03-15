@@ -9,11 +9,6 @@ import (
 
 const SearcherURL = "/document/new"
 
-type DocumentForm struct {
-	// Context string `json:"text"`
-	Context string `json:"context"`
-}
-
 func (fs *FileSender) StoreDocument(document *reader.Document) error {
 	jsonData, err := json.Marshal(document)
 	if err != nil {
