@@ -6,11 +6,15 @@ import (
 	"errors"
 	"github.com/fsnotify/fsnotify"
 	"log"
+	"math"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 type NotifyWatcher struct {
+	stopCh          chan bool
 	storeChunksFlag bool
 	readRawFileFlag bool
 	directories     []string
@@ -34,6 +38,7 @@ func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs
 	}
 
 	return &NotifyWatcher{
+		stopCh:          make(chan bool),
 		readRawFileFlag: rawFlag,
 		storeChunksFlag: storeFlag,
 		directories:     watchDirs,
@@ -47,7 +52,13 @@ func (nw *NotifyWatcher) RunWatcher() {
 	defer func() { _ = nw.watcher.Close() }()
 	go nw.parseEventSlot()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
-	<-make(chan interface{})
+	<-nw.stopCh
+}
+
+func (nw *NotifyWatcher) StopWatcher() {
+	dirs := nw.watcher.WatchList()
+	_ = nw.RemoveDirectories(dirs)
+	nw.stopCh <- true
 }
 
 func (nw *NotifyWatcher) WatchedDirsList() []string {
@@ -132,12 +143,6 @@ func (nw *NotifyWatcher) parseEventSlot() {
 }
 
 func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
-	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-		absFilePath, err := filepath.Abs(event.Name)
-		if err != nil {
-			log.Println("Failed while getting abs path of file: ", err)
-			return
-		}
 	absFilePath, err := filepath.Abs(event.Name)
 	if err != nil {
 		log.Println("Failed while getting abs path of file: ", err)
