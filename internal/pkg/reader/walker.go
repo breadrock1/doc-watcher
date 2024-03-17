@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (f *FileReader) ParseCaughtFiles(filePath string) []*Document {
+func (f *ReaderService) ParseCaughtFiles(filePath string) []*Document {
 	mu := &sync.Mutex{}
 	var customList []*Document
 

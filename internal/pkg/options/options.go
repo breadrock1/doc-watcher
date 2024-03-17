@@ -74,7 +74,7 @@ func LoadFromEnv() (*Options, error) {
 	}, nil
 }
 
-func ParseServerAddress(serverAddr string) *server.ServerOptions {
+func ParseServerAddress(serverAddr string) *server.Options {
 	tmp := strings.Split(serverAddr, ":")
 	servicePort, _ := strconv.Atoi(tmp[1])
 	return server.BuildOptions(tmp[0], servicePort)

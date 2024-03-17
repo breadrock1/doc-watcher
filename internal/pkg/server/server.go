@@ -9,12 +9,12 @@ import (
 )
 
 type EchoServer struct {
-	options *ServerOptions
+	options *Options
 	server  *echo.Echo
 	watcher *watcher.NotifyWatcher
 }
 
-func New(options *ServerOptions, nw *watcher.NotifyWatcher) *EchoServer {
+func New(options *Options, nw *watcher.NotifyWatcher) *EchoServer {
 	return &EchoServer{
 		options: options,
 		watcher: nw,

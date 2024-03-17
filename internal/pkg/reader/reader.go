@@ -1,8 +1,8 @@
 package reader
 
-type FileReader struct {
+type ReaderService struct {
 }
 
-func New() *FileReader {
-	return &FileReader{}
+func New() *ReaderService {
+	return &ReaderService{}
 }
