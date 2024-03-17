@@ -1,8 +1,10 @@
 package watcher
 
 import (
+	"doc-notifier/internal/pkg/ocr"
 	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/searcher"
+	"doc-notifier/internal/pkg/tokenizer"
 	"errors"
 	"github.com/fsnotify/fsnotify"
 	"log"
@@ -14,23 +16,31 @@ import (
 )
 
 type NotifyWatcher struct {
-	stopCh          chan bool
-	storeChunksFlag bool
-	readRawFileFlag bool
-	directories     []string
-	watcher         *fsnotify.Watcher
-	sender          *sender.FileSender
-	reader          *reader.FileReader
+	stopCh chan bool
+
+	directories []string
+	watcher     *fsnotify.Watcher
+
+	ocr       *ocr.OcrService
+	reader    *reader.ReaderService
+	searcher  *searcher.SearcherService
+	tokenizer *tokenizer.TokenizerService
 }
 
-func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs []string) *NotifyWatcher {
-	fileReader := reader.New()
-	fileSender := sender.New(
-		searchAddr,
-		ocrAddr,
-		llmAddr,
-		rawFlag,
-	)
+func New(options *Options) *NotifyWatcher {
+	ocrService := ocr.New(&ocr.Options{
+		Mode:    ocr.GetModeFromString(options.OcrMode),
+		Address: options.OcrAddress,
+	})
+	readerService := reader.New()
+	searcherService := searcher.New(options.SearcherAddress)
+	tokenizerService := tokenizer.New(&tokenizer.Options{
+		Mode:         tokenizer.GetModeFromString(options.TokenizerMode),
+		Address:      options.TokenizerAddress,
+		ChunkSize:    options.TokenizerChunkSize,
+		ChunkedFlag:  options.TokenizerChunkedFlag,
+		ChunkOverlap: options.TokenizerChunkOverlap,
+	})
 
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -38,13 +48,13 @@ func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs
 	}
 
 	return &NotifyWatcher{
-		stopCh:          make(chan bool),
-		readRawFileFlag: rawFlag,
-		storeChunksFlag: storeFlag,
-		directories:     watchDirs,
-		watcher:         notifyWatcher,
-		sender:          fileSender,
-		reader:          fileReader,
+		stopCh:      make(chan bool),
+		directories: options.WatcherDirectories,
+		ocr:         ocrService,
+		watcher:     notifyWatcher,
+		reader:      readerService,
+		searcher:    searcherService,
+		tokenizer:   tokenizerService,
 	}
 }
 

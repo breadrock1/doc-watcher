@@ -10,23 +10,7 @@ import (
 	"time"
 )
 
-type FileSender struct {
-	ReadRawFileFlag   bool
-	OrcServiceAddress string
-	SearcherAddress   string
-	LlmServiceAddress string
-}
-
-func New(searcherAddr string, assistantAddr string, llmAddress string, readRawFlag bool) *FileSender {
-	return &FileSender{
-		ReadRawFileFlag:   readRawFlag,
-		OrcServiceAddress: assistantAddr,
-		SearcherAddress:   searcherAddr,
-		LlmServiceAddress: llmAddress,
-	}
-}
-
-func (fs *FileSender) sendRequest(body *bytes.Buffer, url *string) ([]byte, error) {
+func SendRequest(body *bytes.Buffer, url *string) ([]byte, error) {
 	req, err := http.NewRequest("POST", *url, body)
 	if err != nil {
 		log.Println("Error creating request:", err)
