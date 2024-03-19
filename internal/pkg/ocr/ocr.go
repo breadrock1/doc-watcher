@@ -8,7 +8,7 @@ import (
 )
 
 type OcrService struct {
-	Ocr *Recognizer
+	Ocr Recognizer
 }
 
 type Recognizer interface {
@@ -21,15 +21,15 @@ func New(options *Options) *OcrService {
 
 	switch options.Mode {
 	case ReadRawFile:
-		service.Ocr = raw.New(options)
+		service.Ocr = raw.New()
 	case LocalTesseract:
-		service.Ocr = tesseract.New(options)
-	case RemoteTesseract:
-		service.Ocr = assistant.New(options)
+		service.Ocr = tesseract.New()
 	case RemoteDedoc:
-		service.Ocr = dedoc.New(options)
+		service.Ocr = dedoc.New(options.Address)
+	case RemoteTesseract:
+		service.Ocr = assistant.New(options.Address)
 	default:
-		service.Ocr = raw.New(options)
+		service.Ocr = raw.New()
 	}
 
 	return service

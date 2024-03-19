@@ -2,7 +2,6 @@ package assistant
 
 import (
 	"bytes"
-	"doc-notifier/internal/pkg/ocr"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"io"
@@ -15,9 +14,9 @@ type AssistantOCR struct {
 	address string
 }
 
-func New(options *ocr.Options) *AssistantOCR {
+func New(address string) *AssistantOCR {
 	return &AssistantOCR{
-		address: options.Address,
+		address: address,
 	}
 }
 

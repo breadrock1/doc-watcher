@@ -2,7 +2,6 @@ package dedoc
 
 import (
 	"bytes"
-	"doc-notifier/internal/pkg/ocr"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"io"
@@ -15,9 +14,9 @@ type DedocOCR struct {
 	address string
 }
 
-func New(options *ocr.Options) *DedocOCR {
+func New(address string) *DedocOCR {
 	return &DedocOCR{
-		address: options.Address,
+		address: address,
 	}
 }
 

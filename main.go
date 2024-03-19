@@ -13,14 +13,20 @@ import (
 func main() {
 	serviceOptions := cmd.Execute()
 
-	watcherService := watcher.New(
-		serviceOptions.ReadRawFileFlag,
-		serviceOptions.StoreChunksFlag,
-		serviceOptions.DocSearchAddress,
-		serviceOptions.OcrServiceAddress,
-		serviceOptions.LlmServiceAddress,
-		serviceOptions.WatchDirectories,
-	)
+	watcherService := watcher.New(&watcher.Options{
+		OcrAddress:      serviceOptions.OcrServiceAddress,
+		OcrMode:         "raw",
+		SearcherAddress: serviceOptions.DocSearchAddress,
+
+		TokenizerMode:         "raw",
+		TokenizerAddress:      serviceOptions.LlmServiceAddress,
+		TokenizerChunkedFlag:  serviceOptions.StoreChunksFlag,
+		TokenizerChunkSize:    800,
+		TokenizerChunkOverlap: 100,
+
+		WatcherDirectories: serviceOptions.WatchDirectories,
+	})
+
 	go watcherService.RunWatcher()
 	defer watcherService.StopWatcher()
 

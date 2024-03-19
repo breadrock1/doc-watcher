@@ -1,7 +1,6 @@
 package tesseract
 
 import (
-	"doc-notifier/internal/pkg/ocr"
 	"github.com/otiai10/gosseract/v2"
 )
 
@@ -9,7 +8,7 @@ type TesseractOCR struct {
 	client *gosseract.Client
 }
 
-func New(_ *ocr.Options) *TesseractOCR {
+func New() *TesseractOCR {
 	client := gosseract.NewClient()
 	return &TesseractOCR{
 		client: client,

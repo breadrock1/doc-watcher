@@ -28,14 +28,16 @@ type NotifyWatcher struct {
 }
 
 func New(options *Options) *NotifyWatcher {
+	readerService := reader.New()
+	searcherService := searcher.New(options.SearcherAddress)
+
 	ocrService := ocr.New(&ocr.Options{
 		Mode:    ocr.GetModeFromString(options.OcrMode),
 		Address: options.OcrAddress,
 	})
-	readerService := reader.New()
-	searcherService := searcher.New(options.SearcherAddress)
-	tokenizerService := tokenizer.New(&tokenizer.Options{
-		Mode:         tokenizer.GetModeFromString(options.TokenizerMode),
+
+	tokenizerService := tokenizer.New(&options.Options{
+		Mode:         options.GetModeFromString(options.TokenizerMode),
 		Address:      options.TokenizerAddress,
 		ChunkSize:    options.TokenizerChunkSize,
 		ChunkedFlag:  options.TokenizerChunkedFlag,
@@ -81,23 +83,6 @@ func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
 
 func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.watcher.Remove)
-}
-
-func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
-	var collectedErrs []string
-	for _, watchDir := range directories {
-		if err := consumer(watchDir); err != nil {
-			collectedErrs = append(collectedErrs, err.Error())
-			continue
-		}
-	}
-
-	if len(collectedErrs) > 0 {
-		msg := strings.Join(collectedErrs, "\n")
-		return errors.New(msg)
-	}
-
-	return nil
 }
 
 func (nw *NotifyWatcher) parseEventSlot() {
@@ -161,4 +146,21 @@ func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
 
 	triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
 	nw.storeExtractedDocuments(triggeredFiles)
+}
+
+func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
+	var collectedErrs []string
+	for _, watchDir := range directories {
+		if err := consumer(watchDir); err != nil {
+			collectedErrs = append(collectedErrs, err.Error())
+			continue
+		}
+	}
+
+	if len(collectedErrs) > 0 {
+		msg := strings.Join(collectedErrs, "\n")
+		return errors.New(msg)
+	}
+
+	return nil
 }
