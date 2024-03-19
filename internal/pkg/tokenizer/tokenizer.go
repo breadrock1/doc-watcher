@@ -1,18 +1,11 @@
 package tokenizer
 
-import (
-	"doc-notifier/internal/pkg/tokenizer/assistant"
-	"doc-notifier/internal/pkg/tokenizer/langchain"
-	"doc-notifier/internal/pkg/tokenizer/local"
-	"doc-notifier/internal/pkg/tokenizer/none"
-)
-
 type TokenizerService struct {
-	ocr interface{}
+	Tokenizer Tokenizer
 }
 
 type Tokenizer interface {
-	TokenizeTextData(text string) ([][]float64, error)
+	TokenizeTextData(text string) (*ComputedTokens, error)
 }
 
 func New(options *Options) *TokenizerService {
@@ -20,15 +13,15 @@ func New(options *Options) *TokenizerService {
 
 	switch options.Mode {
 	case Assistant:
-		service.ocr = assistant.New(options)
+		service.Tokenizer = NewAssistant(options)
 	case LangChain:
-		service.ocr = langchain.New(options)
+		service.Tokenizer = NewLangChain(options)
 	case Local:
-		service.ocr = local.New(options)
+		service.Tokenizer = NewLocal()
 	case None:
-		service.ocr = none.New(options)
+		service.Tokenizer = NewNone()
 	default:
-		service.ocr = none.New(options)
+		service.Tokenizer = NewNone()
 	}
 
 	return service

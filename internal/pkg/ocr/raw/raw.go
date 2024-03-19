@@ -1,7 +1,6 @@
 package raw
 
 import (
-	"doc-notifier/internal/pkg/ocr"
 	"log"
 	"os"
 )
@@ -9,7 +8,7 @@ import (
 type RawExractor struct {
 }
 
-func New(_ *ocr.Options) *RawExractor {
+func New() *RawExractor {
 	return &RawExractor{}
 }
 
