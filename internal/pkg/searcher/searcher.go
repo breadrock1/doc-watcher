@@ -1,20 +1,26 @@
-package sender
+package searcher
 
 import (
 	"bytes"
 	"doc-notifier/internal/pkg/reader"
+	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"log"
 )
 
 const SearcherURL = "/document/new"
 
-type DocumentForm struct {
-	// Context string `json:"text"`
-	Context string `json:"context"`
+type SearcherService struct {
+	address string
 }
 
-func (fs *FileSender) StoreDocument(document *reader.Document) error {
+func New(address string) *SearcherService {
+	return &SearcherService{
+		address: address,
+	}
+}
+
+func (ss *SearcherService) StoreDocument(document *reader.Document) error {
 	jsonData, err := json.Marshal(document)
 	if err != nil {
 		log.Println("Failed while marshaling doc: ", err)
@@ -22,9 +28,9 @@ func (fs *FileSender) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := fs.SearcherAddress + SearcherURL
+	targetURL := ss.address + SearcherURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
-	_, err = fs.sendRequest(reqBody, &targetURL)
+	_, err = sender.SendRequest(reqBody, &targetURL)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return err

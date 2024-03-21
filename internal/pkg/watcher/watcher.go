@@ -1,32 +1,48 @@
 package watcher
 
 import (
+	"doc-notifier/internal/pkg/ocr"
 	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/searcher"
+	"doc-notifier/internal/pkg/tokenizer"
 	"errors"
 	"github.com/fsnotify/fsnotify"
 	"log"
+	"math"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 type NotifyWatcher struct {
-	storeChunksFlag bool
-	readRawFileFlag bool
-	directories     []string
-	watcher         *fsnotify.Watcher
-	sender          *sender.FileSender
-	reader          *reader.FileReader
+	stopCh chan bool
+
+	directories []string
+	watcher     *fsnotify.Watcher
+
+	ocr       *ocr.OcrService
+	reader    *reader.ReaderService
+	searcher  *searcher.SearcherService
+	tokenizer *tokenizer.TokenizerService
 }
 
-func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs []string) *NotifyWatcher {
-	fileReader := reader.New()
-	fileSender := sender.New(
-		searchAddr,
-		ocrAddr,
-		llmAddr,
-		rawFlag,
-	)
+func New(options *Options) *NotifyWatcher {
+	readerService := reader.New()
+	searcherService := searcher.New(options.DocSearchAddress)
+
+	ocrService := ocr.New(&ocr.Options{
+		Mode:    ocr.GetModeFromString(options.OcrServiceMode),
+		Address: options.OcrServiceAddress,
+	})
+
+	tokenizerService := tokenizer.New(&tokenizer.Options{
+		Mode:         tokenizer.GetModeFromString(options.TokenizerServiceMode),
+		Address:      options.TokenizerServiceAddress,
+		ChunkSize:    options.TokenizerChunkSize,
+		ChunkedFlag:  options.TokenizerReturnChunks,
+		ChunkOverlap: options.TokenizerChunkOverlap,
+	})
 
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -34,12 +50,13 @@ func New(rawFlag, storeFlag bool, searchAddr, ocrAddr, llmAddr string, watchDirs
 	}
 
 	return &NotifyWatcher{
-		readRawFileFlag: rawFlag,
-		storeChunksFlag: storeFlag,
-		directories:     watchDirs,
-		watcher:         notifyWatcher,
-		sender:          fileSender,
-		reader:          fileReader,
+		stopCh:      make(chan bool),
+		directories: options.WatchedDirectories,
+		ocr:         ocrService,
+		watcher:     notifyWatcher,
+		reader:      readerService,
+		searcher:    searcherService,
+		tokenizer:   tokenizerService,
 	}
 }
 
@@ -47,7 +64,13 @@ func (nw *NotifyWatcher) RunWatcher() {
 	defer func() { _ = nw.watcher.Close() }()
 	go nw.parseEventSlot()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
-	<-make(chan interface{})
+	<-nw.stopCh
+}
+
+func (nw *NotifyWatcher) StopWatcher() {
+	dirs := nw.watcher.WatchList()
+	_ = nw.RemoveDirectories(dirs)
+	nw.stopCh <- true
 }
 
 func (nw *NotifyWatcher) WatchedDirsList() []string {
@@ -60,6 +83,69 @@ func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
 
 func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.watcher.Remove)
+}
+
+func (nw *NotifyWatcher) parseEventSlot() {
+	var (
+		mu      sync.Mutex
+		timers  = make(map[string]*time.Timer)
+		waitFor = 100 * time.Millisecond
+
+		testFunc = func(e fsnotify.Event) {
+			nw.switchEventCase(&e)
+
+			mu.Lock()
+			delete(timers, e.Name)
+			mu.Unlock()
+		}
+	)
+
+	for {
+		select {
+
+		case err, ok := <-nw.watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Println("Caught error: ", err)
+
+		case event, ok := <-nw.watcher.Events:
+			if !ok {
+				return
+			}
+
+			if !event.Has(fsnotify.Write) && !event.Has(fsnotify.Create) {
+				continue
+			}
+
+			mu.Lock()
+			t, ok := timers[event.Name]
+			mu.Unlock()
+
+			if !ok {
+				t = time.AfterFunc(math.MaxInt64, func() { testFunc(event) })
+				t.Stop()
+
+				mu.Lock()
+				timers[event.Name] = t
+				mu.Unlock()
+			}
+
+			t.Reset(waitFor)
+
+		}
+	}
+}
+
+func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
+	absFilePath, err := filepath.Abs(event.Name)
+	if err != nil {
+		log.Println("Failed while getting abs path of file: ", err)
+		return
+	}
+
+	triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
+	nw.storeExtractedDocuments(triggeredFiles)
 }
 
 func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
@@ -77,36 +163,4 @@ func consumeWatcherDirectories(directories []string, consumer func(name string) 
 	}
 
 	return nil
-}
-
-func (nw *NotifyWatcher) parseEventSlot() {
-	for {
-		select {
-		case event, ok := <-nw.watcher.Events:
-			if !ok {
-				return
-			}
-
-			nw.switchEventCase(&event)
-
-		case err, ok := <-nw.watcher.Errors:
-			if !ok {
-				return
-			}
-			log.Println("Caught error: ", err)
-		}
-	}
-}
-
-func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
-	if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
-		absFilePath, err := filepath.Abs(event.Name)
-		if err != nil {
-			log.Println("Failed while getting abs path of file: ", err)
-			return
-		}
-
-		triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
-		nw.storeExtractedDocuments(triggeredFiles)
-	}
 }

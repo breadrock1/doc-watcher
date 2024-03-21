@@ -46,58 +46,86 @@ func Execute() *options.Options {
 
 func init() {
 	flags := rootCmd.Flags()
-	flags.BoolP("from-env", "e", false, "Load config from env.")
-	flags.BoolP("load-chunks", "c", false, "Store document as doc-chunks.")
-	flags.BoolP("read-raw-file", "m", false, "Read raw file data and load.")
-	flags.StringArrayP("watcher-dir-path", "w", []string{"/archiver"}, "A local directory path to watch fs-events")
-	flags.StringP("host-address", "s", "0.0.0.0:2893", "fs-notifier service host address")
-	flags.StringP("llm-address", "l", "localhost:8000", "An llm address with port")
-	flags.StringP("ocr-address", "r", "localhost:8000", "An ocr address with port")
-	flags.StringP("doc-address", "d", "localhost:2892", "An docseacher address with port")
+	flags.StringArrayP("watched-dirs", "w", []string{"./indexer"}, "A local directory path to watch fs-events")
+	flags.StringP("service-address", "n", "0.0.0.0:2893", "Address of current watcher service")
+
+	flags.StringP("ocr-address", "o", "http://localhost:1231", "Address of current watcher service")
+	flags.StringP("ocr-mode", "a", "read-raw-file", "Address of current watcher service")
+
+	flags.StringP("docsearch-address", "d", "http://localhost:2892", "An doc-seacher address with port")
+
+	flags.StringP("tokenizer-address", "t", "http://localhost:8001", "fs-notifier service host address")
+	flags.StringP("tokenizer-mode", "b", "assistant", "An llm address with port")
+	flags.IntP("chunk-size", "l", 800, "An llm address with port")
+	flags.IntP("size-overlap", "p", 100, "An llm address with port")
+	flags.BoolP("return-chunks", "r", true, "Load config from env.")
+	flags.BoolP("chunk-by-self", "c", false, "Store document as doc-chunks.")
+
+	flags.BoolP("from-env", "e", false, "Parse options from env.")
 }
 
 func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
-	var parseErr error
-	var watcherPath []string
-	var storeChunksFlag, readRawFileFlag bool
-	var serverAddr, llmAddr, ocrAddr, docSearchAddr string
+	var parseOptionErr error
+
+	var watchedDirectories []string
+	var chunkSize, chunkOverlap int
+	var returnChunksFlag, chunkBySelfFlag bool
+	var tokenizerServiceAddr, tokenizerServiceMode string
+	var notifierAddr, docSearchAddr, ocrServiceAddr, ocrServiceMode string
 
 	flags := cmd.Flags()
-	if storeChunksFlag, parseErr = flags.GetBool("load-chunks"); parseErr != nil {
-		return nil, parseErr
+
+	if notifierAddr, parseOptionErr = flags.GetString("service-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if watchedDirectories, parseOptionErr = flags.GetStringArray("watched-dirs"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
 
-	if readRawFileFlag, parseErr = flags.GetBool("read-raw-file"); parseErr != nil {
-		return nil, parseErr
+	if ocrServiceAddr, parseOptionErr = flags.GetString("ocr-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if ocrServiceMode, parseOptionErr = flags.GetString("ocr-mode"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
 
-	if serverAddr, parseErr = flags.GetString("host-address"); parseErr != nil {
-		return nil, parseErr
+	if docSearchAddr, parseOptionErr = flags.GetString("docsearch-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
 
-	if llmAddr, parseErr = flags.GetString("llm-address"); parseErr != nil {
-		return nil, parseErr
+	if tokenizerServiceAddr, parseOptionErr = flags.GetString("tokenizer-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
-
-	if ocrAddr, parseErr = flags.GetString("ocr-address"); parseErr != nil {
-		return nil, parseErr
+	if tokenizerServiceMode, parseOptionErr = flags.GetString("tokenizer-mode"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
-
-	if docSearchAddr, parseErr = flags.GetString("doc-address"); parseErr != nil {
-		return nil, parseErr
+	if chunkSize, parseOptionErr = flags.GetInt("chunk-size"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
-
-	if watcherPath, parseErr = flags.GetStringArray("watcher-dir-path"); parseErr != nil {
-		return nil, parseErr
+	if chunkOverlap, parseOptionErr = flags.GetInt("size-overlap"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if returnChunksFlag, parseOptionErr = flags.GetBool("return-chunks"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if chunkBySelfFlag, parseOptionErr = flags.GetBool("chunk-by-self"); parseOptionErr != nil {
+		return nil, parseOptionErr
 	}
 
 	return &options.Options{
-		ServerAddress:     serverAddr,
-		LlmServiceAddress: llmAddr,
-		DocSearchAddress:  docSearchAddr,
-		OcrServiceAddress: ocrAddr,
-		WatchDirectories:  watcherPath,
-		StoreChunksFlag:   storeChunksFlag,
-		ReadRawFileFlag:   readRawFileFlag,
+		WatcherServiceAddress: notifierAddr,
+		WatchedDirectories:    watchedDirectories,
+
+		OcrServiceAddress: ocrServiceAddr,
+		OcrServiceMode:    ocrServiceMode,
+
+		DocSearchAddress: docSearchAddr,
+
+		TokenizerServiceAddress: tokenizerServiceAddr,
+		TokenizerServiceMode:    tokenizerServiceMode,
+		TokenizerChunkSize:      chunkSize,
+		TokenizerChunkOverlap:   chunkOverlap,
+		TokenizerReturnChunks:   returnChunksFlag,
+		TokenizerChunkBySelf:    chunkBySelfFlag,
 	}, nil
 }

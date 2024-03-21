@@ -5,24 +5,41 @@ import (
 	"doc-notifier/internal/pkg/options"
 	"doc-notifier/internal/pkg/server"
 	"doc-notifier/internal/pkg/watcher"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
 	serviceOptions := cmd.Execute()
 
-	watcherService := watcher.New(
-		serviceOptions.ReadRawFileFlag,
-		serviceOptions.StoreChunksFlag,
-		serviceOptions.DocSearchAddress,
-		serviceOptions.OcrServiceAddress,
-		serviceOptions.LlmServiceAddress,
-		serviceOptions.WatchDirectories,
-	)
-	go watcherService.RunWatcher()
+	watcherService := watcher.New(&watcher.Options{
 
-	serverOptions := options.ParseServerAddress(serviceOptions.ServerAddress)
+		WatcherServiceAddress: serviceOptions.WatcherServiceAddress,
+		WatchedDirectories:    serviceOptions.WatchedDirectories,
+
+		OcrServiceAddress: serviceOptions.OcrServiceAddress,
+		OcrServiceMode:    serviceOptions.OcrServiceMode,
+
+		DocSearchAddress: serviceOptions.DocSearchAddress,
+
+		TokenizerServiceAddress: serviceOptions.TokenizerServiceAddress,
+		TokenizerServiceMode:    serviceOptions.TokenizerServiceMode,
+		TokenizerChunkSize:      serviceOptions.TokenizerChunkSize,
+		TokenizerChunkOverlap:   serviceOptions.TokenizerChunkOverlap,
+		TokenizerReturnChunks:   serviceOptions.TokenizerReturnChunks,
+		TokenizerChunkBySelf:    serviceOptions.TokenizerChunkBySelf,
+	})
+
+	go watcherService.RunWatcher()
+	defer watcherService.StopWatcher()
+
+	serverOptions := options.ParseServerAddress(serviceOptions.WatcherServiceAddress)
 	httpServer := server.New(serverOptions, watcherService)
 	go httpServer.RunServer()
+	defer httpServer.StopServer()
 
-	<-make(chan interface{})
+	killSignal := make(chan os.Signal, 1)
+	signal.Notify(killSignal, syscall.SIGINT, syscall.SIGKILL, syscall.SIGABRT)
+	<-killSignal
 }
