@@ -1,7 +1,8 @@
 package tokenizer
 
 type TokenizerService struct {
-	Tokenizer Tokenizer
+	Tokenizer        Tokenizer
+	TokenizerOptions *Options
 }
 
 type Tokenizer interface {
@@ -9,7 +10,9 @@ type Tokenizer interface {
 }
 
 func New(options *Options) *TokenizerService {
-	service := &TokenizerService{}
+	service := &TokenizerService{
+		TokenizerOptions: options,
+	}
 
 	switch options.Mode {
 	case Assistant:
