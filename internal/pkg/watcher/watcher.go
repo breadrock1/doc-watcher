@@ -29,18 +29,18 @@ type NotifyWatcher struct {
 
 func New(options *Options) *NotifyWatcher {
 	readerService := reader.New()
-	searcherService := searcher.New(options.SearcherAddress)
+	searcherService := searcher.New(options.DocSearchAddress)
 
 	ocrService := ocr.New(&ocr.Options{
-		Mode:    ocr.GetModeFromString(options.OcrMode),
-		Address: options.OcrAddress,
+		Mode:    ocr.GetModeFromString(options.OcrServiceMode),
+		Address: options.OcrServiceAddress,
 	})
 
-	tokenizerService := tokenizer.New(&options.Options{
-		Mode:         options.GetModeFromString(options.TokenizerMode),
-		Address:      options.TokenizerAddress,
+	tokenizerService := tokenizer.New(&tokenizer.Options{
+		Mode:         tokenizer.GetModeFromString(options.TokenizerServiceMode),
+		Address:      options.TokenizerServiceAddress,
 		ChunkSize:    options.TokenizerChunkSize,
-		ChunkedFlag:  options.TokenizerChunkedFlag,
+		ChunkedFlag:  options.TokenizerReturnChunks,
 		ChunkOverlap: options.TokenizerChunkOverlap,
 	})
 
@@ -51,7 +51,7 @@ func New(options *Options) *NotifyWatcher {
 
 	return &NotifyWatcher{
 		stopCh:      make(chan bool),
-		directories: options.WatcherDirectories,
+		directories: options.WatchedDirectories,
 		ocr:         ocrService,
 		watcher:     notifyWatcher,
 		reader:      readerService,
