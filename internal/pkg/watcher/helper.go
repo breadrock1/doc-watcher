@@ -23,18 +23,10 @@ func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
 }
 
 func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
-	var recognizeErr error
-	var contentData string
-
-	if nw.readRawFileFlag {
-		contentData, recognizeErr = nw.sender.ReadRawFileData(document.DocumentPath)
-	} else {
-		contentData, recognizeErr = nw.sender.RecognizeFileData(document.DocumentPath)
-	}
-
+	contentData, recognizeErr := nw.ocr.Ocr.RecognizeFile(document.DocumentPath)
 	if recognizeErr == nil {
 		nw.reader.SetContentData(document, contentData)
-		if nw.storeChunksFlag {
+		if nw.tokenizer.TokenizerOptions.ChunkedFlag {
 			return nw.loadChunkedDocument(document)
 		}
 
@@ -50,12 +42,12 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 	nw.reader.ComputeContentMd5Hash(document)
 	nw.reader.SetContentVector(document, []float64{})
 
-	tokenVectors, _ := nw.sender.ComputeContentTokens(document)
+	tokenVectors, _ := nw.tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for _, chunkData := range tokenVectors.Vectors {
 		nw.reader.AppendContentVector(document, chunkData)
 	}
 
-	if err := nw.sender.StoreDocument(document); err != nil {
+	if err := nw.searcher.StoreDocument(document); err != nil {
 		log.Println("Failed while storing document: ", err)
 		return err
 	}
@@ -66,7 +58,7 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
 	nw.reader.ComputeMd5Hash(document)
 	nw.reader.ComputeSsdeepHash(document)
-	tokenVectors, _ := nw.sender.ComputeContentTokens(document)
+	tokenVectors, _ := nw.tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for chunkIndex, chunkData := range tokenVectors.ChunkedText {
 		nw.reader.SetContentData(document, chunkData)
 
@@ -75,7 +67,7 @@ func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
 
 		nw.reader.ComputeUUID(document)
 		nw.reader.ComputeContentMd5Hash(document)
-		if err := nw.sender.StoreDocument(document); err != nil {
+		if err := nw.searcher.StoreDocument(document); err != nil {
 			log.Println("Failed while storing document: ", err)
 			continue
 		}
