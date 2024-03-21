@@ -16,11 +16,11 @@ type Options struct {
 
 func GetModeFromString(mode string) OcrMode {
 	switch mode {
-	case "raw":
+	case "read-raw-file":
 		return ReadRawFile
-	case "local":
+	case "local-tesseract":
 		return LocalTesseract
-	case "tesseract":
+	case "remote-tesseract":
 		return RemoteTesseract
 	case "dedoc":
 		return RemoteDedoc

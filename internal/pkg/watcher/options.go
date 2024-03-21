@@ -1,16 +1,18 @@
 package watcher
 
 type Options struct {
-	OcrAddress string
-	OcrMode    string
+	WatcherServiceAddress string
+	WatchedDirectories    []string
 
-	SearcherAddress string
+	OcrServiceAddress string
+	OcrServiceMode    string
 
-	TokenizerMode         string
-	TokenizerAddress      string
-	TokenizerChunkedFlag  bool
-	TokenizerChunkSize    int
-	TokenizerChunkOverlap int
+	DocSearchAddress string
 
-	WatcherDirectories []string
+	TokenizerServiceAddress string
+	TokenizerServiceMode    string
+	TokenizerChunkSize      int
+	TokenizerChunkOverlap   int
+	TokenizerReturnChunks   bool
+	TokenizerChunkBySelf    bool
 }

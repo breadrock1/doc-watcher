@@ -14,23 +14,27 @@ func main() {
 	serviceOptions := cmd.Execute()
 
 	watcherService := watcher.New(&watcher.Options{
-		OcrAddress:      serviceOptions.OcrServiceAddress,
-		OcrMode:         "raw",
-		SearcherAddress: serviceOptions.DocSearchAddress,
 
-		TokenizerMode:         "raw",
-		TokenizerAddress:      serviceOptions.LlmServiceAddress,
-		TokenizerChunkedFlag:  serviceOptions.StoreChunksFlag,
-		TokenizerChunkSize:    800,
-		TokenizerChunkOverlap: 100,
+		WatcherServiceAddress: serviceOptions.WatcherServiceAddress,
+		WatchedDirectories:    serviceOptions.WatchedDirectories,
 
-		WatcherDirectories: serviceOptions.WatchDirectories,
+		OcrServiceAddress: serviceOptions.OcrServiceAddress,
+		OcrServiceMode:    serviceOptions.OcrServiceMode,
+
+		DocSearchAddress: serviceOptions.DocSearchAddress,
+
+		TokenizerServiceAddress: serviceOptions.TokenizerServiceAddress,
+		TokenizerServiceMode:    serviceOptions.TokenizerServiceMode,
+		TokenizerChunkSize:      serviceOptions.TokenizerChunkSize,
+		TokenizerChunkOverlap:   serviceOptions.TokenizerChunkOverlap,
+		TokenizerReturnChunks:   serviceOptions.TokenizerReturnChunks,
+		TokenizerChunkBySelf:    serviceOptions.TokenizerChunkBySelf,
 	})
 
 	go watcherService.RunWatcher()
 	defer watcherService.StopWatcher()
 
-	serverOptions := options.ParseServerAddress(serviceOptions.ServerAddress)
+	serverOptions := options.ParseServerAddress(serviceOptions.WatcherServiceAddress)
 	httpServer := server.New(serverOptions, watcherService)
 	go httpServer.RunServer()
 	defer httpServer.StopServer()
