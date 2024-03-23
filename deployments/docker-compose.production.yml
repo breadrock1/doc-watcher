@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  docnotifier:
+    image: registry.logoper.socialcode.ru/docnotifier:latest
+    restart: on-failure
+    ports:
+      - 2893:2893
+    environment:
+      - IS_LOAD_CHUNKS=true
+      - READ_RAW_FILE=false
+      - LLM_ADDRESS=http://embeddings:8000
+      - OCR_ADDRESS=http://dedoc:9091
+      - DOC_ADDRESS=http://docsearcher:2892
+      - WATCHER_DIR_PATHS=/indexer
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.hostname == rb-ai2]
+      update_config:
+        parallelism: 1
+        delay: 10s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2893"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - notifier:/indexer
+    networks:
+      - llm_network
+      - dedoc_network
+
+networks:
+  llm_network:
+    external: true
+  dedoc_network:
+    external: true
+
+volumes:
+  notifier:

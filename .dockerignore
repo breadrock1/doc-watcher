@@ -1,0 +1,12 @@
+.git
+.github
+.gitignore
+.env
+
+.golangci.yml
+
+*.go
+*.md
+*.sh
+
+LICENSE

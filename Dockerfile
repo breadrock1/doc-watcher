@@ -1,18 +1,12 @@
-FROM golang:1.21-alpine as builder
+FROM alpine:3.19.1
 
 WORKDIR /app
-
 COPY . .
 
-RUN rm -rf .env && go mod download && go build -o doc-notifier .
+RUN mkdir -p indexer upload
 
-FROM golang:1.21-alpine
-
-WORKDIR /app
-
-COPY --from=builder /app/doc-notifier .
-RUN mkdir indexer && mkdir upload
-
-CMD ["/app/doc-notifier", "-e"]
+RUN apk add --no-cache curl
 
 EXPOSE 2893
+
+CMD ["/app/doc-notifier", "-e"]
