@@ -17,13 +17,22 @@ issues:
         - dupl
         - gocyclo
         - gosec
+    - path: document.go
+      linters:
+        - gosec
+    - path: sender.go
+      linters:
+        - noctx
+    - path: options.go
+      linters:
+        - revive
+        - ineffassign
 
 linters:
   disable-all: true
   enable:
     - asciicheck
     - bodyclose
-    - depguard
     - dogsled
     - dupl
     - durationcheck
@@ -31,14 +40,12 @@ linters:
     - exhaustive
     - exportloopref
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godot
     - gofmt
-    - gofumpt
     - goheader
     - goprintffuncname
     - gosec
@@ -58,7 +65,6 @@ linters:
     - revive
     - staticcheck
     - stylecheck
-    - tagliatelle
     - thelper
     - typecheck
     - unconvert

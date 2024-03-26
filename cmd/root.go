@@ -1,16 +1,15 @@
 package cmd
 
 import (
-	"doc-notifier/internal/pkg/server"
-	"doc-notifier/internal/pkg/watcher"
-	"fmt"
+	"doc-notifier/internal/pkg/options"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
-	"strconv"
-	"strings"
 )
 
-// rootCmd represents the base command when called without any subcommands
+var serviceOptions *options.Options
+
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "internal",
 	Short: "Launch internal service to load endpoints from watcher directory",
@@ -18,44 +17,115 @@ var rootCmd = &cobra.Command{
 		Launch internal service to load endpoints from watcher directory.
 	`,
 
-	Run: func(cmd *cobra.Command, args []string) {
-		serviceAddress, _ := cmd.Flags().GetString("watcherService-address")
-		llmServiceAddr, _ := cmd.Flags().GetString("llm-watcherService-address")
-		ocrServiceAddr, _ := cmd.Flags().GetString("recognition-watcherService-address")
-		docSearchServiceAddr, _ := cmd.Flags().GetString("docsearch-watcherService-address")
-		watcherPath, _ := cmd.Flags().GetStringArray("watcher-directory-path")
-		fmt.Println(ocrServiceAddr, docSearchServiceAddr, watcherPath)
+	Run: func(cmd *cobra.Command, _ []string) {
+		fromEnv, _ := cmd.Flags().GetBool("from-env")
 
-		watcherService := watcher.New(&watcher.Options{
-			LlmServiceAddress: llmServiceAddr,
-			DocSearchAddress:  docSearchServiceAddr,
-			OcrServiceAddress: ocrServiceAddr,
-			WatchDirectories:  watcherPath,
-		})
+		var parseErr error
+		if fromEnv {
+			serviceOptions, parseErr = options.LoadFromEnv()
+		} else {
+			serviceOptions, parseErr = LoadFromCli(cmd)
+		}
 
-		tmp := strings.Split(serviceAddress, ":")
-		servicePort, _ := strconv.Atoi(tmp[1])
-		serverOptions := server.BuildOptions(tmp[0], servicePort)
-		httpServer := server.New(serverOptions, watcherService)
-		httpServer.RunServer()
+		if parseErr != nil {
+			log.Fatal(parseErr)
+		}
 
-		watcherService.RunWatcher()
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute() *options.Options {
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
+	return serviceOptions
 }
 
 func init() {
-	rootCmd.Flags().StringP("service-address", "s", "0.0.0.0:2893", "fs-notifier service host address")
-	rootCmd.Flags().StringP("llm-service-address", "l", "localhost:8000", "An llm address with port")
-	rootCmd.Flags().StringP("recognition-service-address", "r", "localhost:8000", "An ocr address with port")
-	rootCmd.Flags().StringP("docsearch-service-address", "d", "localhost:2892", "An docseacher address with port")
-	rootCmd.Flags().StringArrayP("watcher-directory-path", "w", []string{"/archiver"}, "A local directory path to watch fs-events")
+	flags := rootCmd.Flags()
+	flags.StringArrayP("watched-dirs", "w", []string{"./indexer"}, "A local directory path to watch fs-events")
+	flags.StringP("service-address", "n", "0.0.0.0:2893", "Address of current watcher service")
+
+	flags.StringP("ocr-address", "o", "http://localhost:1231", "Address of current watcher service")
+	flags.StringP("ocr-mode", "a", "read-raw-file", "Address of current watcher service")
+
+	flags.StringP("docsearch-address", "d", "http://localhost:2892", "An doc-seacher address with port")
+
+	flags.StringP("tokenizer-address", "t", "http://localhost:8001", "fs-notifier service host address")
+	flags.StringP("tokenizer-mode", "b", "assistant", "An llm address with port")
+	flags.IntP("chunk-size", "l", 800, "An llm address with port")
+	flags.IntP("size-overlap", "p", 100, "An llm address with port")
+	flags.BoolP("return-chunks", "r", true, "Load config from env.")
+	flags.BoolP("chunk-by-self", "c", false, "Store document as doc-chunks.")
+
+	flags.BoolP("from-env", "e", false, "Parse options from env.")
+}
+
+func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
+	var parseOptionErr error
+
+	var watchedDirectories []string
+	var chunkSize, chunkOverlap int
+	var returnChunksFlag, chunkBySelfFlag bool
+	var tokenizerServiceAddr, tokenizerServiceMode string
+	var notifierAddr, docSearchAddr, ocrServiceAddr, ocrServiceMode string
+
+	flags := cmd.Flags()
+
+	if notifierAddr, parseOptionErr = flags.GetString("service-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if watchedDirectories, parseOptionErr = flags.GetStringArray("watched-dirs"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+
+	if ocrServiceAddr, parseOptionErr = flags.GetString("ocr-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if ocrServiceMode, parseOptionErr = flags.GetString("ocr-mode"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+
+	if docSearchAddr, parseOptionErr = flags.GetString("docsearch-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+
+	if tokenizerServiceAddr, parseOptionErr = flags.GetString("tokenizer-address"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if tokenizerServiceMode, parseOptionErr = flags.GetString("tokenizer-mode"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if chunkSize, parseOptionErr = flags.GetInt("chunk-size"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if chunkOverlap, parseOptionErr = flags.GetInt("size-overlap"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if returnChunksFlag, parseOptionErr = flags.GetBool("return-chunks"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+	if chunkBySelfFlag, parseOptionErr = flags.GetBool("chunk-by-self"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
+
+	return &options.Options{
+		WatcherServiceAddress: notifierAddr,
+		WatchedDirectories:    watchedDirectories,
+
+		OcrServiceAddress: ocrServiceAddr,
+		OcrServiceMode:    ocrServiceMode,
+
+		DocSearchAddress: docSearchAddr,
+
+		TokenizerServiceAddress: tokenizerServiceAddr,
+		TokenizerServiceMode:    tokenizerServiceMode,
+		TokenizerChunkSize:      chunkSize,
+		TokenizerChunkOverlap:   chunkOverlap,
+		TokenizerReturnChunks:   returnChunksFlag,
+		TokenizerChunkBySelf:    chunkBySelfFlag,
+	}, nil
 }
