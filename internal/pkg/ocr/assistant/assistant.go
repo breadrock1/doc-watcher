@@ -54,7 +54,7 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
@@ -84,7 +84,7 @@ func (ro *AssistantOCR) RecognizeFileData(data []byte) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file to recognize file data")
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
