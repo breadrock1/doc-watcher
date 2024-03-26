@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-func SendRequest(body *bytes.Buffer, url *string) ([]byte, error) {
+func SendRequest(body *bytes.Buffer, url *string, formData string) ([]byte, error) {
 	req, err := http.NewRequest("POST", *url, body)
 	if err != nil {
 		log.Println("Error creating request:", err)
 		return nil, err
 	}
 
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderContentType, formData)
 
 	client := &http.Client{Timeout: 120 * time.Second}
 	response, err := client.Do(req)
@@ -27,15 +27,15 @@ func SendRequest(body *bytes.Buffer, url *string) ([]byte, error) {
 	}
 	defer func() { _ = response.Body.Close() }()
 
-	if response.StatusCode > 200 {
-		log.Println("Non Ok response status: ", response.Status)
-		return nil, errors.New("non 200 response code status")
-	}
-
 	respData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Println("Failed while reading response reqBody: ", err)
 		return nil, err
+	}
+
+	if response.StatusCode > 200 {
+		log.Printf("Non Ok response status %d: %s", response.Status, string(respData))
+		return nil, errors.New("non 200 response code status")
 	}
 
 	return respData, nil
