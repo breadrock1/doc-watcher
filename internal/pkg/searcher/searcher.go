@@ -30,7 +30,7 @@ func (ss *SearcherService) StoreDocument(document *reader.Document) error {
 	reqBody := bytes.NewBuffer(jsonData)
 	targetURL := ss.address + SearcherURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
-	_, err = sender.SendRequest(reqBody, &targetURL)
+	_, err = sender.SendRequest(reqBody, &targetURL, "application/json")
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return err

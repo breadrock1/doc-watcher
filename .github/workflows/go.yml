@@ -43,5 +43,9 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: tmp
+        run: mkdir {indexer,upload}
+
       - name: tests
         run: for test_module in $(git ls-files test); do go test -v -count=1 -race $test_module; done
+
