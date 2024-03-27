@@ -20,7 +20,7 @@ build:
 lint:
   stage: lint
   script:
-    - golangci-lint run $(git add ls-files | grep *.go)
+    - golangci-lint run $(git ls-files | grep *.go)
 
 test:
   stage: test
