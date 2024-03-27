@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 )
 
-type AssistantOCR struct {
+type Service struct {
 	address string
 }
 
-func New(address string) *AssistantOCR {
-	return &AssistantOCR{
+func New(address string) *Service {
+	return &Service{
 		address: address,
 	}
 }
@@ -27,7 +27,7 @@ type DocumentForm struct {
 	Context string `json:"context"`
 }
 
-func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
+func (ro *Service) RecognizeFile(filePath string) (string, error) {
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
@@ -67,7 +67,7 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 	return resTest.Context, nil
 }
 
-func (ro *AssistantOCR) RecognizeFileData(data []byte) (string, error) {
+func (ro *Service) RecognizeFileData(data []byte) (string, error) {
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
 

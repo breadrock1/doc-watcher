@@ -34,7 +34,7 @@ func SendRequest(body *bytes.Buffer, url *string, formData string) ([]byte, erro
 	}
 
 	if response.StatusCode > 200 {
-		log.Printf("Non Ok response status %d: %s", response.Status, string(respData))
+		log.Printf("Non Ok response status %s: %s", response.Status, string(respData))
 		return nil, errors.New("non 200 response code status")
 	}
 

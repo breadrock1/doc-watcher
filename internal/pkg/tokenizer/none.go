@@ -7,7 +7,7 @@ func NewNone() *NoneTokenizer {
 	return &NoneTokenizer{}
 }
 
-func (nt *NoneTokenizer) TokenizeTextData(text string) (*ComputedTokens, error) {
+func (nt *NoneTokenizer) TokenizeTextData(_ string) (*ComputedTokens, error) {
 	return &ComputedTokens{
 		Chunks:      0,
 		ChunkedText: []string{},
