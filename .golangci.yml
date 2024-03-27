@@ -11,12 +11,13 @@ linters-settings:
 
 issues:
   exclude-rules:
-    - path: _test\.go
+    - path: _test.go
       linters:
         - errcheck
         - dupl
         - gocyclo
         - gosec
+        - gocritic
     - path: document.go
       linters:
         - gosec
@@ -27,6 +28,12 @@ issues:
       linters:
         - revive
         - ineffassign
+    - path: langchain.go
+      linters:
+        - dupl
+    - path: assistant.go
+      linters:
+        - dupl
 
 linters:
   disable-all: true

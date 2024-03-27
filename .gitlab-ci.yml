@@ -9,9 +9,6 @@ stages:
   - build
   - lint
   - test
-  - deployci
-  - deployqa
-  - prod
 
 build:
   stage: build
@@ -28,4 +25,4 @@ lint:
 test:
   stage: test
   script:
-    - for test_module in $(git ls-files test); do go test -v -count=1 -race $test_module; done
+    - for test_module in $(git ls-files tests); do go test -v -count=1 -race $test_module; done

@@ -40,6 +40,6 @@ func main() {
 	defer httpServer.StopServer()
 
 	killSignal := make(chan os.Signal, 1)
-	signal.Notify(killSignal, syscall.SIGINT, syscall.SIGKILL, syscall.SIGABRT)
+	signal.Notify(killSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
 	<-killSignal
 }

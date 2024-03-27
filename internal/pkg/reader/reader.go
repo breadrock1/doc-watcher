@@ -1,8 +1,8 @@
 package reader
 
-type ReaderService struct {
+type Service struct {
 }
 
-func New() *ReaderService {
-	return &ReaderService{}
+func New() *Service {
+	return &Service{}
 }

@@ -8,25 +8,26 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 )
 
-type DedocOCR struct {
+type Service struct {
 	address string
 }
 
-func New(address string) *DedocOCR {
-	return &DedocOCR{
+func New(address string) *Service {
+	return &Service{
 		address: address,
 	}
 }
 
 const RecognitionURL = "/api/v1/extract_text"
 
-type documentForm struct {
+type DocumentForm struct {
 	Context string `json:"text"`
 }
 
-func (do *DedocOCR) RecognizeFile(filePath string) (string, error) {
+func (do *Service) RecognizeFile(filePath string) (string, error) {
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
@@ -36,7 +37,7 @@ func (do *DedocOCR) RecognizeFile(filePath string) (string, error) {
 
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filePath)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
 		log.Println("Failed while creating form file: ", err)
 		return "", err
@@ -54,19 +55,19 @@ func (do *DedocOCR) RecognizeFile(filePath string) (string, error) {
 
 	targetURL := do.address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
 }
 
-func (do *DedocOCR) RecognizeFileData(data []byte) (string, error) {
+func (do *Service) RecognizeFileData(data []byte) (string, error) {
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
 
@@ -84,13 +85,13 @@ func (do *DedocOCR) RecognizeFileData(data []byte) (string, error) {
 
 	targetURL := do.address + RecognitionURL
 	log.Printf("Sending file to recognize file data")
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
