@@ -5,7 +5,6 @@ type TokenizerMode int
 const (
 	Assistant TokenizerMode = iota
 	LangChain
-	Local
 	None
 )
 
@@ -23,8 +22,6 @@ func GetModeFromString(mode string) TokenizerMode {
 		return Assistant
 	case "langchain":
 		return LangChain
-	case "local":
-		return Local
 	case "none":
 		return None
 	default:

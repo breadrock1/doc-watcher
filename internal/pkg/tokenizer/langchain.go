@@ -34,7 +34,7 @@ func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	}
 
 	contentData := strings.ReplaceAll(content, "\n", " ")
-	textVectors := &TokenizerForm{
+	textVectors := &GetTokensForm{
 		Text:              contentData,
 		ChunkSize:         lt.ChunkSize,
 		ChunkOverlap:      lt.ChunkOverlap,
@@ -50,7 +50,7 @@ func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	reqBody := bytes.NewBuffer(jsonData)
 	targetURL := lt.address + EmbeddingsLCURL
 	log.Printf("Sending file to extract tokens")
-	respData, err := sender.SendRequest(reqBody, &targetURL)
+	respData, err := sender.SendRequest(reqBody, &targetURL, "application/json")
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return computedTokens, err

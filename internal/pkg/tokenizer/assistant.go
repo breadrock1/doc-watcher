@@ -34,7 +34,7 @@ func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	}
 
 	contentData := strings.ReplaceAll(content, "\n", " ")
-	textVectors := &TokenizerForm{
+	textVectors := &GetTokensForm{
 		Text:              contentData,
 		ChunkSize:         at.ChunkSize,
 		ChunkOverlap:      at.ChunkOverlap,
@@ -50,7 +50,7 @@ func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	reqBody := bytes.NewBuffer(jsonData)
 	targetURL := at.address + EmbeddingsAssistantURL
 	log.Printf("Sending file to extract tokens")
-	respData, err := sender.SendRequest(reqBody, &targetURL)
+	respData, err := sender.SendRequest(reqBody, &targetURL, "application/json")
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return computedTokens, err
