@@ -34,7 +34,7 @@ func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	}
 
 	contentData := strings.ReplaceAll(content, "\n", " ")
-	textVectors := &TokenizerForm{
+	textVectors := &GetTokensForm{
 		Text:              contentData,
 		ChunkSize:         at.ChunkSize,
 		ChunkOverlap:      at.ChunkOverlap,

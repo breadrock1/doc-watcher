@@ -1,6 +1,6 @@
 package tokenizer
 
-type TokenizerForm struct {
+type GetTokensForm struct {
 	Text              string `json:"text"`
 	ChunkSize         int    `json:"chunk_size"`
 	ChunkOverlap      int    `json:"chunk_overlap"`

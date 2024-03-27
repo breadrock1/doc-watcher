@@ -1,6 +1,6 @@
 package tokenizer
 
-type TokenizerService struct {
+type Service struct {
 	Tokenizer        Tokenizer
 	TokenizerOptions *Options
 }
@@ -9,8 +9,8 @@ type Tokenizer interface {
 	TokenizeTextData(text string) (*ComputedTokens, error)
 }
 
-func New(options *Options) *TokenizerService {
-	service := &TokenizerService{
+func New(options *Options) *Service {
+	service := &Service{
 		TokenizerOptions: options,
 	}
 

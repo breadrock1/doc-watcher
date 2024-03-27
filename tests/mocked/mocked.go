@@ -47,7 +47,7 @@ func StoreDocument(c echo.Context) error {
 }
 
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &tokenizer.TokenizerForm{}
+	tokensForm := &tokenizer.GetTokensForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 

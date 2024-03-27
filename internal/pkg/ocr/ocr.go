@@ -6,7 +6,7 @@ import (
 	"doc-notifier/internal/pkg/ocr/raw"
 )
 
-type OcrService struct {
+type Service struct {
 	Ocr Recognizer
 }
 
@@ -15,8 +15,8 @@ type Recognizer interface {
 	RecognizeFileData(data []byte) (string, error)
 }
 
-func New(options *Options) *OcrService {
-	service := &OcrService{}
+func New(options *Options) *Service {
+	service := &Service{}
 
 	switch options.Mode {
 	case ReadRawFile:
