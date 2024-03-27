@@ -4,7 +4,6 @@ import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/ocr/dedoc"
 	"doc-notifier/internal/pkg/ocr/raw"
-	"doc-notifier/internal/pkg/ocr/tesseract"
 )
 
 type OcrService struct {
@@ -22,11 +21,9 @@ func New(options *Options) *OcrService {
 	switch options.Mode {
 	case ReadRawFile:
 		service.Ocr = raw.New()
-	case LocalTesseract:
-		service.Ocr = tesseract.New()
-	case RemoteDedoc:
+	case DedocWrapper:
 		service.Ocr = dedoc.New(options.Address)
-	case RemoteTesseract:
+	case AssistantMode:
 		service.Ocr = assistant.New(options.Address)
 	default:
 		service.Ocr = raw.New()

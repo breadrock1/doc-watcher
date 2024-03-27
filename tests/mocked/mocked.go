@@ -1,27 +1,33 @@
 package mocked
 
 import (
+	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/searcher"
-	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/tokenizer"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"log"
 )
 
+type DocumentForm struct {
+	Context string
+}
+
+type TokenizerForm struct {
+}
+
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
-	e.POST(sender.RecognitionURL, RecognizeFile)
-	e.POST(sender.EmbeddingsURL, ComputeTokens)
+	e.POST(assistant.RecognitionURL, RecognizeFile)
+	e.POST(tokenizer.EmbeddingsAssistantURL, ComputeTokens)
 	e.POST(searcher.SearcherURL, StoreDocument)
 
 	return e
 }
 
 func RecognizeFile(c echo.Context) error {
-	document := sender.DocumentForm{
-		Context: "test_file_1",
-	}
+	document := DocumentForm{Context: "test_file_1"}
 	log.Println("Got request to recognize file: ", document.Context)
 	return c.JSON(200, document)
 }
@@ -41,7 +47,7 @@ func StoreDocument(c echo.Context) error {
 }
 
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &sender.TokenizerForm{}
+	tokensForm := &tokenizer.TokenizerForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 
@@ -51,10 +57,11 @@ func ComputeTokens(c echo.Context) error {
 		return c.JSON(403, tokensForm)
 	}
 
-	tokenizedVector := sender.CreateTokenizedVectors()
-	tokenizedVector.Chunks = 1
-	tokenizedVector.ChunkedText = []string{"test_file_1"}
-	tokenizedVector.Vectors = [][]float64{{0.345, 0.045}}
+	tokenizedVector := tokenizer.ComputedTokens{
+		Chunks:      1,
+		ChunkedText: []string{"test_file_1"},
+		Vectors:     [][]float64{{0.345, 0.045}},
+	}
 
 	return c.JSON(200, tokenizedVector)
 }

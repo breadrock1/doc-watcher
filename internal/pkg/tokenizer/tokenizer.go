@@ -19,8 +19,6 @@ func New(options *Options) *TokenizerService {
 		service.Tokenizer = NewAssistant(options)
 	case LangChain:
 		service.Tokenizer = NewLangChain(options)
-	case Local:
-		service.Tokenizer = NewLocal()
 	case None:
 		service.Tokenizer = NewNone()
 	default:

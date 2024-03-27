@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 )
 
 type AssistantOCR struct {
@@ -20,9 +21,9 @@ func New(address string) *AssistantOCR {
 	}
 }
 
-const RecognitionURL = "/api/assistant/extract-file/"
+const RecognitionURL = "/ocr_extract_text"
 
-type documentForm struct {
+type DocumentForm struct {
 	Context string `json:"context"`
 }
 
@@ -36,7 +37,7 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filePath)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
 		log.Println("Failed while creating form file: ", err)
 		return "", err
@@ -60,7 +61,7 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
@@ -90,7 +91,7 @@ func (ro *AssistantOCR) RecognizeFileData(data []byte) (string, error) {
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
