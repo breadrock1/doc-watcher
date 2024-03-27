@@ -98,8 +98,8 @@ func TestRecognizeFileData(t *testing.T) {
 
 	t.Run("Caught error with service denied", func(t *testing.T) {
 		ocrService := ocr.New(&ocr.Options{
-			Mode:    ocr.GetModeFromString("read-raw-file"),
-			Address: "http://localhost:3451",
+			Mode:    ocr.GetModeFromString("assistant"),
+			Address: "http://localhost:4444",
 		})
 
 		e := mocked.CreateMockedServer()

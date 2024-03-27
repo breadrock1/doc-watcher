@@ -51,5 +51,5 @@ jobs:
         run: mkdir {indexer,upload}
 
       - name: tests
-        run: for test_module in $(git ls-files test); do go test -v -count=1 -race $test_module; done
+        run: for test_module in $(git ls-files tests); do go test -v -count=1 -race $test_module; done
 
