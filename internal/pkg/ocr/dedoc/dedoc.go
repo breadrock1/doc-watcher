@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 )
 
 type DedocOCR struct {
@@ -22,7 +23,7 @@ func New(address string) *DedocOCR {
 
 const RecognitionURL = "/api/v1/extract_text"
 
-type documentForm struct {
+type DocumentForm struct {
 	Context string `json:"text"`
 }
 
@@ -36,7 +37,7 @@ func (do *DedocOCR) RecognizeFile(filePath string) (string, error) {
 
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filePath)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
 		log.Println("Failed while creating form file: ", err)
 		return "", err
@@ -60,7 +61,7 @@ func (do *DedocOCR) RecognizeFile(filePath string) (string, error) {
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
@@ -90,7 +91,7 @@ func (do *DedocOCR) RecognizeFileData(data []byte) (string, error) {
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
