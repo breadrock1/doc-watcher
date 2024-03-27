@@ -10,7 +10,23 @@ const TestcaseDirPath = "../../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
-	watch := watcher.New(false, false, "", "", "", []string{})
+	watch := watcher.New(&watcher.Options{
+
+		WatcherServiceAddress: "0.0.0.0:2893",
+		WatchedDirectories:    []string{IndexerDirPath},
+
+		OcrServiceAddress: "http://localhost:8004",
+		OcrServiceMode:    "read-raw-file",
+
+		DocSearchAddress: "http://localhost:2892",
+
+		TokenizerServiceAddress: "http://localhost:8001",
+		TokenizerServiceMode:    "none",
+		TokenizerChunkSize:      0,
+		TokenizerChunkOverlap:   0,
+		TokenizerReturnChunks:   false,
+		TokenizerChunkBySelf:    false,
+	})
 
 	t.Run("Append directory to watch", func(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})

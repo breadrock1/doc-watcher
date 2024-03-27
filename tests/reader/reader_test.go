@@ -6,8 +6,9 @@ import (
 	"testing"
 )
 
+const TestcaseDirPath = "../../testcases/"
+
 func TestParseCaughtFiles(t *testing.T) {
-	const TestcaseDirPath = "../../testcases/"
 	fileReader := &reader.ReaderService{}
 
 	t.Run("Parse file by path", func(t *testing.T) {
