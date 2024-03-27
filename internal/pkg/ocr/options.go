@@ -4,9 +4,8 @@ type OcrMode int
 
 const (
 	ReadRawFile OcrMode = iota
-	LocalTesseract
-	RemoteTesseract
-	RemoteDedoc
+	AssistantMode
+	DedocWrapper
 )
 
 type Options struct {
@@ -18,12 +17,10 @@ func GetModeFromString(mode string) OcrMode {
 	switch mode {
 	case "read-raw-file":
 		return ReadRawFile
-	case "local-tesseract":
-		return LocalTesseract
-	case "remote-tesseract":
-		return RemoteTesseract
-	case "dedoc":
-		return RemoteDedoc
+	case "assistant":
+		return AssistantMode
+	case "dedoc-wrapper":
+		return DedocWrapper
 	default:
 		return ReadRawFile
 	}
