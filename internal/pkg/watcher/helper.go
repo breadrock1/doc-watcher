@@ -42,11 +42,13 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 	nw.reader.ComputeContentMd5Hash(document)
 	nw.reader.SetContentVector(document, []float64{})
 
+	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for _, chunkData := range tokenVectors.Vectors {
 		nw.reader.AppendContentVector(document, chunkData)
 	}
 
+	log.Println("Storing document object: ", document.DocumentName)
 	if err := nw.searcher.StoreDocument(document); err != nil {
 		log.Println("Failed while storing document: ", err)
 		return err
@@ -58,6 +60,7 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
 	nw.reader.ComputeMd5Hash(document)
 	nw.reader.ComputeSsdeepHash(document)
+	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for chunkIndex, chunkData := range tokenVectors.ChunkedText {
 		nw.reader.SetContentData(document, chunkData)
@@ -67,11 +70,13 @@ func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
 
 		nw.reader.ComputeUUID(document)
 		nw.reader.ComputeContentMd5Hash(document)
+		log.Println("Storing computed chunk data: ", document.ContentMD5)
 		if err := nw.searcher.StoreDocument(document); err != nil {
 			log.Println("Failed while storing document: ", err)
 			continue
 		}
 	}
 
+	log.Println("Storing document chunks done for: ", document.DocumentName)
 	return nil
 }
