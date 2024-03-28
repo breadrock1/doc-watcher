@@ -24,7 +24,7 @@ func New(address string) *Service {
 const RecognitionURL = "/ocr_extract_text"
 
 type DocumentForm struct {
-	Context string `json:"context"`
+	Context string `json:"text"`
 }
 
 func (ro *Service) RecognizeFile(filePath string) (string, error) {
