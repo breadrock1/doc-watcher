@@ -62,8 +62,8 @@ func LoadFromEnv() (*Options, error) {
 	if tokenizerServiceAddr, envExists = os.LookupEnv("TOKENIZER_SERVICE_ADDRESS"); !envExists {
 		return nil, errors.New("failed while parsing TOKENIZER_SERVICE_ADDRESS env variable")
 	}
-	if tokenizerServiceMode, envExists = os.LookupEnv("TOKENIZER_SERVICE_ADDRESS"); !envExists {
-		return nil, errors.New("failed while parsing TOKENIZER_SERVICE_ADDRESS env variable")
+	if tokenizerServiceMode, envExists = os.LookupEnv("TOKENIZER_MODE"); !envExists {
+		return nil, errors.New("failed while parsing TOKENIZER_MODE env variable")
 	}
 
 	tmpOptionVar, envExists = os.LookupEnv("TOKENIZER_RETURN_CHUNKS")
