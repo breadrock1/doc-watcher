@@ -6,7 +6,6 @@ import (
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
 	"log"
-	"math"
 	"mime"
 	"os"
 	"path/filepath"
@@ -90,7 +89,7 @@ func ParseDocumentType(extension string) string {
 	case "video":
 		return "video"
 	case "text":
-		return extractApplicationMimeType(attributes[1])
+		return "document"
 	case "application":
 		return extractApplicationMimeType(attributes[1])
 	default:
@@ -144,22 +143,4 @@ func (f *Service) ComputeUUID(document *Document) {
 	if uuidToken, err := uuid.FromBytes(data); err == nil {
 		document.ContentUUID = uuidToken.String()
 	}
-}
-
-func (f *Service) SplitContent(content string, chunkSize int) []string {
-	strLength := len(content)
-	splitLength := int(math.Ceil(float64(strLength) / float64(chunkSize)))
-	splitString := make([]string, splitLength)
-	var start, stop int
-	for i := 0; i < splitLength; i++ {
-		start = i * chunkSize
-		stop = start + chunkSize
-		if stop > strLength {
-			stop = strLength
-		}
-
-		splitString[i] = content[start:stop]
-	}
-
-	return splitString
 }
