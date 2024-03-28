@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const EmbeddingsLCURL = "/api/v1/vectorizer/get_vectors"
+const EmbeddingsLCURL = "/api/v1/get_vectors"
 
 type LangChainTokenizer struct {
 	address           string
