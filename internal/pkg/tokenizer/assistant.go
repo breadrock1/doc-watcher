@@ -34,7 +34,7 @@ type EmbedAllForm struct {
 
 func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens, error) {
 	computedTokens := &ComputedTokens{
-		Chunks:      0,
+		Chunks:      1,
 		ChunkedText: []string{},
 		Vectors:     [][]float64{},
 	}
