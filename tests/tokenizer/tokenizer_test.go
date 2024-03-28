@@ -16,11 +16,11 @@ const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestComputeContentTokens(t *testing.T) {
 	tokenizerService := tokenizer.New(&tokenizer.Options{
-		Mode:         tokenizer.GetModeFromString("assistant"),
+		Mode:         tokenizer.GetModeFromString("langchain"),
 		Address:      "http://localhost:3451",
-		ChunkSize:    0,
+		ChunkSize:    1,
 		ChunkedFlag:  false,
-		ChunkOverlap: 0,
+		ChunkOverlap: 1,
 	})
 
 	t.Run("Compute tokens", func(t *testing.T) {
