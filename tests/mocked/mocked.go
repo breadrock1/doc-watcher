@@ -20,7 +20,7 @@ type TokenizerForm struct {
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
-	e.POST(tokenizer.EmbeddingsAssistantURL, ComputeTokens)
+	e.POST(tokenizer.EmbeddingsLCURL, ComputeTokens)
 	e.POST(searcher.SearcherURL, StoreDocument)
 
 	return e
