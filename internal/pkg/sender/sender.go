@@ -10,16 +10,16 @@ import (
 	"time"
 )
 
-func SendRequest(body *bytes.Buffer, url *string, formData string) ([]byte, error) {
+func SendRequest(body *bytes.Buffer, url, mime *string, timeout time.Duration) ([]byte, error) {
 	req, err := http.NewRequest("POST", *url, body)
 	if err != nil {
 		log.Println("Error creating request:", err)
 		return nil, err
 	}
 
-	req.Header.Set(echo.HeaderContentType, formData)
+	req.Header.Set(echo.HeaderContentType, *mime)
 
-	client := &http.Client{Timeout: 120 * time.Second}
+	client := &http.Client{Timeout: timeout}
 	response, err := client.Do(req)
 	if err != nil {
 		log.Println("Error while creating request:", err)

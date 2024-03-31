@@ -1,19 +1,22 @@
 package ocr
 
-type OcrMode int
+import "time"
+
+type Mode int
 
 const (
-	ReadRawFile OcrMode = iota
+	ReadRawFile Mode = iota
 	AssistantMode
 	DedocWrapper
 )
 
 type Options struct {
-	Mode    OcrMode
+	Mode    Mode
 	Address string
+	Timeout time.Duration
 }
 
-func GetModeFromString(mode string) OcrMode {
+func GetModeFromString(mode string) Mode {
 	switch mode {
 	case "read-raw-file":
 		return ReadRawFile

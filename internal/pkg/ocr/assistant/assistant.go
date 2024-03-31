@@ -9,22 +9,25 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Service struct {
 	address string
+	timeout time.Duration
 }
 
-func New(address string) *Service {
+func New(address string, timeout time.Duration) *Service {
 	return &Service{
 		address: address,
+		timeout: timeout,
 	}
 }
 
 const RecognitionURL = "/ocr_extract_text"
 
 type DocumentForm struct {
-	Context string `json:"context"`
+	Context string `json:"text"`
 }
 
 func (ro *Service) RecognizeFile(filePath string) (string, error) {
@@ -55,7 +58,8 @@ func (ro *Service) RecognizeFile(filePath string) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
-	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
+	mimeType := writer.FormDataContentType()
+	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, ro.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
@@ -63,6 +67,11 @@ func (ro *Service) RecognizeFile(filePath string) (string, error) {
 
 	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
+
+	if len(resTest.Context) == 0 {
+		log.Println("Failed: returned empty string data...")
+		return "", err
+	}
 
 	return resTest.Context, nil
 }
@@ -85,7 +94,8 @@ func (ro *Service) RecognizeFileData(data []byte) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file to recognize file data")
-	respData, err := sender.SendRequest(&reqBody, &targetURL, writer.FormDataContentType())
+	mimeType := writer.FormDataContentType()
+	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, ro.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err

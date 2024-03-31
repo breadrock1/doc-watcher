@@ -14,7 +14,6 @@ func main() {
 	serviceOptions := cmd.Execute()
 
 	watcherService := watcher.New(&watcher.Options{
-
 		WatcherServiceAddress: serviceOptions.WatcherServiceAddress,
 		WatchedDirectories:    serviceOptions.WatchedDirectories,
 
@@ -29,6 +28,7 @@ func main() {
 		TokenizerChunkOverlap:   serviceOptions.TokenizerChunkOverlap,
 		TokenizerReturnChunks:   serviceOptions.TokenizerReturnChunks,
 		TokenizerChunkBySelf:    serviceOptions.TokenizerChunkBySelf,
+		TokenizerTimeout:        serviceOptions.TokenizerTimeout,
 	})
 
 	go watcherService.RunWatcher()
