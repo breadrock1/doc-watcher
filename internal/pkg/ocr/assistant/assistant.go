@@ -8,25 +8,29 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path/filepath"
+	"time"
 )
 
-type AssistantOCR struct {
+type Service struct {
 	address string
+	timeout time.Duration
 }
 
-func New(address string) *AssistantOCR {
-	return &AssistantOCR{
+func New(address string, timeout time.Duration) *Service {
+	return &Service{
 		address: address,
+		timeout: timeout,
 	}
 }
 
-const RecognitionURL = "/api/assistant/extract-file/"
+const RecognitionURL = "/ocr_extract_text"
 
-type documentForm struct {
-	Context string `json:"context"`
+type DocumentForm struct {
+	Context string `json:"text"`
 }
 
-func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
+func (ro *Service) RecognizeFile(filePath string) (string, error) {
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
@@ -36,7 +40,7 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filePath)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
 		log.Println("Failed while creating form file: ", err)
 		return "", err
@@ -54,19 +58,25 @@ func (ro *AssistantOCR) RecognizeFile(filePath string) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	mimeType := writer.FormDataContentType()
+	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, ro.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
+
+	if len(resTest.Context) == 0 {
+		log.Println("Failed: returned empty string data...")
+		return "", err
+	}
 
 	return resTest.Context, nil
 }
 
-func (ro *AssistantOCR) RecognizeFileData(data []byte) (string, error) {
+func (ro *Service) RecognizeFileData(data []byte) (string, error) {
 	var reqBody bytes.Buffer
 	writer := multipart.NewWriter(&reqBody)
 
@@ -84,13 +94,14 @@ func (ro *AssistantOCR) RecognizeFileData(data []byte) (string, error) {
 
 	targetURL := ro.address + RecognitionURL
 	log.Printf("Sending file to recognize file data")
-	respData, err := sender.SendRequest(&reqBody, &targetURL)
+	mimeType := writer.FormDataContentType()
+	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, ro.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "", err
 	}
 
-	var resTest = &documentForm{}
+	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil

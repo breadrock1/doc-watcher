@@ -6,7 +6,6 @@ import (
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
 	"log"
-	"math"
 	"mime"
 	"os"
 	"path/filepath"
@@ -90,7 +89,7 @@ func ParseDocumentType(extension string) string {
 	case "video":
 		return "video"
 	case "text":
-		return extractApplicationMimeType(attributes[1])
+		return "document"
 	case "application":
 		return extractApplicationMimeType(attributes[1])
 	default:
@@ -108,58 +107,40 @@ func extractApplicationMimeType(attribute string) string {
 	return "unknown"
 }
 
-func (f *ReaderService) SetContentData(document *Document, data string) {
+func (f *Service) SetContentData(document *Document, data string) {
 	document.Content = data
 }
 
-func (f *ReaderService) SetContentVector(document *Document, data []float64) {
+func (f *Service) SetContentVector(document *Document, data []float64) {
 	document.ContentVector = data
 }
 
-func (f *ReaderService) AppendContentVector(document *Document, data []float64) {
+func (f *Service) AppendContentVector(document *Document, data []float64) {
 	document.ContentVector = append(document.ContentVector, data...)
 }
 
-func (f *ReaderService) ComputeMd5Hash(document *Document) {
+func (f *Service) ComputeMd5Hash(document *Document) {
 	data := []byte(document.Content)
 	document.DocumentMD5 = fmt.Sprintf("%x", md5.Sum(data))
 }
 
-func (f *ReaderService) ComputeContentMd5Hash(document *Document) {
+func (f *Service) ComputeContentMd5Hash(document *Document) {
 	if len(document.DocumentMD5) == 0 {
 		f.ComputeMd5Hash(document)
 	}
 	document.ContentMD5 = document.DocumentMD5
 }
 
-func (f *ReaderService) ComputeSsdeepHash(document *Document) {
+func (f *Service) ComputeSsdeepHash(document *Document) {
 	data := []byte(document.Content)
 	if hashData, err := ssdeep.FuzzyBytes(data); err == nil {
 		document.DocumentSSDEEP = hashData
 	}
 }
 
-func (f *ReaderService) ComputeUUID(document *Document) {
+func (f *Service) ComputeUUID(document *Document) {
 	data := []byte(document.Content)
 	if uuidToken, err := uuid.FromBytes(data); err == nil {
 		document.ContentUUID = uuidToken.String()
 	}
-}
-
-func (f *ReaderService) SplitContent(content string, chunkSize int) []string {
-	strLength := len(content)
-	splitLength := int(math.Ceil(float64(strLength) / float64(chunkSize)))
-	splitString := make([]string, splitLength)
-	var start, stop int
-	for i := 0; i < splitLength; i++ {
-		start = i * chunkSize
-		stop = start + chunkSize
-		if stop > strLength {
-			stop = strLength
-		}
-
-		splitString[i] = content[start:stop]
-	}
-
-	return splitString
 }

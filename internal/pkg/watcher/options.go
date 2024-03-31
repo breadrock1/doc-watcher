@@ -15,4 +15,5 @@ type Options struct {
 	TokenizerChunkOverlap   int
 	TokenizerReturnChunks   bool
 	TokenizerChunkBySelf    bool
+	TokenizerTimeout        uint
 }

@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Download dependencies
+      run: |
+        sudo apt-get install pkg-config liblept5 libleptonica-dev tesseract-ocr libtesseract-dev
   
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -36,6 +39,7 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
+    needs: [build, golangci]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Go
@@ -43,5 +47,9 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: tmp
+        run: mkdir {indexer,upload}
+
       - name: tests
-        run: for test_module in $(git ls-files test); do go test -v -count=1 -race $test_module; done
+        run: for test_module in $(git ls-files tests); do go test -v -count=1 -race $test_module; done
+

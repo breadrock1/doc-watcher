@@ -6,21 +6,24 @@ import (
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"log"
+	"time"
 )
 
-const SearcherURL = "/document/new"
+const ServiceURL = "/document/new"
 
-type SearcherService struct {
+type Service struct {
 	address string
+	timeout time.Duration
 }
 
-func New(address string) *SearcherService {
-	return &SearcherService{
+func New(address string, timeout time.Duration) *Service {
+	return &Service{
 		address: address,
+		timeout: timeout,
 	}
 }
 
-func (ss *SearcherService) StoreDocument(document *reader.Document) error {
+func (ss *Service) StoreDocument(document *reader.Document) error {
 	jsonData, err := json.Marshal(document)
 	if err != nil {
 		log.Println("Failed while marshaling doc: ", err)
@@ -28,9 +31,11 @@ func (ss *SearcherService) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.address + SearcherURL
+	targetURL := ss.address + ServiceURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
-	_, err = sender.SendRequest(reqBody, &targetURL)
+
+	mimeType := "application/json"
+	_, err = sender.SendRequest(reqBody, &targetURL, &mimeType, ss.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return err

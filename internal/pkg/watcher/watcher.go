@@ -21,24 +21,27 @@ type NotifyWatcher struct {
 	directories []string
 	watcher     *fsnotify.Watcher
 
-	ocr       *ocr.OcrService
-	reader    *reader.ReaderService
-	searcher  *searcher.SearcherService
-	tokenizer *tokenizer.TokenizerService
+	ocr       *ocr.Service
+	reader    *reader.Service
+	searcher  *searcher.Service
+	tokenizer *tokenizer.Service
 }
 
 func New(options *Options) *NotifyWatcher {
 	readerService := reader.New()
-	searcherService := searcher.New(options.DocSearchAddress)
+	timeoutDuration := time.Duration(options.TokenizerTimeout) * time.Second
+	searcherService := searcher.New(options.DocSearchAddress, timeoutDuration)
 
 	ocrService := ocr.New(&ocr.Options{
 		Mode:    ocr.GetModeFromString(options.OcrServiceMode),
 		Address: options.OcrServiceAddress,
+		Timeout: timeoutDuration,
 	})
 
 	tokenizerService := tokenizer.New(&tokenizer.Options{
 		Mode:         tokenizer.GetModeFromString(options.TokenizerServiceMode),
 		Address:      options.TokenizerServiceAddress,
+		Timeout:      timeoutDuration,
 		ChunkSize:    options.TokenizerChunkSize,
 		ChunkedFlag:  options.TokenizerReturnChunks,
 		ChunkOverlap: options.TokenizerChunkOverlap,
@@ -102,7 +105,6 @@ func (nw *NotifyWatcher) parseEventSlot() {
 
 	for {
 		select {
-
 		case err, ok := <-nw.watcher.Errors:
 			if !ok {
 				return
@@ -132,7 +134,6 @@ func (nw *NotifyWatcher) parseEventSlot() {
 			}
 
 			t.Reset(waitFor)
-
 		}
 	}
 }

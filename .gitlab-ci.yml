@@ -24,9 +24,9 @@ test:
     CGO_ENABLED: 1
   artifacts:
     reports:
-     coverage_report:
-      coverage_format: cobertura
-      path: ./tmp/coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: ./tmp/coverage.xml
 
 
 build_app:
