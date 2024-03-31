@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"time"
 )
 
-const EmbeddingsLCURL = "/api/v1/get_vectors"
+const ServiceURL = "/api/v1/get_vectors"
 
 type LangChainTokenizer struct {
 	address           string
+	timeout           time.Duration
 	ChunkSize         int
 	ChunkOverlap      int
 	ReturnChunkedText bool
@@ -20,6 +22,7 @@ type LangChainTokenizer struct {
 func NewLangChain(options *Options) *LangChainTokenizer {
 	return &LangChainTokenizer{
 		address:           options.Address,
+		timeout:           options.Timeout,
 		ChunkSize:         options.ChunkSize,
 		ChunkOverlap:      options.ChunkOverlap,
 		ReturnChunkedText: options.ChunkedFlag,
@@ -48,9 +51,11 @@ func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := lt.address + EmbeddingsLCURL
+	targetURL := lt.address + ServiceURL
 	log.Printf("Sending file to extract tokens")
-	respData, err := sender.SendRequest(reqBody, &targetURL, "application/json")
+
+	mimeType := "application/json"
+	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, lt.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return computedTokens, err

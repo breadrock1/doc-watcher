@@ -24,6 +24,7 @@ type Options struct {
 	TokenizerChunkOverlap   int
 	TokenizerReturnChunks   bool
 	TokenizerChunkBySelf    bool
+	TokenizerTimeout        uint
 }
 
 func LoadFromEnv() (*Options, error) {
@@ -34,6 +35,7 @@ func LoadFromEnv() (*Options, error) {
 	var parseOptionErr error
 
 	var watchedDirectories []string
+	var tokenizerTimeout uint64
 	var chunkSize, chunkOverlap int64
 	var returnChunksFlag, chunkBySelfFlag bool
 	var tokenizerServiceAddr, tokenizerServiceMode string
@@ -90,6 +92,14 @@ func LoadFromEnv() (*Options, error) {
 		return nil, errors.New("failed while parsing TOKENIZER_CHUNK_OVERLAP env variable")
 	}
 
+	tmpOptionVar, envExists = os.LookupEnv("TOKENIZER_TIMEOUT_SECONDS")
+	if !envExists {
+		return nil, errors.New("failed while parsing TOKENIZER_TIMEOUT_SECONDS env variable")
+	}
+	if tokenizerTimeout, parseOptionErr = strconv.ParseUint(tmpOptionVar, 10, 64); parseOptionErr != nil {
+		return nil, errors.New("failed while parsing TOKENIZER_TIMEOUT_SECONDS env variable")
+	}
+
 	tmpOptionVar, envExists = os.LookupEnv("TOKENIZER_CHUNK_BY_SELF")
 	if !envExists {
 		return nil, errors.New("failed while parsing TOKENIZER_CHUNK_BY_SELF env variable")
@@ -113,6 +123,7 @@ func LoadFromEnv() (*Options, error) {
 		TokenizerChunkOverlap:   int(chunkOverlap),
 		TokenizerReturnChunks:   returnChunksFlag,
 		TokenizerChunkBySelf:    chunkBySelfFlag,
+		TokenizerTimeout:        uint(tokenizerTimeout),
 	}, nil
 }
 

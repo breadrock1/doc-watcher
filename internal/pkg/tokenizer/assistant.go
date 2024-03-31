@@ -7,12 +7,14 @@ import (
 	"log"
 	"math"
 	"strings"
+	"time"
 )
 
 const EmbeddingsAssistantURL = "/embed"
 
 type AssistantTokenizer struct {
 	address           string
+	timeout           time.Duration
 	ChunkSize         int
 	ChunkOverlap      int
 	ReturnChunkedText bool
@@ -21,6 +23,7 @@ type AssistantTokenizer struct {
 func NewAssistant(options *Options) *AssistantTokenizer {
 	return &AssistantTokenizer{
 		address:           options.Address,
+		timeout:           options.Timeout,
 		ChunkSize:         options.ChunkSize,
 		ChunkOverlap:      options.ChunkOverlap,
 		ReturnChunkedText: options.ChunkedFlag,
@@ -67,7 +70,8 @@ func (at *AssistantTokenizer) loadTextDataTokens(content string) ([]float64, err
 	reqBody := bytes.NewBuffer(jsonData)
 	targetURL := at.address + EmbeddingsAssistantURL
 	log.Printf("Sending file to extract tokens")
-	respData, err := sender.SendRequest(reqBody, &targetURL, "application/json")
+	mimeType := "application/json"
+	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, at.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return []float64{}, err

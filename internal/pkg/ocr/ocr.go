@@ -22,9 +22,9 @@ func New(options *Options) *Service {
 	case ReadRawFile:
 		service.Ocr = raw.New()
 	case DedocWrapper:
-		service.Ocr = dedoc.New(options.Address)
+		service.Ocr = dedoc.New(options.Address, options.Timeout)
 	case AssistantMode:
-		service.Ocr = assistant.New(options.Address)
+		service.Ocr = assistant.New(options.Address, options.Timeout)
 	default:
 		service.Ocr = raw.New()
 	}

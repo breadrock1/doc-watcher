@@ -19,7 +19,13 @@ func (re *Service) RecognizeFile(filePath string) (string, error) {
 		return "", err
 	}
 
-	return string(bytesData), nil
+	stringData := string(bytesData)
+	if len(stringData) == 0 {
+		log.Println("Failed: returned empty string data...")
+		return "", err
+	}
+
+	return stringData, nil
 }
 
 func (re *Service) RecognizeFileData(data []byte) (string, error) {

@@ -58,6 +58,7 @@ func init() {
 	flags.StringP("tokenizer-mode", "b", "assistant", "An llm address with port")
 	flags.IntP("chunk-size", "l", 800, "An llm address with port")
 	flags.IntP("size-overlap", "p", 100, "An llm address with port")
+	flags.UintP("tokenizer-timeout", "x", 300, "Tokenizer timeout seconds")
 	flags.BoolP("return-chunks", "r", true, "Load config from env.")
 	flags.BoolP("chunk-by-self", "c", false, "Store document as doc-chunks.")
 
@@ -68,6 +69,7 @@ func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
 	var parseOptionErr error
 
 	var watchedDirectories []string
+	var tokenizerTimeout uint
 	var chunkSize, chunkOverlap int
 	var returnChunksFlag, chunkBySelfFlag bool
 	var tokenizerServiceAddr, tokenizerServiceMode string
@@ -105,6 +107,9 @@ func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
 	if chunkOverlap, parseOptionErr = flags.GetInt("size-overlap"); parseOptionErr != nil {
 		return nil, parseOptionErr
 	}
+	if tokenizerTimeout, parseOptionErr = flags.GetUint("tokenizer-timeout"); parseOptionErr != nil {
+		return nil, parseOptionErr
+	}
 	if returnChunksFlag, parseOptionErr = flags.GetBool("return-chunks"); parseOptionErr != nil {
 		return nil, parseOptionErr
 	}
@@ -127,5 +132,6 @@ func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
 		TokenizerChunkOverlap:   chunkOverlap,
 		TokenizerReturnChunks:   returnChunksFlag,
 		TokenizerChunkBySelf:    chunkBySelfFlag,
+		TokenizerTimeout:        tokenizerTimeout,
 	}, nil
 }

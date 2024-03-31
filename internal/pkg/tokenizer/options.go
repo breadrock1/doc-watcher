@@ -1,22 +1,25 @@
 package tokenizer
 
-type TokenizerMode int
+import "time"
+
+type Mode int
 
 const (
-	Assistant TokenizerMode = iota
+	Assistant Mode = iota
 	LangChain
 	None
 )
 
 type Options struct {
-	Mode         TokenizerMode
+	Mode         Mode
 	Address      string
+	Timeout      time.Duration
 	ChunkedFlag  bool
 	ChunkSize    int
 	ChunkOverlap int
 }
 
-func GetModeFromString(mode string) TokenizerMode {
+func GetModeFromString(mode string) Mode {
 	switch mode {
 	case "assistant":
 		return Assistant
