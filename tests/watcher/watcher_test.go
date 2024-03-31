@@ -26,6 +26,7 @@ func TestWatcherManager(t *testing.T) {
 		TokenizerChunkOverlap:   0,
 		TokenizerReturnChunks:   false,
 		TokenizerChunkBySelf:    false,
+		TokenizerTimeout:        10,
 	})
 
 	t.Run("Append directory to watch", func(t *testing.T) {
