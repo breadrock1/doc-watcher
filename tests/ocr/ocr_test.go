@@ -15,9 +15,11 @@ const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestReadRawFileData(t *testing.T) {
+	timeoutDuration := time.Duration(10) * time.Second
 	ocrService := ocr.New(&ocr.Options{
 		Mode:    ocr.GetModeFromString("read-raw-file"),
 		Address: "http://localhost:3451",
+		Timeout: timeoutDuration,
 	})
 
 	t.Run("Read existing file", func(t *testing.T) {
@@ -43,9 +45,11 @@ func TestReadRawFileData(t *testing.T) {
 }
 
 func TestRecognizeFileData(t *testing.T) {
+	timeoutDuration := time.Duration(10) * time.Second
 	ocrService := ocr.New(&ocr.Options{
 		Mode:    ocr.GetModeFromString("read-raw-file"),
 		Address: "http://localhost:3451",
+		Timeout: timeoutDuration,
 	})
 
 	t.Run("Recognize file data", func(t *testing.T) {
@@ -100,6 +104,7 @@ func TestRecognizeFileData(t *testing.T) {
 		ocrService := ocr.New(&ocr.Options{
 			Mode:    ocr.GetModeFromString("assistant"),
 			Address: "http://localhost:4444",
+			Timeout: timeoutDuration,
 		})
 
 		e := mocked.CreateMockedServer()

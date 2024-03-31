@@ -15,7 +15,8 @@ const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestStoreDocument(t *testing.T) {
-	searcherService := searcher.New("http://localhost:3451")
+	timeoutDuration := time.Duration(10) * time.Second
+	searcherService := searcher.New("http://localhost:3451", timeoutDuration)
 
 	t.Run("Store Document", func(t *testing.T) {
 		e := mocked.CreateMockedServer()
@@ -52,7 +53,7 @@ func TestStoreDocument(t *testing.T) {
 	})
 
 	t.Run("Caught error with service denied", func(t *testing.T) {
-		searcherService := searcher.New("http://localhost:4444")
+		searcherService := searcher.New("http://localhost:4444", timeoutDuration)
 
 		e := mocked.CreateMockedServer()
 		go func() {

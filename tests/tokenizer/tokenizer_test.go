@@ -15,12 +15,14 @@ const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestComputeContentTokens(t *testing.T) {
+	timeoutDuration := time.Duration(10) * time.Second
 	tokenizerService := tokenizer.New(&tokenizer.Options{
 		Mode:         tokenizer.GetModeFromString("langchain"),
 		Address:      "http://localhost:3451",
 		ChunkSize:    1,
 		ChunkedFlag:  false,
 		ChunkOverlap: 1,
+		Timeout:      timeoutDuration,
 	})
 
 	t.Run("Compute tokens", func(t *testing.T) {
@@ -69,6 +71,7 @@ func TestComputeContentTokens(t *testing.T) {
 			ChunkSize:    0,
 			ChunkedFlag:  false,
 			ChunkOverlap: 0,
+			Timeout:      timeoutDuration,
 		})
 
 		e := mocked.CreateMockedServer()
