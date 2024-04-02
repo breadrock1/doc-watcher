@@ -9,7 +9,7 @@ lint:
   except:
     - master
   script:
-    - golangci-lint run $(git ls-files | grep *.go)
+    - golangci-lint run ./...
 
 test:
   image: registry.logoper.socialcode.ru/tools/golang-ci
@@ -17,7 +17,8 @@ test:
   except:
     - master
   script:
-    - mkdir -p ./tmp && go test -v -count=1 -race for test_module in $(git ls-files tests); do go test -v -count=1 $test_module; done
+    - mkdir -p ./tmp && go test -v -race -count=1 -coverprofile=tmp/cover.out ./...
+    - gocov convert ./tmp/test.out | gocov-xml > ./tmp/test.xml
     - gocov convert ./tmp/cover.out | gocov-xml > ./tmp/coverage.xml
   coverage: /^coverage:\s(\d+(?:\.\d+)?%)/
   variables:
