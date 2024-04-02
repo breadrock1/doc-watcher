@@ -9,7 +9,7 @@ lint:
   except:
     - master
   script:
-    - golangci-lint run ./...
+    - golangci-lint run -c .golangci.yaml --timeout 15m ./...
 
 test:
   image: registry.logoper.socialcode.ru/tools/golang-ci
