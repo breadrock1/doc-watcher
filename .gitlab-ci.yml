@@ -17,7 +17,7 @@ test:
   except:
     - master
   script:
-    - mkdir -p ./tmp && go test -v -race -count=1 -coverprofile=tmp/cover.out ./...
+    - mkdir -p ./tmp && go test -v -race -count=1 -coverprofile=./tmp/test.out ./...
     - gocov convert ./tmp/test.out | gocov-xml > ./tmp/test.xml
     - gocov convert ./tmp/cover.out | gocov-xml > ./tmp/coverage.xml
   coverage: /^coverage:\s(\d+(?:\.\d+)?%)/
