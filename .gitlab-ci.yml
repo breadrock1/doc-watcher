@@ -17,7 +17,7 @@ test:
   except:
     - master
   script:
-    - mkdir -p ./tmp && go test -v -count=1 -race ./...
+    - mkdir -p ./tmp && go test -v -count=1 -race for test_module in $(git ls-files tests); do go test -v -count=1 $test_module; done
     - gocov convert ./tmp/cover.out | gocov-xml > ./tmp/coverage.xml
   coverage: /^coverage:\s(\d+(?:\.\d+)?%)/
   variables:
