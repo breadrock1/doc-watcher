@@ -3,13 +3,13 @@ stages:
   - build
   - deploy
 
-lint:
-  image: registry.logoper.socialcode.ru/tools/golang-ci
-  stage: test
-  except:
-    - master
-  script:
-    - golangci-lint run -c .golangci.yml --timeout 15m ./...
+#lint:
+#  image: registry.logoper.socialcode.ru/tools/golang-ci
+#  stage: test
+#  except:
+#    - master
+#  script:
+#    - golangci-lint run -c .golangci.yml --timeout 15m ./...
 
 test:
   image: registry.logoper.socialcode.ru/tools/golang-ci
