@@ -9,4 +9,4 @@ RUN apk add --no-cache curl
 
 EXPOSE 2893
 
-CMD ["/app/doc-notifier", "-e"]
+CMD ["/app/doc-notifier", "-z"]
