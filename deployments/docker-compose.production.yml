@@ -8,7 +8,7 @@ services:
       - 2893:2893
     environment:
       - DOC_NOTIFIER_SERVICE_ADDRESS=0.0.0.0:2893
-      - DOC_NOTIFIER_WATCHED_DIRS=/indexer
+      - DOC_NOTIFIER_WATCHED_DIRS=./indexer
       - OCR_SERVICE_ADDRESS=http://dedoc:9091
       - OCR_SERVICE_MODE=dedoc-wrapper
       - DOC_SEARCHER_SERVICE_ADDRESS=http://docsearcher:2892
