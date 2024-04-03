@@ -32,6 +32,8 @@ func (s *EchoServer) RunServer() {
 		}
 	})
 
+	s.server.GET("/hello", endpoints.Hello)
+
 	s.server.POST("/attach", endpoints.AttachDirectories)
 	s.server.POST("/detach", endpoints.DetachDirectories)
 	s.server.GET("/watcher", endpoints.WatchedDirsList)
