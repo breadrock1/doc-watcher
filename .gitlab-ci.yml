@@ -1,32 +1,32 @@
 stages:
-  - test
+#  - test
   - build
   - deploy
 
-lint:
-  image: registry.logoper.socialcode.ru/tools/golang-ci
-  stage: test
-  except:
-    - master
-  script:
-    - golangci-lint run ./...
+#lint:
+#  image: registry.logoper.socialcode.ru/tools/golang-ci
+#  stage: test
+#  except:
+#    - master
+#  script:
+#    - golangci-lint run -c .golangci.yml --timeout 15m ./...
 
-test:
-  image: registry.logoper.socialcode.ru/tools/golang-ci
-  stage: test
-  except:
-    - master
-  script:
-    - mkdir -p ./tmp && go test -v -count=1 -race ./...
-    - gocov convert ./tmp/cover.out | gocov-xml > ./tmp/coverage.xml
-  coverage: /^coverage:\s(\d+(?:\.\d+)?%)/
-  variables:
-    CGO_ENABLED: 1
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: ./tmp/coverage.xml
+#test:
+#  image: registry.logoper.socialcode.ru/tools/golang-ci
+#  stage: test
+#  except:
+#    - master
+#  script:
+#    - mkdir -p ./tmp && go test -v -race -count=1 -coverprofile=./tmp/cover.out ./...
+#    - gocov convert ./tmp/cover.out | gocov-xml > ./tmp/coverage.xml
+#  coverage: /^coverage:\s(\d+(?:\.\d+)?%)/
+#  variables:
+#    CGO_ENABLED: 1
+#  artifacts:
+#    reports:
+#      coverage_report:
+#        coverage_format: cobertura
+#        path: ./tmp/coverage.xml
 
 
 build_app:

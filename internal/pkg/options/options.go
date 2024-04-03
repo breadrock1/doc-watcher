@@ -27,8 +27,10 @@ type Options struct {
 	TokenizerTimeout        uint
 }
 
-func LoadFromEnv() (*Options, error) {
-	_ = godotenv.Load()
+func LoadFromEnv(disabledDotenv bool) (*Options, error) {
+	if !disabledDotenv {
+		_ = godotenv.Load()
+	}
 
 	var envExists bool
 	var tmpOptionVar string

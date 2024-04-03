@@ -7,12 +7,18 @@ services:
     ports:
       - 2893:2893
     environment:
-      - IS_LOAD_CHUNKS=true
-      - READ_RAW_FILE=false
-      - LLM_ADDRESS=http://embeddings:8000
-      - OCR_ADDRESS=http://dedoc:9091
-      - DOC_ADDRESS=http://docsearcher:2892
-      - WATCHER_DIR_PATHS=/indexer
+      - DOC_NOTIFIER_SERVICE_ADDRESS=0.0.0.0:2893
+      - DOC_NOTIFIER_WATCHED_DIRS=./indexer
+      - OCR_SERVICE_ADDRESS=http://dedoc:9091
+      - OCR_SERVICE_MODE=dedoc-wrapper
+      - DOC_SEARCHER_SERVICE_ADDRESS=http://docsearcher:2892
+      - TOKENIZER_MODE=none
+      - TOKENIZER_CHUNK_SIZE=800
+      - TOKENIZER_CHUNK_OVERLAP=100
+      - TOKENIZER_RETURN_CHUNKS=true
+      - TOKENIZER_CHUNK_BY_SELF=false
+      - TOKENIZER_TIMEOUT_SECONDS=300
+      - TOKENIZER_SERVICE_ADDRESS=http://embeddings:8000
     deploy:
       replicas: 1
       placement:
