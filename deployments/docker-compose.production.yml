@@ -27,7 +27,7 @@ services:
         parallelism: 1
         delay: 10s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2893"]
+      test: ["CMD", "curl", "-f", "http://localhost:2893/hello"]
       interval: 10s
       timeout: 3s
       retries: 5
