@@ -5,10 +5,20 @@ import (
 	"doc-notifier/internal/pkg/options"
 	"doc-notifier/internal/pkg/server"
 	"doc-notifier/internal/pkg/watcher"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 )
+
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime)
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("Failed to open log file:", err)
+	}
+	log.SetOutput(file)
+}
 
 func main() {
 	serviceOptions := cmd.Execute()
