@@ -16,7 +16,8 @@ import (
 )
 
 type NotifyWatcher struct {
-	stopCh chan bool
+	stopCh        chan bool
+	PauseWatchers bool
 
 	directories []string
 	watcher     *fsnotify.Watcher
@@ -53,13 +54,14 @@ func New(options *Options) *NotifyWatcher {
 	}
 
 	return &NotifyWatcher{
-		stopCh:      make(chan bool),
-		directories: options.WatchedDirectories,
-		ocr:         ocrService,
-		watcher:     notifyWatcher,
-		reader:      readerService,
-		searcher:    searcherService,
-		tokenizer:   tokenizerService,
+		stopCh:        make(chan bool),
+		PauseWatchers: false,
+		directories:   options.WatchedDirectories,
+		ocr:           ocrService,
+		watcher:       notifyWatcher,
+		reader:        readerService,
+		searcher:      searcherService,
+		tokenizer:     tokenizerService,
 	}
 }
 
@@ -113,6 +115,10 @@ func (nw *NotifyWatcher) parseEventSlot() {
 
 		case event, ok := <-nw.watcher.Events:
 			if !ok {
+				return
+			}
+
+			if nw.PauseWatchers {
 				return
 			}
 

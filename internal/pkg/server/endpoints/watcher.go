@@ -52,3 +52,19 @@ func returnStatusResponse(status int, msg string) *ResponseForm {
 		Message: msg,
 	}
 }
+
+func PauseWatchers(c echo.Context) error {
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	if watcher.PauseWatchers {
+		return c.JSON(200, returnStatusResponse(400, "Already paused"))
+	} else {
+		watcher.PauseWatchers = true
+		return c.JSON(200, returnStatusResponse(200, "Done"))
+	}
+}
+
+func RunWatchers(c echo.Context) error {
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	watcher.PauseWatchers = false
+	return c.JSON(200, returnStatusResponse(200, "Done"))
+}

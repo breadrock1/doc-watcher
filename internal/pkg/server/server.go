@@ -42,6 +42,9 @@ func (s *EchoServer) RunServer() {
 	s.server.POST("/upload", endpoints.UploadFile)
 	s.server.GET("/upload", endpoints.UploadFileForm)
 
+	s.server.GET("/stop", endpoints.PauseWatchers)
+	s.server.GET("/run", endpoints.RunWatchers)
+
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
 	_ = s.server.Start(address)
 }
