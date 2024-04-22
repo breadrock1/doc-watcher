@@ -8,6 +8,7 @@ const (
 	ReadRawFile Mode = iota
 	AssistantMode
 	DedocWrapper
+	Logoper
 )
 
 type Options struct {
@@ -24,6 +25,8 @@ func GetModeFromString(mode string) Mode {
 		return AssistantMode
 	case "dedoc-wrapper":
 		return DedocWrapper
+	case "logoper":
+		return Logoper
 	default:
 		return ReadRawFile
 	}
