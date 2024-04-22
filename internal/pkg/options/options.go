@@ -12,6 +12,7 @@ import (
 type Options struct {
 	WatcherServiceAddress string
 	WatchedDirectories    []string
+	EnableFileLog         bool
 
 	OcrServiceAddress string
 	OcrServiceMode    string
@@ -37,7 +38,7 @@ func LoadFromEnv() (*Options, error) {
 	var watchedDirectories []string
 	var tokenizerTimeout uint64
 	var chunkSize, chunkOverlap int64
-	var returnChunksFlag, chunkBySelfFlag bool
+	var returnChunksFlag, chunkBySelfFlag, enableFileLog bool
 	var tokenizerServiceAddr, tokenizerServiceMode string
 	var notifierAddr, docSearchAddr, ocrServiceAddr, ocrServiceMode string
 
@@ -76,6 +77,14 @@ func LoadFromEnv() (*Options, error) {
 		return nil, errors.New("failed while parsing TOKENIZER_RETURN_CHUNKS env variable")
 	}
 
+	tmpOptionVar, envExists = os.LookupEnv("DOC_NOTIFIER_ENABLE_FILE_LOG")
+	if !envExists {
+		tmpOptionVar = "false"
+	}
+	if enableFileLog, parseOptionErr = strconv.ParseBool(tmpOptionVar); parseOptionErr != nil {
+		return nil, errors.New("failed while parsing DOC_NOTIFIER_ENABLE_FILE_LOG env variable")
+	}
+
 	tmpOptionVar, envExists = os.LookupEnv("TOKENIZER_CHUNK_SIZE")
 	if !envExists {
 		return nil, errors.New("failed while parsing TOKENIZER_CHUNK_SIZE env variable")
@@ -111,6 +120,7 @@ func LoadFromEnv() (*Options, error) {
 	return &Options{
 		WatcherServiceAddress: notifierAddr,
 		WatchedDirectories:    watchedDirectories,
+		EnableFileLog:         enableFileLog,
 
 		OcrServiceAddress: ocrServiceAddr,
 		OcrServiceMode:    ocrServiceMode,
