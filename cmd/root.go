@@ -65,7 +65,7 @@ func init() {
 	flags.BoolP("enable-file-log", "z", false, "Translate log output to file.")
 
 	flags.BoolP("from-env", "e", false, "Parse options from env.")
-	flags.BoolP("without-dotenv", "z", false, "Parse options from native env.")
+	flags.BoolP("without-dotenv", "j", false, "Parse options from native env.")
 }
 
 func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
