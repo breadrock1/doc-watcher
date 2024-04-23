@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -28,13 +29,48 @@ func New(address string, timeout time.Duration) *Service {
 const RecognitionURL = "/api/v2/text/create_extraction"
 const GetResultURL = "/api/v2/text/get/"
 
+type OcrJobErrorType int
+
+const (
+	Processing OcrJobErrorType = iota
+	FailedResponse
+)
+
+type OcrJobError struct {
+	Type    OcrJobErrorType
+	Message string
+}
+
 type OcrJob struct {
 	JobId string `json:"job_id"`
 }
 
 type OcrResult struct {
-	DocType string `json:"doc_type"`
-	Text    string `json:"text"`
+	JobId      string `json:"job_id"`
+	Text       string `json:"text"`
+	PagesCount int    `json:"pages_count"`
+	DocType    string `json:"doc_type"`
+	Artifacts  struct {
+		TransportInvoiceDate      string
+		TransportInvoiceNumber    string
+		OrderNumber               string
+		Carrier                   string
+		VehicleNumber             string
+		CargoDateArrival          string
+		CargoDateDeparture        string
+		AddressRedirection        string
+		DateRedirection           string
+		CargoIssueAddress         string
+		CargoIssueDate            string
+		CargoWeight               string
+		CargoPlacesNumber         string
+		ContainerReceiptActNumber string
+		ContainerReceiptActDate   string
+		ContainerNumber           string
+		TerminalName              string
+		KtkName                   string
+		DriverFullName            string
+	} `json:"artifacts"`
 }
 
 func (do *Service) RecognizeFile(filePath string) (string, error) {
@@ -73,14 +109,14 @@ func (do *Service) RecognizeFile(filePath string) (string, error) {
 		return "", err
 	}
 
-	var resTest = &OcrJob{}
-	_ = json.Unmarshal(respData, resTest)
+	var ocrJob = &OcrJob{}
+	_ = json.Unmarshal(respData, ocrJob)
 
-	waitCh := make(chan string)
-	go do.awaitOcrResult(resTest.JobId, waitCh)
+	waitCh := make(chan *OcrResult)
+	go do.awaitOcrResult(ocrJob.JobId, waitCh)
 	result := <-waitCh
 
-	return result, nil
+	return result.Text, nil
 }
 
 func (do *Service) RecognizeFileData(data []byte) (string, error) {
@@ -112,44 +148,61 @@ func (do *Service) RecognizeFileData(data []byte) (string, error) {
 	var resTest = &OcrJob{}
 	_ = json.Unmarshal(respData, resTest)
 
-	waitCh := make(chan string)
+	waitCh := make(chan *OcrResult)
 	go do.awaitOcrResult(resTest.JobId, waitCh)
 	result := <-waitCh
 
-	return result, nil
+	return result.Text, nil
 }
 
-func (do *Service) awaitOcrResult(jobId string, waitCh chan string) {
-	getURLAddress := do.address + RecognitionURL + jobId
+func (do *Service) awaitOcrResult(jobId string, waitCh chan *OcrResult) {
+	getURLAddress := do.address + GetResultURL + jobId
 	for {
-		res, err := do.checkOcrJobStatus(getURLAddress)
-
+		time.Sleep(5 * time.Second)
+		res, err := do.checkOcrJobStatus(getURLAddress, jobId)
 		if err != nil {
-			waitCh <- res
-			break
+			log.Println(err.Message)
+			switch err.Type {
+			case Processing:
+				continue
+			case FailedResponse:
+				waitCh <- res
+				break
+			}
 		}
 
-		time.Sleep(5 * time.Second)
+		waitCh <- res
+		break
 	}
 }
 
-func (do *Service) checkOcrJobStatus(targetURL string) (string, error) {
+func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*OcrResult, *OcrJobError) {
+	var ocrResult = &OcrResult{}
 	response, err := http.Get(targetURL)
 	if err != nil {
-		log.Println("Error while creating request:", err)
-		return "", err
+		msg := fmt.Sprintf("Error while creating request: %s", err)
+		return ocrResult, &OcrJobError{Type: FailedResponse, Message: msg}
+	}
+
+	if response.StatusCode == 202 {
+		msg := fmt.Sprintf("Job '%s' are processing...", jobId)
+		return ocrResult, &OcrJobError{Type: Processing, Message: msg}
 	}
 
 	if response.StatusCode > 200 {
-		log.Printf("Non Ok response status: %s", response.Status)
-		defer func() { _ = response.Body.Close() }()
-		//respData, err := io.ReadAll(response.Body)
-		//if err != nil {
-		//	log.Println("Failed while reading response reqBody: ", err)
-		//	return "", err
-		//}
-		return "", err
+		msg := fmt.Sprintf("Error response for job '%s'", jobId)
+		return ocrResult, &OcrJobError{Type: FailedResponse, Message: msg}
 	}
 
-	return "", nil
+	log.Printf("Successful response for job '%s': %s", jobId, response.Status)
+	defer func() { _ = response.Body.Close() }()
+	respData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Println("Failed while reading response reqBody: ", err)
+		msg := fmt.Sprintf("Failed while reading response reqBody: %s", err)
+		return ocrResult, &OcrJobError{Type: FailedResponse, Message: msg}
+	}
+
+	_ = json.Unmarshal(respData, ocrResult)
+	return ocrResult, nil
 }
