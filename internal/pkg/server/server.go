@@ -32,6 +32,8 @@ func (s *EchoServer) RunServer() {
 		}
 	})
 
+	s.server.GET("/hello", endpoints.Hello)
+
 	s.server.POST("/attach", endpoints.AttachDirectories)
 	s.server.POST("/detach", endpoints.DetachDirectories)
 	s.server.GET("/watcher", endpoints.WatchedDirsList)
@@ -39,6 +41,9 @@ func (s *EchoServer) RunServer() {
 	s.server.POST("/download", endpoints.DownloadFile)
 	s.server.POST("/upload", endpoints.UploadFile)
 	s.server.GET("/upload", endpoints.UploadFileForm)
+
+	s.server.GET("/stop", endpoints.PauseWatchers)
+	s.server.GET("/run", endpoints.RunWatchers)
 
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
 	_ = s.server.Start(address)

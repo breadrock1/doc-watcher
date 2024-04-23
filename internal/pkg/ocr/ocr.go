@@ -3,6 +3,7 @@ package ocr
 import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/ocr/dedoc"
+	"doc-notifier/internal/pkg/ocr/logoper"
 	"doc-notifier/internal/pkg/ocr/raw"
 )
 
@@ -25,6 +26,8 @@ func New(options *Options) *Service {
 		service.Ocr = dedoc.New(options.Address, options.Timeout)
 	case AssistantMode:
 		service.Ocr = assistant.New(options.Address, options.Timeout)
+	case Logoper:
+		service.Ocr = logoper.New(options.Address, options.Timeout)
 	default:
 		service.Ocr = raw.New()
 	}
