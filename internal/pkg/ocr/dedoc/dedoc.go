@@ -2,6 +2,7 @@ package dedoc
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"io"
@@ -30,7 +31,8 @@ type DocumentForm struct {
 	Context string `json:"text"`
 }
 
-func (do *Service) RecognizeFile(filePath string) (string, error) {
+func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
+	filePath := document.DocumentPath
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
