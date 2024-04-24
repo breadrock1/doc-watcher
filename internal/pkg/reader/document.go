@@ -78,6 +78,7 @@ type OcrResult struct {
 
 func ParseFile(filePath string) (*Document, error) {
 	absFilePath, _ := filepath.Abs(filePath)
+	bucketName2 := ParseBucketName(absFilePath)
 	fileInfo, err := os.Stat(absFilePath)
 	if err != nil {
 		log.Println("Failed while getting stat of file: ", err)
@@ -94,7 +95,7 @@ func ParseFile(filePath string) (*Document, error) {
 
 	document := Document{}
 	document.BucketPath = bucketPath
-	document.BucketUUID = bucketName
+	document.BucketUUID = bucketName2
 	document.DocumentPath = absFilePath
 	document.DocumentName = fileInfo.Name()
 	document.DocumentSize = fileInfo.Size()
@@ -106,6 +107,24 @@ func ParseFile(filePath string) (*Document, error) {
 	document.DocumentCreated = createdTimeNew
 
 	return &document, nil
+}
+
+func ParseBucketName(filePath string) string {
+	currPath := os.Getenv("PWD")
+	relPath, err := filepath.Rel(currPath, filePath)
+	relPath2, err := filepath.Rel("indexer", relPath)
+	bucketNameRes, _ := filepath.Split(relPath2)
+	if err != nil {
+		log.Printf("Failed while parsing bucket name")
+		return bucketName
+	}
+
+	bucketNameRes2 := strings.ReplaceAll(bucketNameRes, "/", "")
+	if bucketNameRes2 == "" {
+		return bucketName
+	}
+
+	return bucketNameRes2
 }
 
 func ParseDocumentType(extension string) string {
@@ -135,6 +154,33 @@ func extractApplicationMimeType(attribute string) string {
 	}
 
 	return "unknown"
+}
+
+func (f *Service) MoveFileToUnrecognized(document *Document) {
+	inputFile, err := os.Open(document.DocumentPath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", document.DocumentPath, err)
+		return
+	}
+	defer func() { _ = inputFile.Close() }()
+
+	outputFilePath := "./indexer/unrecognized/" + document.DocumentName
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", outputFilePath, err)
+		return
+	}
+	defer func() { _ = outputFile.Close() }()
+
+	if _, err = io.Copy(outputFile, inputFile); err != nil {
+		log.Printf("Failed while coping file: %s", err)
+		return
+	}
+
+	_ = inputFile.Close()
+	if err = os.Remove(document.DocumentPath); err != nil {
+		log.Printf("Failed while removing file %s: %s", inputFile.Name(), err)
+	}
 }
 
 func (f *Service) SetContentData(document *Document, data string) {

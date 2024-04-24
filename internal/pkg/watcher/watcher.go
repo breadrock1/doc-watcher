@@ -6,9 +6,11 @@ import (
 	"doc-notifier/internal/pkg/searcher"
 	"doc-notifier/internal/pkg/tokenizer"
 	"errors"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"log"
 	"math"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -20,12 +22,12 @@ type NotifyWatcher struct {
 	PauseWatchers bool
 
 	directories []string
-	watcher     *fsnotify.Watcher
+	Watcher     *fsnotify.Watcher
 
-	ocr       *ocr.Service
-	reader    *reader.Service
-	searcher  *searcher.Service
-	tokenizer *tokenizer.Service
+	Ocr       *ocr.Service
+	Reader    *reader.Service
+	Searcher  *searcher.Service
+	Tokenizer *tokenizer.Service
 }
 
 func New(options *Options) *NotifyWatcher {
@@ -57,37 +59,66 @@ func New(options *Options) *NotifyWatcher {
 		stopCh:        make(chan bool),
 		PauseWatchers: false,
 		directories:   options.WatchedDirectories,
-		ocr:           ocrService,
-		watcher:       notifyWatcher,
-		reader:        readerService,
-		searcher:      searcherService,
-		tokenizer:     tokenizerService,
+		Ocr:           ocrService,
+		Watcher:       notifyWatcher,
+		Reader:        readerService,
+		Searcher:      searcherService,
+		Tokenizer:     tokenizerService,
 	}
 }
 
 func (nw *NotifyWatcher) RunWatcher() {
-	defer func() { _ = nw.watcher.Close() }()
+	defer func() { _ = nw.Watcher.Close() }()
 	go nw.parseEventSlot()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-nw.stopCh
 }
 
 func (nw *NotifyWatcher) StopWatcher() {
-	dirs := nw.watcher.WatchList()
+	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
 func (nw *NotifyWatcher) WatchedDirsList() []string {
-	return nw.watcher.WatchList()
+	return nw.Watcher.WatchList()
+}
+
+func (nw *NotifyWatcher) UnrecognizedFiles() []*reader.Document {
+	return nw.Reader.ParseCaughtFiles("./indexer/unrecognized/")
+}
+
+func (nw *NotifyWatcher) AppendDirectory(directory string) error {
+	directory = "./indexer/" + directory
+	if err := os.Mkdir(directory, os.ModePerm); err != nil {
+		msg := fmt.Sprintf("Failed while creating directory: %s", err)
+		return errors.New(msg)
+	}
+
+	directories := []string{directory}
+	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.watcher.Add)
+	return consumeWatcherDirectories(directories, nw.Watcher.Add)
+}
+
+func (nw *NotifyWatcher) RemoveDirectory(directory string) error {
+	directory = "./indexer/" + directory
+	if err := consumeWatcherDirectories([]string{directory}, nw.Watcher.Remove); err != nil {
+		log.Printf("Failed while detaching watched directory: %s", err)
+	}
+
+	if err := os.RemoveAll(directory); err != nil {
+		msg := fmt.Sprintf("Failed while removing directory: %s", err)
+		return errors.New(msg)
+	}
+
+	return nil
 }
 
 func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.watcher.Remove)
+	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
 func (nw *NotifyWatcher) parseEventSlot() {
@@ -107,13 +138,13 @@ func (nw *NotifyWatcher) parseEventSlot() {
 
 	for {
 		select {
-		case err, ok := <-nw.watcher.Errors:
+		case err, ok := <-nw.Watcher.Errors:
 			if !ok {
 				return
 			}
 			log.Println("Caught error: ", err)
 
-		case event, ok := <-nw.watcher.Events:
+		case event, ok := <-nw.Watcher.Events:
 			if !ok {
 				return
 			}
@@ -151,7 +182,7 @@ func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
 		return
 	}
 
-	triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
+	triggeredFiles := nw.Reader.ParseCaughtFiles(absFilePath)
 	nw.storeExtractedDocuments(triggeredFiles)
 }
 
