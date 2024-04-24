@@ -1,6 +1,7 @@
 package raw
 
 import (
+	"doc-notifier/internal/pkg/reader"
 	"log"
 	"os"
 )
@@ -12,7 +13,8 @@ func New() *Service {
 	return &Service{}
 }
 
-func (re *Service) RecognizeFile(filePath string) (string, error) {
+func (re *Service) RecognizeFile(document *reader.Document) (string, error) {
+	filePath := document.DocumentPath
 	bytesData, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Println("Failed while reading file: ", err)

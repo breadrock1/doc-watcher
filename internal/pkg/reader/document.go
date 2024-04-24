@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
+	"io"
 	"log"
 	"mime"
 	"os"
@@ -28,22 +29,51 @@ var (
 )
 
 type Document struct {
-	BucketUUID          string    `json:"bucket_uuid"`
-	BucketPath          string    `json:"bucket_path"`
-	ContentUUID         string    `json:"content_uuid"`
-	ContentMD5          string    `json:"content_md5"`
-	Content             string    `json:"content"`
-	ContentVector       []float64 `json:"content_vector"`
-	DocumentMD5         string    `json:"document_md5"`
-	DocumentSSDEEP      string    `json:"document_ssdeep"`
-	DocumentName        string    `json:"document_name"`
-	DocumentPath        string    `json:"document_path"`
-	DocumentSize        int64     `json:"document_size"`
-	DocumentType        string    `json:"document_type"`
-	DocumentExtension   string    `json:"document_extension"`
-	DocumentPermissions int32     `json:"document_permissions"`
-	DocumentCreated     string    `json:"document_created"`
-	DocumentModified    string    `json:"document_modified"`
+	BucketUUID          string     `json:"bucket_uuid"`
+	BucketPath          string     `json:"bucket_path"`
+	ContentUUID         string     `json:"content_uuid"`
+	ContentMD5          string     `json:"content_md5"`
+	Content             string     `json:"content"`
+	ContentVector       []float64  `json:"content_vector"`
+	DocumentMD5         string     `json:"document_md5"`
+	DocumentSSDEEP      string     `json:"document_ssdeep"`
+	DocumentName        string     `json:"document_name"`
+	DocumentPath        string     `json:"document_path"`
+	DocumentSize        int64      `json:"document_size"`
+	DocumentType        string     `json:"document_type"`
+	DocumentExtension   string     `json:"document_extension"`
+	DocumentPermissions int32      `json:"document_permissions"`
+	DocumentCreated     string     `json:"document_created"`
+	DocumentModified    string     `json:"document_modified"`
+	OcrMetadata         *OcrResult `json:"ocr_metadata"`
+}
+
+type OcrResult struct {
+	JobId      string `json:"job_id"`
+	Text       string `json:"text"`
+	PagesCount int    `json:"pages_count"`
+	DocType    string `json:"doc_type"`
+	Artifacts  struct {
+		TransportInvoiceDate      string
+		TransportInvoiceNumber    string
+		OrderNumber               string
+		Carrier                   string
+		VehicleNumber             string
+		CargoDateArrival          string
+		CargoDateDeparture        string
+		AddressRedirection        string
+		DateRedirection           string
+		CargoIssueAddress         string
+		CargoIssueDate            string
+		CargoWeight               string
+		CargoPlacesNumber         string
+		ContainerReceiptActNumber string
+		ContainerReceiptActDate   string
+		ContainerNumber           string
+		TerminalName              string
+		KtkName                   string
+		DriverFullName            string
+	} `json:"artifacts"`
 }
 
 func ParseFile(filePath string) (*Document, error) {
@@ -108,6 +138,7 @@ func extractApplicationMimeType(attribute string) string {
 }
 
 func (f *Service) SetContentData(document *Document, data string) {
+	document.OcrMetadata.Text = ""
 	document.Content = data
 }
 

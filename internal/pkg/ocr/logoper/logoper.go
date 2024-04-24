@@ -2,6 +2,7 @@ package logoper
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"fmt"
@@ -45,35 +46,8 @@ type OcrJob struct {
 	JobId string `json:"job_id"`
 }
 
-type OcrResult struct {
-	JobId      string `json:"job_id"`
-	Text       string `json:"text"`
-	PagesCount int    `json:"pages_count"`
-	DocType    string `json:"doc_type"`
-	Artifacts  struct {
-		TransportInvoiceDate      string
-		TransportInvoiceNumber    string
-		OrderNumber               string
-		Carrier                   string
-		VehicleNumber             string
-		CargoDateArrival          string
-		CargoDateDeparture        string
-		AddressRedirection        string
-		DateRedirection           string
-		CargoIssueAddress         string
-		CargoIssueDate            string
-		CargoWeight               string
-		CargoPlacesNumber         string
-		ContainerReceiptActNumber string
-		ContainerReceiptActDate   string
-		ContainerNumber           string
-		TerminalName              string
-		KtkName                   string
-		DriverFullName            string
-	} `json:"artifacts"`
-}
-
-func (do *Service) RecognizeFile(filePath string) (string, error) {
+func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
+	filePath := document.DocumentPath
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
@@ -112,10 +86,11 @@ func (do *Service) RecognizeFile(filePath string) (string, error) {
 	var ocrJob = &OcrJob{}
 	_ = json.Unmarshal(respData, ocrJob)
 
-	waitCh := make(chan *OcrResult)
+	waitCh := make(chan *reader.OcrResult)
 	go do.awaitOcrResult(ocrJob.JobId, waitCh)
 	result := <-waitCh
 
+	document.OcrMetadata = result
 	return result.Text, nil
 }
 
@@ -148,14 +123,14 @@ func (do *Service) RecognizeFileData(data []byte) (string, error) {
 	var resTest = &OcrJob{}
 	_ = json.Unmarshal(respData, resTest)
 
-	waitCh := make(chan *OcrResult)
+	waitCh := make(chan *reader.OcrResult)
 	go do.awaitOcrResult(resTest.JobId, waitCh)
 	result := <-waitCh
 
 	return result.Text, nil
 }
 
-func (do *Service) awaitOcrResult(jobId string, waitCh chan *OcrResult) {
+func (do *Service) awaitOcrResult(jobId string, waitCh chan *reader.OcrResult) {
 	getURLAddress := do.address + GetResultURL + jobId
 	for {
 		time.Sleep(5 * time.Second)
@@ -176,8 +151,8 @@ func (do *Service) awaitOcrResult(jobId string, waitCh chan *OcrResult) {
 	}
 }
 
-func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*OcrResult, *OcrJobError) {
-	var ocrResult = &OcrResult{}
+func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*reader.OcrResult, *OcrJobError) {
+	var ocrResult = &reader.OcrResult{}
 	response, err := http.Get(targetURL)
 	if err != nil {
 		msg := fmt.Sprintf("Error while creating request: %s", err)
