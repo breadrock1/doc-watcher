@@ -6,40 +6,48 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type WatcherDirectoriesForm struct {
-	Paths []string `json:"paths"`
+type CreateWatchDirectoryForm struct {
+	DirectoryName string `json:"directory_name"`
 }
 
-func WatchedDirsList(c echo.Context) error {
+func GetWatchedDirectories(c echo.Context) error {
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	watcherDirs := watcher.WatchedDirsList()
 	return c.JSON(200, watcherDirs)
 }
 
-func AttachDirectories(c echo.Context) error {
-	jsonForm := &WatcherDirectoriesForm{}
+func CreateWatchDirectory(c echo.Context) error {
+	jsonForm := &CreateWatchDirectoryForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	if err := decoder.Decode(jsonForm); err != nil {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	if err := watcher.AppendDirectories(jsonForm.Paths); err != nil {
+	if err := watcher.AppendDirectory(jsonForm.DirectoryName); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	if err := watcher.Searcher.CreateBucket(jsonForm.DirectoryName); err != nil {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
 	return c.JSON(200, returnStatusResponse(200, "Ok"))
 }
 
-func DetachDirectories(c echo.Context) error {
-	jsonForm := &WatcherDirectoriesForm{}
+func RemoveWatchDirectory(c echo.Context) error {
+	jsonForm := &CreateWatchDirectoryForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	if err := decoder.Decode(jsonForm); err != nil {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	if err := watcher.RemoveDirectories(jsonForm.Paths); err != nil {
+	if err := watcher.RemoveDirectory(jsonForm.DirectoryName); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	if err := watcher.Searcher.DeleteBucket(jsonForm.DirectoryName); err != nil {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
@@ -67,4 +75,10 @@ func RunWatchers(c echo.Context) error {
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	watcher.PauseWatchers = false
 	return c.JSON(200, returnStatusResponse(200, "Done"))
+}
+
+func GetUnrecognizedFiles(c echo.Context) error {
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	files := watcher.UnrecognizedFiles()
+	return c.JSON(200, files)
 }

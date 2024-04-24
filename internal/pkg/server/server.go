@@ -32,18 +32,19 @@ func (s *EchoServer) RunServer() {
 		}
 	})
 
-	s.server.GET("/hello", endpoints.Hello)
+	s.server.GET("/hello/", endpoints.Hello)
 
-	s.server.POST("/attach", endpoints.AttachDirectories)
-	s.server.POST("/detach", endpoints.DetachDirectories)
-	s.server.GET("/watcher", endpoints.WatchedDirsList)
+	s.server.POST("/watcher/create", endpoints.CreateWatchDirectory)
+	s.server.DELETE("/watcher/remove", endpoints.RemoveWatchDirectory)
+	s.server.GET("/watcher/all", endpoints.GetWatchedDirectories)
+	s.server.GET("/watcher/unrecognized", endpoints.GetUnrecognizedFiles)
 
-	s.server.POST("/download", endpoints.DownloadFile)
-	s.server.POST("/upload", endpoints.UploadFile)
-	s.server.GET("/upload", endpoints.UploadFileForm)
+	s.server.POST("/file/download", endpoints.DownloadFile)
+	s.server.POST("/file/upload", endpoints.UploadFile)
+	s.server.GET("/file/upload", endpoints.UploadFileForm)
 
-	s.server.GET("/stop", endpoints.PauseWatchers)
-	s.server.GET("/run", endpoints.RunWatchers)
+	s.server.GET("/watcher/stop", endpoints.PauseWatchers)
+	s.server.GET("/watcher/run", endpoints.RunWatchers)
 
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
 	_ = s.server.Start(address)
