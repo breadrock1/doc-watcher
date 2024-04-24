@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
+	"io"
 	"log"
 	"mime"
 	"os"
@@ -28,26 +29,56 @@ var (
 )
 
 type Document struct {
-	BucketUUID          string    `json:"bucket_uuid"`
-	BucketPath          string    `json:"bucket_path"`
-	ContentUUID         string    `json:"content_uuid"`
-	ContentMD5          string    `json:"content_md5"`
-	Content             string    `json:"content"`
-	ContentVector       []float64 `json:"content_vector"`
-	DocumentMD5         string    `json:"document_md5"`
-	DocumentSSDEEP      string    `json:"document_ssdeep"`
-	DocumentName        string    `json:"document_name"`
-	DocumentPath        string    `json:"document_path"`
-	DocumentSize        int64     `json:"document_size"`
-	DocumentType        string    `json:"document_type"`
-	DocumentExtension   string    `json:"document_extension"`
-	DocumentPermissions int32     `json:"document_permissions"`
-	DocumentCreated     string    `json:"document_created"`
-	DocumentModified    string    `json:"document_modified"`
+	BucketUUID          string     `json:"bucket_uuid"`
+	BucketPath          string     `json:"bucket_path"`
+	ContentUUID         string     `json:"content_uuid"`
+	ContentMD5          string     `json:"content_md5"`
+	Content             string     `json:"content"`
+	ContentVector       []float64  `json:"content_vector"`
+	DocumentMD5         string     `json:"document_md5"`
+	DocumentSSDEEP      string     `json:"document_ssdeep"`
+	DocumentName        string     `json:"document_name"`
+	DocumentPath        string     `json:"document_path"`
+	DocumentSize        int64      `json:"document_size"`
+	DocumentType        string     `json:"document_type"`
+	DocumentExtension   string     `json:"document_extension"`
+	DocumentPermissions int32      `json:"document_permissions"`
+	DocumentCreated     string     `json:"document_created"`
+	DocumentModified    string     `json:"document_modified"`
+	OcrMetadata         *OcrResult `json:"ocr_metadata"`
+}
+
+type OcrResult struct {
+	JobId      string `json:"job_id"`
+	Text       string `json:"text"`
+	PagesCount int    `json:"pages_count"`
+	DocType    string `json:"doc_type"`
+	Artifacts  struct {
+		TransportInvoiceDate      string
+		TransportInvoiceNumber    string
+		OrderNumber               string
+		Carrier                   string
+		VehicleNumber             string
+		CargoDateArrival          string
+		CargoDateDeparture        string
+		AddressRedirection        string
+		DateRedirection           string
+		CargoIssueAddress         string
+		CargoIssueDate            string
+		CargoWeight               string
+		CargoPlacesNumber         string
+		ContainerReceiptActNumber string
+		ContainerReceiptActDate   string
+		ContainerNumber           string
+		TerminalName              string
+		KtkName                   string
+		DriverFullName            string
+	} `json:"artifacts"`
 }
 
 func ParseFile(filePath string) (*Document, error) {
 	absFilePath, _ := filepath.Abs(filePath)
+	bucketName2 := ParseBucketName(absFilePath)
 	fileInfo, err := os.Stat(absFilePath)
 	if err != nil {
 		log.Println("Failed while getting stat of file: ", err)
@@ -64,7 +95,7 @@ func ParseFile(filePath string) (*Document, error) {
 
 	document := Document{}
 	document.BucketPath = bucketPath
-	document.BucketUUID = bucketName
+	document.BucketUUID = bucketName2
 	document.DocumentPath = absFilePath
 	document.DocumentName = fileInfo.Name()
 	document.DocumentSize = fileInfo.Size()
@@ -76,6 +107,24 @@ func ParseFile(filePath string) (*Document, error) {
 	document.DocumentCreated = createdTimeNew
 
 	return &document, nil
+}
+
+func ParseBucketName(filePath string) string {
+	currPath := os.Getenv("PWD")
+	relPath, err := filepath.Rel(currPath, filePath)
+	relPath2, err := filepath.Rel("indexer", relPath)
+	bucketNameRes, _ := filepath.Split(relPath2)
+	if err != nil {
+		log.Printf("Failed while parsing bucket name")
+		return bucketName
+	}
+
+	bucketNameRes2 := strings.ReplaceAll(bucketNameRes, "/", "")
+	if bucketNameRes2 == "" {
+		return bucketName
+	}
+
+	return bucketNameRes2
 }
 
 func ParseDocumentType(extension string) string {
@@ -107,7 +156,35 @@ func extractApplicationMimeType(attribute string) string {
 	return "unknown"
 }
 
+func (f *Service) MoveFileToUnrecognized(document *Document) {
+	inputFile, err := os.Open(document.DocumentPath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", document.DocumentPath, err)
+		return
+	}
+	defer func() { _ = inputFile.Close() }()
+
+	outputFilePath := "./indexer/unrecognized/" + document.DocumentName
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", outputFilePath, err)
+		return
+	}
+	defer func() { _ = outputFile.Close() }()
+
+	if _, err = io.Copy(outputFile, inputFile); err != nil {
+		log.Printf("Failed while coping file: %s", err)
+		return
+	}
+
+	_ = inputFile.Close()
+	if err = os.Remove(document.DocumentPath); err != nil {
+		log.Printf("Failed while removing file %s: %s", inputFile.Name(), err)
+	}
+}
+
 func (f *Service) SetContentData(document *Document, data string) {
+	document.OcrMetadata.Text = ""
 	document.Content = data
 }
 

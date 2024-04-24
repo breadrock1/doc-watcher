@@ -21,7 +21,7 @@ func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
 	e.POST(tokenizer.ServiceURL, ComputeTokens)
-	e.POST(searcher.ServiceURL, StoreDocument)
+	e.POST(searcher.CreateDocumentURL, StoreDocument)
 
 	return e
 }
