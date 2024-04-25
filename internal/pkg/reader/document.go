@@ -183,6 +183,35 @@ func (f *Service) MoveFileToUnrecognized(document *Document) {
 	}
 }
 
+func (f *Service) MoveFileTo(filePath string, targetDir string) error {
+	inputFile, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", filePath, err)
+		return err
+	}
+	defer func() { _ = inputFile.Close() }()
+
+	_, fileName := filepath.Split(filePath)
+	outputFilePath := fmt.Sprintf("./indexer/%s/%s", targetDir, fileName)
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		log.Printf("Failed while opening file %s: %s", outputFilePath, err)
+		return err
+	}
+	defer func() { _ = outputFile.Close() }()
+
+	if _, err = io.Copy(outputFile, inputFile); err != nil {
+		log.Printf("Failed while coping file: %s", err)
+		return err
+	}
+
+	_ = inputFile.Close()
+	if err = os.Remove(filePath); err != nil {
+		log.Printf("Failed while removing file %s: %s", inputFile.Name(), err)
+	}
+	return nil
+}
+
 func (f *Service) SetContentData(document *Document, data string) {
 	document.OcrMetadata.Text = ""
 	document.Content = data

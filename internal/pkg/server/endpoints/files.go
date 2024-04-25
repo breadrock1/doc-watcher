@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	watcher2 "doc-notifier/internal/pkg/watcher"
+	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
@@ -59,4 +61,42 @@ const UploadHTMLForm = `
 
 func UploadFileForm(c echo.Context) error {
 	return c.HTML(http.StatusOK, UploadHTMLForm)
+}
+
+type MoveFileForm struct {
+	FilePath   string `json:"file_path"`
+	TargetPath string `json:"target_path"`
+}
+
+func MoveFile(c echo.Context) error {
+	jsonForm := &MoveFileForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	if err := watcher.Reader.MoveFileTo(jsonForm.FilePath, jsonForm.TargetPath); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	return c.JSON(200, returnStatusResponse(200, "Ok"))
+}
+
+type RemoveFileForm struct {
+	FilePath string `json:"file_path"`
+}
+
+func RemoveFile(c echo.Context) error {
+	jsonForm := &RemoveFileForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	if err := os.RemoveAll(jsonForm.FilePath); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	return c.JSON(200, returnStatusResponse(200, "Ok"))
 }
