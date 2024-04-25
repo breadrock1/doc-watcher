@@ -54,25 +54,31 @@ type OcrResult struct {
 	PagesCount int    `json:"pages_count"`
 	DocType    string `json:"doc_type"`
 	Artifacts  struct {
-		TransportInvoiceDate      string
-		TransportInvoiceNumber    string
-		OrderNumber               string
-		Carrier                   string
-		VehicleNumber             string
-		CargoDateArrival          string
-		CargoDateDeparture        string
-		AddressRedirection        string
-		DateRedirection           string
-		CargoIssueAddress         string
-		CargoIssueDate            string
-		CargoWeight               string
-		CargoPlacesNumber         string
-		ContainerReceiptActNumber string
-		ContainerReceiptActDate   string
-		ContainerNumber           string
-		TerminalName              string
-		KtkName                   string
-		DriverFullName            string
+		TransportInvoiceDate      string `json:"date_of_transport_invoice"`
+		TransportInvoiceNumber    string `json:"number_of_transport_invoice"`
+		OrderNumber               string `json:"order_number"`
+		Carrier                   string `json:"carrier"`
+		VehicleNumber             string `json:"vehicle_number"`
+		CargoDateArrival          string `json:"arrival_of_cargo_date_time"`
+		CargoDateDeparture        string `json:"departure_of_cargo_date_time"`
+		AddressRedirection        string `json:"redirection_address"`
+		DateRedirection           string `json:"redirection_date_time"`
+		CargoIssueAddress         string `json:"cargo_issue_address"`
+		CargoIssueDate            string `json:"cargo_issue_date"`
+		CargoWeight               string `json:"cargo_weight"`
+		CargoPlacesNumber         string `json:"number_of_cargo_places"`
+		ContainerReceiptActNumber string `json:"container_receipt_act_number"`
+		ContainerReceiptActDate   string `json:"container_receipt_act_date_time"`
+		ContainerNumber           string `json:"container_number"`
+		TerminalName              string `json:"terminal_name"`
+		KtkName                   string `json:"ktk_state"`
+		DriverFullName            string `json:"driver_full_name"`
+		DocumentNumber            string `json:"document_number"`
+		ShipName                  string `json:"ship_name"`
+		FlightNumber              string `json:"flight_number"`
+		ShipDate                  string `json:"ship_date"`
+		DocumentType              string `json:"document_type"`
+		Seals                     bool   `json:"seals"`
 	} `json:"artifacts"`
 }
 
