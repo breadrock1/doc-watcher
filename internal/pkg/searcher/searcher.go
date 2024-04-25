@@ -18,13 +18,13 @@ const CreateBucketURL = "/bucket/new"
 const DeleteBucketURL = "/bucket/"
 
 type Service struct {
-	address string
+	Address string
 	timeout time.Duration
 }
 
 func New(address string, timeout time.Duration) *Service {
 	return &Service{
-		address: address,
+		Address: address,
 		timeout: timeout,
 	}
 }
@@ -37,7 +37,7 @@ func (ss *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.address + CreateDocumentURL
+	targetURL := ss.Address + CreateDocumentURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
 
 	mimeType := "application/json"
@@ -63,7 +63,7 @@ func (ss *Service) CreateBucket(bucketName string) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.address + CreateBucketURL
+	targetURL := ss.Address + CreateBucketURL
 	log.Printf("Creating bucket %s into elastic", bucketName)
 
 	mimeType := "application/json"
@@ -85,7 +85,7 @@ func (ss *Service) DeleteBucket(bucketName string) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.address + DeleteBucketURL + bucketName
+	targetURL := ss.Address + DeleteBucketURL + bucketName
 
 	req, err := http.NewRequest("DELETE", targetURL, reqBody)
 	if err != nil {

@@ -213,7 +213,7 @@ func (f *Service) MoveFileTo(filePath string, targetDir string) error {
 }
 
 func (f *Service) SetContentData(document *Document, data string) {
-	document.OcrMetadata.Text = ""
+	//document.OcrMetadata.Text = ""
 	document.Content = data
 }
 
@@ -235,6 +235,10 @@ func (f *Service) ComputeContentMd5Hash(document *Document) {
 		f.ComputeMd5Hash(document)
 	}
 	document.ContentMD5 = document.DocumentMD5
+}
+
+func (f *Service) ComputeMd5HashByData(document *Document, data []byte) {
+	document.DocumentMD5 = fmt.Sprintf("%x", md5.Sum(data))
 }
 
 func (f *Service) ComputeSsdeepHash(document *Document) {

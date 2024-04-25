@@ -3,6 +3,7 @@ package endpoints
 import (
 	watcher2 "doc-notifier/internal/pkg/watcher"
 	"encoding/json"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
@@ -94,7 +95,21 @@ func RemoveFile(c echo.Context) error {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
-	if err := os.RemoveAll(jsonForm.FilePath); err != nil {
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	documents := watcher.Reader.ParseCaughtFiles(jsonForm.FilePath)
+	res, err := os.ReadFile(jsonForm.FilePath)
+	if err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+	watcher.Reader.ComputeMd5HashByData(documents[0], res)
+
+	targetURL := fmt.Sprintf("%s/document/%s/%s", watcher.Searcher.Address, documents[0].BucketUUID, documents[0].DocumentMD5)
+	response, err := http.Get(targetURL)
+	if err != nil || response.StatusCode != 200 {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	if err = os.RemoveAll(jsonForm.FilePath); err != nil {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 

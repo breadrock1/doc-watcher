@@ -42,8 +42,8 @@ func (s *EchoServer) RunServer() {
 	s.server.POST("/file/download", endpoints.DownloadFile)
 	s.server.POST("/file/upload", endpoints.UploadFile)
 	s.server.GET("/file/upload", endpoints.UploadFileForm)
-	s.server.GET("/file/move", endpoints.MoveFile)
-	s.server.GET("/file/remove", endpoints.RemoveFile)
+	s.server.POST("/file/move", endpoints.MoveFile)
+	s.server.POST("/file/remove", endpoints.RemoveFile)
 
 	s.server.GET("/watcher/stop", endpoints.PauseWatchers)
 	s.server.GET("/watcher/run", endpoints.RunWatchers)
