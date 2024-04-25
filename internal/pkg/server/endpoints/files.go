@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"time"
 )
 
 func DownloadFile(c echo.Context) error {
@@ -39,7 +40,15 @@ func UploadFile(c echo.Context) error {
 		return err
 	}
 
-	return nil
+	time.Sleep(5 * time.Second)
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	for key, value := range watcher.Ocr.Ocr.GetProcessingJobs() {
+		if value.Document.DocumentName == fileHandle.Filename {
+			return c.JSON(200, returnStatusResponse(200, key))
+		}
+	}
+
+	return c.JSON(403, returnStatusResponse(403, "Failed while uploading"))
 }
 
 const UploadHTMLForm = `
@@ -52,7 +61,7 @@ const UploadHTMLForm = `
 <body>
 <h1>Upload single file</h1>
 
-<form action="/upload" method="post" enctype="multipart/form-data">
+<form action="/file/upload" method="post" enctype="multipart/form-data">
     Files: <input type="file" name="file_name"><br><br>
     <input type="submit" value="Submit">
 </form>
@@ -114,4 +123,20 @@ func RemoveFile(c echo.Context) error {
 	}
 
 	return c.JSON(200, returnStatusResponse(200, "Ok"))
+}
+
+type ParsingJobForm struct {
+	JobId string `json:"job_id"`
+}
+
+func GetUploadingStatus(c echo.Context) error {
+	jsonForm := &ParsingJobForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	jobRes := watcher.Ocr.Ocr.GetProcessingJob(jsonForm.JobId)
+	return c.JSON(200, jobRes)
 }

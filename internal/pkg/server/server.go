@@ -44,6 +44,7 @@ func (s *EchoServer) RunServer() {
 	s.server.GET("/file/upload", endpoints.UploadFileForm)
 	s.server.POST("/file/move", endpoints.MoveFile)
 	s.server.POST("/file/remove", endpoints.RemoveFile)
+	s.server.POST("/file/status", endpoints.GetUploadingStatus)
 
 	s.server.GET("/watcher/stop", endpoints.PauseWatchers)
 	s.server.GET("/watcher/run", endpoints.RunWatchers)

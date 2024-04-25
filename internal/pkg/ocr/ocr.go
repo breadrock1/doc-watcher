@@ -4,6 +4,7 @@ import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/ocr/dedoc"
 	"doc-notifier/internal/pkg/ocr/logoper"
+	"doc-notifier/internal/pkg/ocr/processing"
 	"doc-notifier/internal/pkg/ocr/raw"
 	"doc-notifier/internal/pkg/reader"
 )
@@ -15,6 +16,8 @@ type Service struct {
 type Recognizer interface {
 	RecognizeFile(document *reader.Document) (string, error)
 	RecognizeFileData(data []byte) (string, error)
+	GetProcessingJobs() map[string]*processing.ProcessJob
+	GetProcessingJob(jobId string) *processing.ProcessJob
 }
 
 func New(options *Options) *Service {
