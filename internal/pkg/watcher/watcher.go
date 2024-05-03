@@ -17,15 +17,17 @@ import (
 
 type NotifyWatcher struct {
 	stopCh        chan bool
+	AppendCh      chan string
+	ReturnCh      chan []*reader.Document
 	PauseWatchers bool
 
 	directories []string
-	watcher     *fsnotify.Watcher
+	Watcher     *fsnotify.Watcher
 
-	ocr       *ocr.Service
-	reader    *reader.Service
-	searcher  *searcher.Service
-	tokenizer *tokenizer.Service
+	Ocr       *ocr.Service
+	Reader    *reader.Service
+	Searcher  *searcher.Service
+	Tokenizer *tokenizer.Service
 }
 
 func New(options *Options) *NotifyWatcher {
@@ -55,104 +57,40 @@ func New(options *Options) *NotifyWatcher {
 
 	return &NotifyWatcher{
 		stopCh:        make(chan bool),
+		AppendCh:      make(chan string),
 		PauseWatchers: false,
 		directories:   options.WatchedDirectories,
-		ocr:           ocrService,
-		watcher:       notifyWatcher,
-		reader:        readerService,
-		searcher:      searcherService,
-		tokenizer:     tokenizerService,
+		Ocr:           ocrService,
+		Watcher:       notifyWatcher,
+		Reader:        readerService,
+		Searcher:      searcherService,
+		Tokenizer:     tokenizerService,
 	}
 }
 
-func (nw *NotifyWatcher) RunWatcher() {
-	defer func() { _ = nw.watcher.Close() }()
+func (nw *NotifyWatcher) RunWatchers() {
+	defer func() { _ = nw.Watcher.Close() }()
 	go nw.parseEventSlot()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-nw.stopCh
 }
 
-func (nw *NotifyWatcher) StopWatcher() {
-	dirs := nw.watcher.WatchList()
+func (nw *NotifyWatcher) TerminateWatchers() {
+	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
-func (nw *NotifyWatcher) WatchedDirsList() []string {
-	return nw.watcher.WatchList()
+func (nw *NotifyWatcher) GetWatchedDirectories() []string {
+	return nw.Watcher.WatchList()
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.watcher.Add)
+	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
 func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.watcher.Remove)
-}
-
-func (nw *NotifyWatcher) parseEventSlot() {
-	var (
-		mu      sync.Mutex
-		timers  = make(map[string]*time.Timer)
-		waitFor = 100 * time.Millisecond
-
-		testFunc = func(e fsnotify.Event) {
-			nw.switchEventCase(&e)
-
-			mu.Lock()
-			delete(timers, e.Name)
-			mu.Unlock()
-		}
-	)
-
-	for {
-		select {
-		case err, ok := <-nw.watcher.Errors:
-			if !ok {
-				return
-			}
-			log.Println("Caught error: ", err)
-
-		case event, ok := <-nw.watcher.Events:
-			if !ok {
-				return
-			}
-
-			if nw.PauseWatchers {
-				return
-			}
-
-			if !event.Has(fsnotify.Write) && !event.Has(fsnotify.Create) {
-				continue
-			}
-
-			mu.Lock()
-			t, ok := timers[event.Name]
-			mu.Unlock()
-
-			if !ok {
-				t = time.AfterFunc(math.MaxInt64, func() { testFunc(event) })
-				t.Stop()
-
-				mu.Lock()
-				timers[event.Name] = t
-				mu.Unlock()
-			}
-
-			t.Reset(waitFor)
-		}
-	}
-}
-
-func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
-	absFilePath, err := filepath.Abs(event.Name)
-	if err != nil {
-		log.Println("Failed while getting abs path of file: ", err)
-		return
-	}
-
-	triggeredFiles := nw.reader.ParseCaughtFiles(absFilePath)
-	nw.storeExtractedDocuments(triggeredFiles)
+	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
 func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
@@ -170,4 +108,78 @@ func consumeWatcherDirectories(directories []string, consumer func(name string) 
 	}
 
 	return nil
+}
+
+func (nw *NotifyWatcher) parseEventSlot() {
+	var (
+		mu      sync.Mutex
+		timers  = make(map[string]*time.Timer)
+		waitFor = 100 * time.Millisecond
+
+		processFileCallback = func(e fsnotify.Event) {
+			nw.runProcessingPipeline(&e)
+
+			mu.Lock()
+			delete(timers, e.Name)
+			mu.Unlock()
+		}
+	)
+
+	for {
+		select {
+		case docID := <-nw.AppendCh:
+			document := nw.Reader.GetAwaitDocument(docID)
+			if document == nil {
+				nw.ReturnCh <- nil
+			}
+			absFilePath, _ := filepath.Abs(document.DocumentPath)
+			parsedDoc := nw.Reader.ParseCaughtFiles(absFilePath)
+			nw.ReturnCh <- parsedDoc
+
+		case err, ok := <-nw.Watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Println("Caught error: ", err)
+
+		case event, ok := <-nw.Watcher.Events:
+			if !ok {
+				return
+			}
+
+			if nw.PauseWatchers {
+				return
+			}
+
+			if !event.Has(fsnotify.Write) && !event.Has(fsnotify.Create) {
+				continue
+			}
+
+			mu.Lock()
+			t, ok := timers[event.Name]
+			mu.Unlock()
+
+			if !ok {
+				t = time.AfterFunc(math.MaxInt64, func() { processFileCallback(event) })
+				t.Stop()
+
+				mu.Lock()
+				timers[event.Name] = t
+				mu.Unlock()
+			}
+
+			t.Reset(waitFor)
+		}
+	}
+}
+
+func (nw *NotifyWatcher) runProcessingPipeline(event *fsnotify.Event) {
+	absFilePath, err := filepath.Abs(event.Name)
+	if err != nil {
+		log.Println("Failed while getting abs path of file: ", err)
+		return
+	}
+
+	triggeredFiles := nw.Reader.ParseCaughtFiles(absFilePath)
+	nw.storeExtractedDocuments(triggeredFiles)
 }

@@ -12,13 +12,13 @@ import (
 const ServiceURL = "/document/new"
 
 type Service struct {
-	address string
+	Address string
 	timeout time.Duration
 }
 
 func New(address string, timeout time.Duration) *Service {
 	return &Service{
-		address: address,
+		Address: address,
 		timeout: timeout,
 	}
 }
@@ -31,7 +31,7 @@ func (ss *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.address + ServiceURL
+	targetURL := ss.Address + ServiceURL
 	log.Printf("Storing document %s to elastic", document.DocumentPath)
 
 	mimeType := "application/json"
