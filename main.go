@@ -45,8 +45,8 @@ func main() {
 		TokenizerTimeout:        serviceOptions.TokenizerTimeout,
 	})
 
-	go watcherService.RunWatcher()
-	defer watcherService.StopWatcher()
+	go watcherService.RunWatchers()
+	defer watcherService.TerminateWatchers()
 
 	serverOptions := options.ParseServerAddress(serviceOptions.WatcherServiceAddress)
 	httpServer := server.New(serverOptions, watcherService)
