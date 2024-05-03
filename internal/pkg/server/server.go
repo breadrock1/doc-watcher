@@ -6,6 +6,8 @@ import (
 	"doc-notifier/internal/pkg/watcher"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type EchoServer struct {
@@ -23,6 +25,9 @@ func New(options *Options, nw *watcher.NotifyWatcher) *EchoServer {
 
 func (s *EchoServer) RunServer() {
 	s.server = echo.New()
+
+	s.server.Use(middleware.Logger())
+	s.server.Use(middleware.CORS())
 
 	// Just store watcher service ptr to get functionality access.
 	s.server.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
