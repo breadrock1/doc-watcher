@@ -19,10 +19,11 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, _ []string) {
 		fromEnv, _ := cmd.Flags().GetBool("from-env")
+		disabledDotenv, _ := cmd.Flags().GetBool("without-dotenv")
 
 		var parseErr error
 		if fromEnv {
-			serviceOptions, parseErr = options.LoadFromEnv()
+			serviceOptions, parseErr = options.LoadFromEnv(disabledDotenv)
 		} else {
 			serviceOptions, parseErr = LoadFromCli(cmd)
 		}
@@ -64,6 +65,7 @@ func init() {
 	flags.BoolP("enable-file-log", "z", false, "Translate log output to file.")
 
 	flags.BoolP("from-env", "e", false, "Parse options from env.")
+	flags.BoolP("without-dotenv", "j", false, "Parse options from native env.")
 }
 
 func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
