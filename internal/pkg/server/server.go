@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	_ "doc-notifier/docs"
 	"doc-notifier/internal/pkg/server/endpoints"
 	"doc-notifier/internal/pkg/watcher"
 	"fmt"
@@ -37,18 +38,23 @@ func (s *EchoServer) RunServer() {
 		}
 	})
 
-	s.server.GET("/hello", endpoints.Hello)
+	s.server.GET("/hello/", endpoints.Hello)
 
-	s.server.POST("/attach", endpoints.AttachDirectories)
-	s.server.POST("/detach", endpoints.DetachDirectories)
-	s.server.GET("/watcher", endpoints.WatchedDirsList)
+	s.server.POST("/watcher/attach", endpoints.AttachDirectories)
+	s.server.POST("/watcher/detach", endpoints.DetachDirectories)
+	s.server.GET("/watcher/all", endpoints.WatchedDirsList)
+	s.server.GET("/watcher/pause", endpoints.PauseWatchers)
+	s.server.GET("/watcher/run", endpoints.RunWatchers)
 
-	s.server.POST("/download", endpoints.DownloadFile)
-	s.server.POST("/upload", endpoints.UploadFile)
-	s.server.GET("/upload", endpoints.UploadFileForm)
+	s.server.POST("/files/download", endpoints.DownloadFile)
+	s.server.POST("/files/upload", endpoints.UploadFiles)
+	s.server.GET("/files/upload", endpoints.UploadFileForm)
+	s.server.POST("/files/analyse", endpoints.AnalyseFiles)
+	s.server.POST("/files/move", endpoints.MoveFile)
+	s.server.POST("/files/remove", endpoints.RemoveFile)
+	s.server.GET("/files/unrecognized", endpoints.GetUnrecognized)
 
-	s.server.GET("/stop", endpoints.PauseWatchers)
-	s.server.GET("/run", endpoints.RunWatchers)
+	s.server.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
 	_ = s.server.Start(address)
