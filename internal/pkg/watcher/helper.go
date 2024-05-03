@@ -14,7 +14,7 @@ func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
 		document := document
 		go func() {
 			defer wg.Done()
-			_ = nw.processTriggeredFile(document)
+			_ = nw.ProcessTriggeredFile(document)
 			<-time.After(1 * time.Second)
 		}()
 	}
@@ -22,17 +22,17 @@ func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
 	wg.Wait()
 }
 
-func (nw *NotifyWatcher) processTriggeredFile(document *reader.Document) error {
+func (nw *NotifyWatcher) ProcessTriggeredFile(document *reader.Document) error {
 	contentData, recognizeErr := nw.Ocr.Ocr.RecognizeFile(document)
 	if recognizeErr == nil {
 		nw.Reader.SetContentData(document, contentData)
 		if nw.Tokenizer.TokenizerOptions.ChunkedFlag {
 			return nw.loadChunkedDocument(document)
 		}
+
 		return nw.loadFullDocument(document)
 	}
-	nw.Reader.MoveFileToUnrecognized(document)
-	return nil
+	return recognizeErr
 }
 
 func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {

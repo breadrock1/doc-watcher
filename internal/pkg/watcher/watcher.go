@@ -6,11 +6,9 @@ import (
 	"doc-notifier/internal/pkg/searcher"
 	"doc-notifier/internal/pkg/tokenizer"
 	"errors"
-	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"log"
 	"math"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -19,6 +17,8 @@ import (
 
 type NotifyWatcher struct {
 	stopCh        chan bool
+	AppendCh      chan string
+	ReturnCh      chan []*reader.Document
 	PauseWatchers bool
 
 	directories []string
@@ -57,6 +57,7 @@ func New(options *Options) *NotifyWatcher {
 
 	return &NotifyWatcher{
 		stopCh:        make(chan bool),
+		AppendCh:      make(chan string),
 		PauseWatchers: false,
 		directories:   options.WatchedDirectories,
 		Ocr:           ocrService,
@@ -67,58 +68,46 @@ func New(options *Options) *NotifyWatcher {
 	}
 }
 
-func (nw *NotifyWatcher) RunWatcher() {
+func (nw *NotifyWatcher) RunWatchers() {
 	defer func() { _ = nw.Watcher.Close() }()
 	go nw.parseEventSlot()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-nw.stopCh
 }
 
-func (nw *NotifyWatcher) StopWatcher() {
+func (nw *NotifyWatcher) TerminateWatchers() {
 	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
-func (nw *NotifyWatcher) WatchedDirsList() []string {
+func (nw *NotifyWatcher) GetWatchedDirectories() []string {
 	return nw.Watcher.WatchList()
-}
-
-func (nw *NotifyWatcher) UnrecognizedFiles() []*reader.Document {
-	return nw.Reader.ParseCaughtFiles("./indexer/unrecognized/")
-}
-
-func (nw *NotifyWatcher) AppendDirectory(directory string) error {
-	directory = "./indexer/" + directory
-	if err := os.Mkdir(directory, os.ModePerm); err != nil {
-		msg := fmt.Sprintf("Failed while creating directory: %s", err)
-		return errors.New(msg)
-	}
-
-	directories := []string{directory}
-	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
-func (nw *NotifyWatcher) RemoveDirectory(directory string) error {
-	directory = "./indexer/" + directory
-	if err := consumeWatcherDirectories([]string{directory}, nw.Watcher.Remove); err != nil {
-		log.Printf("Failed while detaching watched directory: %s", err)
+func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
+}
+
+func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
+	var collectedErrs []string
+	for _, watchDir := range directories {
+		if err := consumer(watchDir); err != nil {
+			collectedErrs = append(collectedErrs, err.Error())
+			continue
+		}
 	}
 
-	if err := os.RemoveAll(directory); err != nil {
-		msg := fmt.Sprintf("Failed while removing directory: %s", err)
+	if len(collectedErrs) > 0 {
+		msg := strings.Join(collectedErrs, "\n")
 		return errors.New(msg)
 	}
 
 	return nil
-}
-
-func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
 func (nw *NotifyWatcher) parseEventSlot() {
@@ -127,8 +116,8 @@ func (nw *NotifyWatcher) parseEventSlot() {
 		timers  = make(map[string]*time.Timer)
 		waitFor = 100 * time.Millisecond
 
-		testFunc = func(e fsnotify.Event) {
-			nw.switchEventCase(&e)
+		processFileCallback = func(e fsnotify.Event) {
+			nw.runProcessingPipeline(&e)
 
 			mu.Lock()
 			delete(timers, e.Name)
@@ -138,6 +127,15 @@ func (nw *NotifyWatcher) parseEventSlot() {
 
 	for {
 		select {
+		case docID := <-nw.AppendCh:
+			document := nw.Reader.GetAwaitDocument(docID)
+			if document == nil {
+				nw.ReturnCh <- nil
+			}
+			absFilePath, _ := filepath.Abs(document.DocumentPath)
+			parsedDoc := nw.Reader.ParseCaughtFiles(absFilePath)
+			nw.ReturnCh <- parsedDoc
+
 		case err, ok := <-nw.Watcher.Errors:
 			if !ok {
 				return
@@ -162,7 +160,7 @@ func (nw *NotifyWatcher) parseEventSlot() {
 			mu.Unlock()
 
 			if !ok {
-				t = time.AfterFunc(math.MaxInt64, func() { testFunc(event) })
+				t = time.AfterFunc(math.MaxInt64, func() { processFileCallback(event) })
 				t.Stop()
 
 				mu.Lock()
@@ -175,7 +173,7 @@ func (nw *NotifyWatcher) parseEventSlot() {
 	}
 }
 
-func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
+func (nw *NotifyWatcher) runProcessingPipeline(event *fsnotify.Event) {
 	absFilePath, err := filepath.Abs(event.Name)
 	if err != nil {
 		log.Println("Failed while getting abs path of file: ", err)
@@ -184,21 +182,4 @@ func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
 
 	triggeredFiles := nw.Reader.ParseCaughtFiles(absFilePath)
 	nw.storeExtractedDocuments(triggeredFiles)
-}
-
-func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
-	var collectedErrs []string
-	for _, watchDir := range directories {
-		if err := consumer(watchDir); err != nil {
-			collectedErrs = append(collectedErrs, err.Error())
-			continue
-		}
-	}
-
-	if len(collectedErrs) > 0 {
-		msg := strings.Join(collectedErrs, "\n")
-		return errors.New(msg)
-	}
-
-	return nil
 }
