@@ -2,6 +2,8 @@ package assistant
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/ocr/processing"
+	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"io"
@@ -30,7 +32,8 @@ type DocumentForm struct {
 	Context string `json:"text"`
 }
 
-func (ro *Service) RecognizeFile(filePath string) (string, error) {
+func (ro *Service) RecognizeFile(document *reader.Document) (string, error) {
+	filePath := document.DocumentPath
 	fileHandle, err := os.Open(filePath)
 	if err != nil {
 		log.Println("Failed while opening file: ", err)
@@ -105,4 +108,12 @@ func (ro *Service) RecognizeFileData(data []byte) (string, error) {
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
+}
+
+func (ro *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+	return make(map[string]*processing.ProcessJob)
+}
+
+func (ro *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+	return nil
 }

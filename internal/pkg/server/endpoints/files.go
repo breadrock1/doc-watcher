@@ -23,11 +23,6 @@ const UploadHTMLForm = `
     <title>Single file upload</title>
 </head>
 <body>
-<h1>Upload single file</h1>
-
-<form action="/upload" method="post" enctype="multipart/form-data">
-    Files: <input type="file" name="file_name"><br><br>
-    <input type="submit" value="Submit">
 	<h1>Upload single file</h1>
 	<form action="/files/upload" method="post" enctype="multipart/form-data">
         <input type="file" name="files" multiple>
