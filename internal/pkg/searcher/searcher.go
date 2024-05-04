@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const ServiceURL = "/document/new"
+const ServiceURL = "/documents/create"
 
 type Service struct {
 	Address string
@@ -32,7 +32,7 @@ func (ss *Service) StoreDocument(document *reader.Document) error {
 
 	reqBody := bytes.NewBuffer(jsonData)
 	targetURL := ss.Address + ServiceURL
-	log.Printf("Storing document %s to elastic", document.DocumentPath)
+	log.Printf("Storing document %s to elastic", document.FolderID)
 
 	mimeType := "application/json"
 	_, err = sender.SendRequest(reqBody, &targetURL, &mimeType, ss.timeout)
