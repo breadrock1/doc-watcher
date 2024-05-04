@@ -2,6 +2,7 @@ package dedoc
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/ocr/processing"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
@@ -109,4 +110,12 @@ func (do *Service) RecognizeFileData(data []byte) (string, error) {
 	_ = json.Unmarshal(respData, resTest)
 
 	return resTest.Context, nil
+}
+
+func (do *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+	return make(map[string]*processing.ProcessJob)
+}
+
+func (do *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+	return nil
 }

@@ -2,10 +2,13 @@ package server
 
 import (
 	"context"
+	_ "doc-notifier/docs"
 	"doc-notifier/internal/pkg/server/endpoints"
 	"doc-notifier/internal/pkg/watcher"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type EchoServer struct {
@@ -24,6 +27,9 @@ func New(options *Options, nw *watcher.NotifyWatcher) *EchoServer {
 func (s *EchoServer) RunServer() {
 	s.server = echo.New()
 
+	s.server.Use(middleware.Logger())
+	s.server.Use(middleware.CORS())
+
 	// Just store watcher service ptr to get functionality access.
 	s.server.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -34,17 +40,22 @@ func (s *EchoServer) RunServer() {
 
 	s.server.GET("/hello/", endpoints.Hello)
 
-	s.server.POST("/watcher/create", endpoints.CreateWatchDirectory)
-	s.server.DELETE("/watcher/remove", endpoints.RemoveWatchDirectory)
-	s.server.GET("/watcher/all", endpoints.GetWatchedDirectories)
-	s.server.GET("/watcher/unrecognized", endpoints.GetUnrecognizedFiles)
-
-	s.server.POST("/file/download", endpoints.DownloadFile)
-	s.server.POST("/file/upload", endpoints.UploadFile)
-	s.server.GET("/file/upload", endpoints.UploadFileForm)
-
-	s.server.GET("/watcher/stop", endpoints.PauseWatchers)
 	s.server.GET("/watcher/run", endpoints.RunWatchers)
+	s.server.GET("/watcher/all", endpoints.WatchedDirsList)
+	s.server.GET("/watcher/pause", endpoints.PauseWatchers)
+	s.server.POST("/watcher/attach", endpoints.AttachDirectories)
+	s.server.POST("/watcher/detach", endpoints.DetachDirectories)
+	s.server.POST("/watcher/upload", endpoints.UploadFilesToWatcher)
+
+	s.server.POST("/files/download", endpoints.DownloadFile)
+	s.server.POST("/files/upload", endpoints.UploadFiles)
+	s.server.GET("/files/upload", endpoints.UploadFileForm)
+	s.server.POST("/files/analyse", endpoints.AnalyseFiles)
+	s.server.POST("/files/move", endpoints.MoveFiles)
+	s.server.POST("/files/remove", endpoints.RemoveFiles)
+	s.server.GET("/files/unrecognized", endpoints.GetUnrecognized)
+
+	s.server.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	address := fmt.Sprintf("%s:%d", s.options.hostAddress, s.options.portNumber)
 	_ = s.server.Start(address)

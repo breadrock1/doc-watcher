@@ -2,6 +2,7 @@ package logoper
 
 import (
 	"bytes"
+	"doc-notifier/internal/pkg/ocr/processing"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
@@ -12,19 +13,27 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
 type Service struct {
-	address string
-	timeout time.Duration
+	mu             *sync.Mutex
+	Address        string
+	timeout        time.Duration
+	ProcessingJobs map[string]*processing.ProcessJob
 }
 
 func New(address string, timeout time.Duration) *Service {
-	return &Service{
-		address: address,
-		timeout: timeout,
+	service := &Service{
+		mu:             &sync.Mutex{},
+		Address:        address,
+		timeout:        timeout,
+		ProcessingJobs: make(map[string]*processing.ProcessJob),
 	}
+
+	time.AfterFunc(1*time.Hour, service.clearSuccessfulTasks)
+	return service
 }
 
 const RecognitionURL = "/api/v2/text/create_extraction"
@@ -73,7 +82,7 @@ func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
 		return "", err
 	}
 
-	targetURL := do.address + RecognitionURL
+	targetURL := do.Address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
 
 	mimeType := writer.FormDataContentType()
@@ -86,9 +95,23 @@ func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
 	var ocrJob = &OcrJob{}
 	_ = json.Unmarshal(respData, ocrJob)
 
+	jaba := &processing.ProcessJob{
+		JobId:    ocrJob.JobId,
+		Status:   false,
+		Document: document,
+	}
+
+	do.mu.Lock()
+	do.ProcessingJobs[ocrJob.JobId] = jaba
+	do.mu.Unlock()
+
 	waitCh := make(chan *reader.OcrResult)
 	go do.awaitOcrResult(ocrJob.JobId, waitCh)
 	result := <-waitCh
+
+	do.mu.Lock()
+	do.ProcessingJobs[ocrJob.JobId].Status = true
+	do.mu.Unlock()
 
 	document.OcrMetadata = result
 	return result.Text, nil
@@ -110,7 +133,7 @@ func (do *Service) RecognizeFileData(data []byte) (string, error) {
 		return "", err
 	}
 
-	targetURL := do.address + RecognitionURL
+	targetURL := do.Address + RecognitionURL
 	log.Printf("Sending file to recognize file data")
 
 	mimeType := writer.FormDataContentType()
@@ -131,7 +154,7 @@ func (do *Service) RecognizeFileData(data []byte) (string, error) {
 }
 
 func (do *Service) awaitOcrResult(jobId string, waitCh chan *reader.OcrResult) {
-	getURLAddress := do.address + GetResultURL + jobId
+	getURLAddress := do.Address + GetResultURL + jobId
 	for {
 		time.Sleep(5 * time.Second)
 		res, err := do.checkOcrJobStatus(getURLAddress, jobId)
@@ -180,4 +203,35 @@ func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*reader.Oc
 
 	_ = json.Unmarshal(respData, ocrResult)
 	return ocrResult, nil
+}
+
+func (do *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+	return do.ProcessingJobs
+}
+
+func (do *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+	do.mu.Lock()
+	value, ok := do.ProcessingJobs[jobId]
+	do.mu.Unlock()
+
+	if !ok {
+		return nil
+	}
+
+	return value
+}
+
+func (do *Service) clearSuccessfulTasks() {
+	var collectedJobs []string
+	for key, value := range do.ProcessingJobs {
+		if value.Status {
+			collectedJobs = append(collectedJobs, key)
+		}
+	}
+
+	do.mu.Lock()
+	for _, jobId := range collectedJobs {
+		delete(do.ProcessingJobs, jobId)
+	}
+	do.mu.Unlock()
 }
