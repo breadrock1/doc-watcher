@@ -1,0 +1,411 @@
+definitions:
+  endpoints.AnalyseFilesForm:
+    properties:
+      document_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  endpoints.BadRequestForm:
+    properties:
+      message:
+        example: Bad Request message
+        type: string
+      status:
+        example: 400
+        type: integer
+    type: object
+  endpoints.MoveFilesForm:
+    properties:
+      document_paths:
+        items:
+          type: string
+        type: array
+      target_directory:
+        type: string
+    type: object
+  endpoints.RemoveFilesError:
+    properties:
+      code:
+        example: 403
+        type: integer
+      file_paths:
+        example:
+        - '[]'
+        items:
+          type: string
+        type: array
+      message:
+        example: File not found
+        type: string
+    type: object
+  endpoints.RemoveFilesForm:
+    properties:
+      document_paths:
+        items:
+          type: string
+        type: array
+    type: object
+  endpoints.ResponseForm:
+    properties:
+      message:
+        example: Done
+        type: string
+      status:
+        example: 200
+        type: integer
+    type: object
+  endpoints.ServerErrorForm:
+    properties:
+      message:
+        example: Server Error message
+        type: string
+      status:
+        example: 503
+        type: integer
+    type: object
+  endpoints.UnrecognizedDocuments:
+    properties:
+      unrecognized:
+        items:
+          $ref: '#/definitions/reader.DocumentPreview'
+        type: array
+    type: object
+  endpoints.WatcherDirectoriesForm:
+    properties:
+      paths:
+        example:
+        - ./indexer
+        items:
+          type: string
+        type: array
+    type: object
+  reader.DocumentPreview:
+    properties:
+      created_at:
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      preview_properties:
+        items:
+          $ref: '#/definitions/reader.PreviewProperties'
+        type: array
+      quality_recognition:
+        type: integer
+    type: object
+  reader.PreviewProperties:
+    properties:
+      key:
+        type: string
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /files/analyse:
+    post:
+      consumes:
+      - application/json
+      description: Analyse uploaded files by ids
+      operationId: analyse
+      parameters:
+      - description: Document ids to analyse
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.AnalyseFilesForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Analyse uploaded files by ids
+      tags:
+      - files
+  /files/download:
+    post:
+      description: Download file from server
+      operationId: download
+      parameters:
+      - description: Path to file on server
+        in: formData
+        name: file_path
+        required: true
+        type: string
+      produces:
+      - multipart/form
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Download file from server
+      tags:
+      - files
+  /files/move:
+    post:
+      consumes:
+      - application/json
+      description: Moving files to target directory
+      operationId: moving
+      parameters:
+      - description: Document ids to move
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.MoveFilesForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Moving files to target directory
+      tags:
+      - files
+  /files/remove:
+    post:
+      consumes:
+      - application/json
+      description: Remove files from directory
+      operationId: remove
+      parameters:
+      - description: Document paths to remove
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.RemoveFilesForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.RemoveFilesError'
+      summary: Remove files from directory
+      tags:
+      - files
+  /files/unrecognized:
+    get:
+      description: Get unrecognized documents
+      operationId: unrecognized
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.UnrecognizedDocuments'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Get unrecognized documents
+      tags:
+      - files
+  /files/upload:
+    get:
+      description: Get upload file form
+      operationId: upload-form
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Get upload file form
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form
+      description: Upload file to server
+      operationId: upload
+      parameters:
+      - description: File entity
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Upload file to server
+      tags:
+      - files
+  /hello/:
+    get:
+      consumes:
+      - application/json
+      description: Check service is available
+      operationId: hello
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/endpoints.ServerErrorForm'
+      summary: Hello
+      tags:
+      - hello
+  /watcher/all:
+    get:
+      consumes:
+      - application/json
+      description: Get watcher dirs list
+      operationId: watched-dirs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Watched dirs
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Get watcher dirs list
+      tags:
+      - watcher
+  /watcher/attach:
+    post:
+      consumes:
+      - application/json
+      description: Attach new directory to watcher
+      operationId: attach
+      parameters:
+      - description: File entity
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.WatcherDirectoriesForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Attach new directory to watcher
+      tags:
+      - watcher
+  /watcher/pause:
+    get:
+      description: Pause all watchers
+      operationId: pause
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Pause all watchers
+      tags:
+      - watcher
+  /watcher/run:
+    get:
+      description: Run all watchers
+      operationId: run
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Run all watchers
+      tags:
+      - watcher
+  /watcher/upload:
+    post:
+      consumes:
+      - multipart/form
+      description: Upload files to watcher directory
+      operationId: upload-watcher
+      parameters:
+      - description: File entity
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Done
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+      summary: Upload files to watcher directory
+      tags:
+      - watcher
+swagger: "2.0"
