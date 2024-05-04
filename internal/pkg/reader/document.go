@@ -30,8 +30,8 @@ var (
 )
 
 type Document struct {
-	BucketUUID          string     `json:"bucket_uuid"`
-	BucketPath          string     `json:"bucket_path"`
+	FolderID            string     `json:"folder_id"`
+	FolderPath          string     `json:"folder_path"`
 	ContentUUID         string     `json:"content_uuid"`
 	ContentMD5          string     `json:"content_md5"`
 	Content             string     `json:"content"`
@@ -89,7 +89,6 @@ type Artifacts struct {
 
 func ParseFile(filePath string) (*Document, error) {
 	absFilePath, _ := filepath.Abs(filePath)
-	bucketName2 := ParseBucketName(absFilePath)
 	fileInfo, err := os.Stat(absFilePath)
 	if err != nil {
 		log.Println("Failed while getting stat of file: ", err)
@@ -107,9 +106,11 @@ func ParseFile(filePath string) (*Document, error) {
 	data, _ := os.ReadFile(absFilePath)
 	documentID := fmt.Sprintf("%x", md5.Sum(data))
 
+	bucketPath = ParseBucketName(absFilePath)
+
 	document := Document{}
-	document.BucketPath = bucketPath
-	document.BucketUUID = bucketName2
+	document.FolderID = bucketName
+	document.FolderPath = bucketPath
 	document.DocumentMD5 = documentID
 	document.DocumentPath = absFilePath
 	document.DocumentName = fileInfo.Name()
