@@ -2,8 +2,6 @@ package assistant
 
 import (
 	"bytes"
-	"doc-notifier/internal/pkg/ocr/processing"
-	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
 	"io"
