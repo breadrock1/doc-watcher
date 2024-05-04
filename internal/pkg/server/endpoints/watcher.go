@@ -1,9 +1,14 @@
 package endpoints
 
 import (
+	"doc-notifier/internal/pkg/reader"
 	watcher2 "doc-notifier/internal/pkg/watcher"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
+	"io"
+	"mime/multipart"
+	"os"
+	"path"
 )
 
 // WatcherDirectoriesForm example
@@ -118,4 +123,59 @@ func RunWatchers(c echo.Context) error {
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	watcher.PauseWatchers = false
 	return c.JSON(200, returnStatusResponse(200, "Done"))
+}
+
+// UploadFilesToWatcher
+// @Summary Upload files to watcher directory
+// @Description Upload files to watcher directory
+// @ID upload-watcher
+// @Tags watcher
+// @Accept  multipart/form
+// @Produce  json
+// @Param files formData file true "File entity"
+// @Success 200 {object} ResponseForm "Done"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Router /watcher/upload [post]
+func UploadFilesToWatcher(c echo.Context) error {
+	var uploadErr error
+	var multipartForm *multipart.Form
+	if multipartForm, uploadErr = c.MultipartForm(); uploadErr != nil {
+		return uploadErr
+	}
+
+	var dstStream *os.File
+	var srcStream multipart.File
+	var uploadFiles []*reader.DocumentPreview
+
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+
+	for _, fileForm := range multipartForm.File["files"] {
+		if srcStream, uploadErr = fileForm.Open(); uploadErr != nil {
+			_ = srcStream.Close()
+			return uploadErr
+		}
+
+		filePath := path.Join("./indexer/unrecognized/", fileForm.Filename)
+		if dstStream, uploadErr = os.Create(filePath); uploadErr != nil {
+			_ = srcStream.Close()
+			_ = dstStream.Close()
+			return uploadErr
+		}
+
+		if _, uploadErr = io.Copy(dstStream, srcStream); uploadErr != nil {
+			_ = srcStream.Close()
+			_ = dstStream.Close()
+			return uploadErr
+		}
+
+		_ = srcStream.Close()
+		_ = dstStream.Close()
+
+		docs := watcher.Reader.ParseCaughtFiles(filePath)
+		prevDoc := reader.From(docs[0])
+		uploadFiles = append(uploadFiles, prevDoc)
+		watcher.Reader.AddAwaitDocument(docs[0])
+	}
+
+	return c.JSON(200, uploadFiles)
 }
