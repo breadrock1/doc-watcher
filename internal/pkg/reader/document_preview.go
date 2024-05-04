@@ -19,17 +19,20 @@ type PreviewProperties struct {
 }
 
 func From(document *Document) *DocumentPreview {
+	var location string
+	var previewProperties []*PreviewProperties
+	if document.OcrMetadata != nil {
+		location = document.OcrMetadata.DocType
+		previewProperties = document.GetGroupedProperties()
+	}
+
 	return &DocumentPreview{
 		DocumentID:        document.DocumentMD5,
 		DocumentName:      document.DocumentName,
 		CreatedAt:         document.DocumentCreated,
-		QualityOCR:        0,
+		QualityOCR:        -1,
 		FileSize:          document.DocumentSize,
-		Location:          document.DocumentPath,
-		PreviewProperties: make([]*PreviewProperties, 0),
+		Location:          location,
+		PreviewProperties: previewProperties,
 	}
-}
-
-func (dp *DocumentPreview) SetQuality(quality int) {
-	dp.QualityOCR = quality
 }

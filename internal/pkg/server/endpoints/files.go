@@ -4,7 +4,6 @@ import (
 	"doc-notifier/internal/pkg/reader"
 	watcher2 "doc-notifier/internal/pkg/watcher"
 	"encoding/json"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strings"
 )
 
 const UploadHTMLForm = `
@@ -123,137 +121,33 @@ func AnalyseFiles(c echo.Context) error {
 		return c.JSON(403, returnStatusResponse(403, err.Error()))
 	}
 
-	var processedDocuments []*reader.DocumentPreview
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	processedDocuments := make([]*reader.DocumentPreview, 0)
 	for _, documentID := range jsonForm.DocumentIDs {
+		// 1. Check does document id stored into recognized documents?!
+		// 2.1. YES?! Stored this document to processedDocuments array
+		// 2.2. NO?!  Get document by id from unrecognized documents and send to channel
+		// 3. Return processedDocuments as Response
 
-		document := watcher.Reader.GetAwaitDocument(documentID)
-		if document == nil {
+		if watcher.IsRecognizedDocument(documentID) {
+			recognizedDoc := watcher.PopRecognizedDocument(documentID)
+			recPrevDoc := reader.From(recognizedDoc)
+			processedDocuments = append(processedDocuments, recPrevDoc)
 			continue
 		}
 
-		oldLocation := document.DocumentPath
-		prevDocument := reader.From(document)
-		if err := watcher.ProcessTriggeredFile(document); err == nil {
-			prevDocument.SetQuality(reader.MaxQualityValue)
-		} else {
-			prevDocument.SetQuality(1)
-		}
-
-		if prevDocument.QualityOCR > 1 {
-			_ = watcher.Reader.MoveFileTo(oldLocation, prevDocument.Location)
-		}
-
-		watcher.Reader.PopDoneDocument(prevDocument.DocumentID)
-		processedDocuments = append(processedDocuments, prevDocument)
-	}
-
-	return c.JSON(200, processedDocuments)
-}
-
-type MoveFileForm struct {
-	TargetDirectory string   `json:"target_directory"`
-	DocumentPaths   []string `json:"document_paths"`
-}
-
-// MoveFile
-// @Summary Moving files to target directory
-// @Description Moving files to target directory
-// @ID moving
-// @Tags files
-// @Accept  json
-// @Produce  json
-// @Param jsonQuery body MoveFileForm true "Document ids to move"
-// @Success 200 {object} ResponseForm "Done"
-// @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/move [post]
-func MoveFile(c echo.Context) error {
-	jsonForm := &MoveFileForm{}
-	decoder := json.NewDecoder(c.Request().Body)
-	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-
-	var collectedErrors []string
-	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	for _, documentPath := range jsonForm.DocumentPaths {
-		if err := watcher.Reader.MoveFileTo(documentPath, jsonForm.TargetDirectory); err != nil {
-			log.Println(err)
-			collectedErrors = append(collectedErrors, documentPath)
+		if watcher.Reader.IsUnrecognizedDocument(documentID) {
+			unrecognizedDoc := watcher.Reader.PopUnrecognizedDocument(documentID)
+			watcher.AppendCh <- unrecognizedDoc
 			continue
 		}
 	}
 
-	if len(collectedErrors) > 0 {
-		files := strings.Join(collectedErrors, ", ")
-		msg := fmt.Sprintf("Failed while moving files: %s", files)
-		return c.JSON(403, returnStatusResponse(403, msg))
+	if len(processedDocuments) > 0 {
+		return c.JSON(200, processedDocuments)
 	}
 
-	return c.JSON(200, returnStatusResponse(200, "Ok"))
-}
-
-type RemoveFileForm struct {
-	FilePath string `json:"file_path"`
-}
-
-func RemoveFile(c echo.Context) error {
-	jsonForm := &RemoveFileForm{}
-	decoder := json.NewDecoder(c.Request().Body)
-	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-
-	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	documents := watcher.Reader.ParseCaughtFiles(jsonForm.FilePath)
-	res, err := os.ReadFile(jsonForm.FilePath)
-	if err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-	watcher.Reader.ComputeMd5HashByData(documents[0], res)
-
-	targetURL := fmt.Sprintf("%s/document/%s/%s", watcher.Searcher.Address, documents[0].BucketUUID, documents[0].DocumentMD5)
-	response, err := http.Get(targetURL)
-	if err != nil || response.StatusCode != 200 {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-
-	if err = os.RemoveAll(jsonForm.FilePath); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-
-	return c.JSON(200, returnStatusResponse(200, "Ok"))
-}
-
-type ParsingJobForm struct {
-	JobId string `json:"job_id"`
-}
-
-func GetUploadingStatus(c echo.Context) error {
-	jsonForm := &ParsingJobForm{}
-	decoder := json.NewDecoder(c.Request().Body)
-	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
-	}
-
-	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	jobRes := watcher.Ocr.Ocr.GetProcessingJob(jsonForm.JobId)
-	return c.JSON(200, jobRes)
-}
-
-// DownloadFile
-// @Summary Download file from server
-// @Description Download file from server
-// @ID download
-// @Tags files
-// @Produce  multipart/form
-// @Param file_path formData string true "Path to file on server"
-// @Success 200 {object} ResponseForm "Done"
-// @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/download [post]
-func DownloadFile(c echo.Context) error {
-	filePath := c.FormValue("file_path")
-	return c.File(filePath)
+	return c.JSON(102, processedDocuments)
 }
 
 type UnrecognizedDocuments struct {
@@ -276,5 +170,111 @@ func GetUnrecognized(c echo.Context) error {
 		collectedPreviews = append(collectedPreviews, reader.From(document))
 	}
 
-	return c.JSON(200, UnrecognizedDocuments{Unrecognized: collectedPreviews})
+	return c.JSON(200, collectedPreviews)
+}
+
+type MoveFilesForm struct {
+	TargetDirectory string   `json:"target_directory"`
+	DocumentPaths   []string `json:"document_paths"`
+}
+
+type RemoveFilesForm struct {
+	DocumentPaths []string `json:"document_paths"`
+}
+
+type RemoveFilesError struct {
+	Code      int      `json:"code" example:"403"`
+	Message   string   `json:"message" example:"File not found"`
+	FilePaths []string `json:"file_paths" example:"[]"`
+}
+
+// MoveFiles
+// @Summary Moving files to target directory
+// @Description Moving files to target directory
+// @ID moving
+// @Tags files
+// @Accept  json
+// @Produce  json
+// @Param jsonQuery body MoveFilesForm true "Document ids to move"
+// @Success 200 {object} ResponseForm "Done"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Router /files/move [post]
+func MoveFiles(c echo.Context) error {
+	jsonForm := &MoveFilesForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	var collectedErrors []string
+	targetDir := jsonForm.TargetDirectory
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
+	for _, documentPath := range jsonForm.DocumentPaths {
+		if err := watcher.Reader.MoveFileTo(documentPath, targetDir); err != nil {
+			log.Println(err)
+			collectedErrors = append(collectedErrors, documentPath)
+			continue
+		}
+	}
+
+	if len(collectedErrors) > 0 {
+		return c.JSON(206, RemoveFilesError{
+			Code:      206,
+			Message:   "These files hasn't been moved",
+			FilePaths: collectedErrors,
+		})
+	}
+
+	return c.JSON(200, returnStatusResponse(200, "Ok"))
+}
+
+// RemoveFiles
+// @Summary Remove files from directory
+// @Description Remove files from directory
+// @ID remove
+// @Tags files
+// @Accept  json
+// @Produce  json
+// @Param jsonQuery body RemoveFilesForm true "Document paths to remove"
+// @Success 200 {object} ResponseForm "Done"
+// @Failure	400 {object} RemoveFilesError "Bad Request message"
+// @Router /files/remove [post]
+func RemoveFiles(c echo.Context) error {
+	jsonForm := &RemoveFilesForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		return c.JSON(403, returnStatusResponse(403, err.Error()))
+	}
+
+	var collectedErrors []string
+	for _, documentPath := range jsonForm.DocumentPaths {
+		if err := os.RemoveAll(documentPath); err != nil {
+			collectedErrors = append(collectedErrors, documentPath)
+		}
+	}
+
+	if len(collectedErrors) > 0 {
+		return c.JSON(206, RemoveFilesError{
+			Code:      206,
+			Message:   "These files hasn't been removed",
+			FilePaths: collectedErrors,
+		})
+	}
+
+	return c.JSON(200, returnStatusResponse(200, "Ok"))
+}
+
+// DownloadFile
+// @Summary Download file from server
+// @Description Download file from server
+// @ID download
+// @Tags files
+// @Produce  multipart/form
+// @Param file_path formData string true "Path to file on server"
+// @Success 200 {object} ResponseForm "Done"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Router /files/download [post]
+func DownloadFile(c echo.Context) error {
+	filePath := c.FormValue("file_path")
+	return c.File(filePath)
 }
