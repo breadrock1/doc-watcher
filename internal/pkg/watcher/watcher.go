@@ -9,6 +9,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"log"
 	"math"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,9 +17,12 @@ import (
 )
 
 type NotifyWatcher struct {
-	stopCh        chan bool
-	AppendCh      chan string
-	ReturnCh      chan []*reader.Document
+	mu                  *sync.RWMutex
+	stopCh              chan bool
+	AppendCh            chan *reader.Document
+	ReturnCh            chan []*reader.Document
+	RecognizedDocuments map[string]*reader.Document
+
 	PauseWatchers bool
 
 	directories []string
@@ -56,21 +60,25 @@ func New(options *Options) *NotifyWatcher {
 	}
 
 	return &NotifyWatcher{
-		stopCh:        make(chan bool),
-		AppendCh:      make(chan string),
-		PauseWatchers: false,
-		directories:   options.WatchedDirectories,
-		Ocr:           ocrService,
-		Watcher:       notifyWatcher,
-		Reader:        readerService,
-		Searcher:      searcherService,
-		Tokenizer:     tokenizerService,
+		mu:                  &sync.RWMutex{},
+		stopCh:              make(chan bool),
+		AppendCh:            make(chan *reader.Document),
+		ReturnCh:            make(chan []*reader.Document),
+		RecognizedDocuments: make(map[string]*reader.Document),
+		PauseWatchers:       false,
+		directories:         options.WatchedDirectories,
+		Ocr:                 ocrService,
+		Watcher:             notifyWatcher,
+		Reader:              readerService,
+		Searcher:            searcherService,
+		Tokenizer:           tokenizerService,
 	}
 }
 
 func (nw *NotifyWatcher) RunWatchers() {
 	defer func() { _ = nw.Watcher.Close() }()
 	go nw.parseEventSlot()
+	go nw.runDocumentsProcessing()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-nw.stopCh
 }
@@ -127,15 +135,6 @@ func (nw *NotifyWatcher) parseEventSlot() {
 
 	for {
 		select {
-		case docID := <-nw.AppendCh:
-			document := nw.Reader.GetAwaitDocument(docID)
-			if document == nil {
-				nw.ReturnCh <- nil
-			}
-			absFilePath, _ := filepath.Abs(document.DocumentPath)
-			parsedDoc := nw.Reader.ParseCaughtFiles(absFilePath)
-			nw.ReturnCh <- parsedDoc
-
 		case err, ok := <-nw.Watcher.Errors:
 			if !ok {
 				return
@@ -182,4 +181,55 @@ func (nw *NotifyWatcher) runProcessingPipeline(event *fsnotify.Event) {
 
 	triggeredFiles := nw.Reader.ParseCaughtFiles(absFilePath)
 	nw.storeExtractedDocuments(triggeredFiles)
+}
+
+func (nw *NotifyWatcher) runDocumentsProcessing() {
+	for {
+		select {
+		case newDocument := <-nw.AppendCh:
+			contentData, recognizeErr := nw.Ocr.Ocr.RecognizeFile(newDocument)
+			if recognizeErr == nil {
+				newDocument.SetQuality(reader.MaxQualityValue)
+				nw.Reader.SetContentData(newDocument, contentData)
+				nw.Reader.ComputeMd5Hash(newDocument)
+				nw.Reader.ComputeSsdeepHash(newDocument)
+				nw.Reader.ComputeUUID(newDocument)
+				nw.Reader.ComputeContentMd5Hash(newDocument)
+				nw.Reader.SetContentVector(newDocument, []float64{})
+
+				oldLocation := newDocument.DocumentPath
+				newLocation := newDocument.OcrMetadata.DocType
+				targetPath := path.Join("./indexer/", newLocation)
+				_ = nw.Reader.MoveFileTo(oldLocation, targetPath)
+				newDocument.DocumentPath = targetPath
+
+				nw.AppendRecognizedDocument(newDocument)
+				_ = nw.Searcher.StoreDocument(newDocument)
+			} else {
+				newDocument.SetQuality(1)
+			}
+		}
+	}
+}
+
+func (nw *NotifyWatcher) IsRecognizedDocument(documentID string) bool {
+	nw.mu.RLock()
+	_, ok := nw.RecognizedDocuments[documentID]
+	nw.mu.RUnlock()
+	return ok
+}
+
+func (nw *NotifyWatcher) PopRecognizedDocument(documentID string) *reader.Document {
+	var document *reader.Document
+	nw.mu.Lock()
+	document, _ = nw.RecognizedDocuments[documentID]
+	delete(nw.RecognizedDocuments, documentID)
+	nw.mu.Unlock()
+	return document
+}
+
+func (nw *NotifyWatcher) AppendRecognizedDocument(document *reader.Document) {
+	nw.mu.Lock()
+	nw.RecognizedDocuments[document.DocumentMD5] = document
+	nw.mu.Unlock()
 }
