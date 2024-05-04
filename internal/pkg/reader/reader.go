@@ -20,20 +20,20 @@ func (s *Service) AddAwaitDocument(document *Document) {
 	s.mu.Unlock()
 }
 
-func (s *Service) PopDoneDocument(documentID string) {
+func (s *Service) PopUnrecognizedDocument(documentID string) *Document {
+	var document *Document
 	s.mu.Lock()
+	document, _ = s.AwaitingDocs[documentID]
 	delete(s.AwaitingDocs, documentID)
 	s.mu.Unlock()
+	return document
 }
 
-func (s *Service) GetAwaitDocument(documentID string) *Document {
-	var awaitDoc *Document
+func (s *Service) IsUnrecognizedDocument(documentID string) bool {
 	s.mu.RLock()
-	if document, ok := s.AwaitingDocs[documentID]; ok {
-		awaitDoc = document
-	}
+	_, ok := s.AwaitingDocs[documentID]
 	s.mu.RUnlock()
-	return awaitDoc
+	return ok
 }
 
 func (s *Service) GetAwaitDocuments() []*Document {

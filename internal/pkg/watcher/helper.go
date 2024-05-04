@@ -23,16 +23,18 @@ func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
 }
 
 func (nw *NotifyWatcher) ProcessTriggeredFile(document *reader.Document) error {
+	document.SetQuality(0)
 	contentData, recognizeErr := nw.Ocr.Ocr.RecognizeFile(document)
-	if recognizeErr == nil {
-		nw.Reader.SetContentData(document, contentData)
-		if nw.Tokenizer.TokenizerOptions.ChunkedFlag {
-			return nw.loadChunkedDocument(document)
-		}
-
-		return nw.loadFullDocument(document)
+	if recognizeErr != nil {
+		return recognizeErr
 	}
-	return recognizeErr
+
+	nw.Reader.SetContentData(document, contentData)
+	if nw.Tokenizer.TokenizerOptions.ChunkedFlag {
+		return nw.loadChunkedDocument(document)
+	}
+
+	return nw.loadFullDocument(document)
 }
 
 func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
