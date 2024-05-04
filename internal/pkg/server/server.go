@@ -40,18 +40,19 @@ func (s *EchoServer) RunServer() {
 
 	s.server.GET("/hello/", endpoints.Hello)
 
-	s.server.POST("/watcher/attach", endpoints.AttachDirectories)
-	s.server.POST("/watcher/detach", endpoints.DetachDirectories)
+	s.server.GET("/watcher/run", endpoints.RunWatchers)
 	s.server.GET("/watcher/all", endpoints.WatchedDirsList)
 	s.server.GET("/watcher/pause", endpoints.PauseWatchers)
-	s.server.GET("/watcher/run", endpoints.RunWatchers)
+	s.server.POST("/watcher/attach", endpoints.AttachDirectories)
+	s.server.POST("/watcher/detach", endpoints.DetachDirectories)
+	s.server.POST("/watcher/upload", endpoints.UploadFilesToWatcher)
 
 	s.server.POST("/files/download", endpoints.DownloadFile)
 	s.server.POST("/files/upload", endpoints.UploadFiles)
 	s.server.GET("/files/upload", endpoints.UploadFileForm)
 	s.server.POST("/files/analyse", endpoints.AnalyseFiles)
-	s.server.POST("/files/move", endpoints.MoveFile)
-	s.server.POST("/files/remove", endpoints.RemoveFile)
+	s.server.POST("/files/move", endpoints.MoveFiles)
+	s.server.POST("/files/remove", endpoints.RemoveFiles)
 	s.server.GET("/files/unrecognized", endpoints.GetUnrecognized)
 
 	s.server.GET("/swagger/*", echoSwagger.WrapHandler)
