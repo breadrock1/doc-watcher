@@ -3,7 +3,6 @@ package mocked
 import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/searcher"
 	"doc-notifier/internal/pkg/tokenizer"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
@@ -21,7 +20,7 @@ func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
 	e.POST(tokenizer.ServiceURL, ComputeTokens)
-	e.POST(searcher.CreateDocumentURL, StoreDocument)
+	e.POST("/document/new", StoreDocument)
 
 	return e
 }

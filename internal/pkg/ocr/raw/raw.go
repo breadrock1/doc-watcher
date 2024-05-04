@@ -15,8 +15,7 @@ func New() *Service {
 }
 
 func (re *Service) RecognizeFile(document *reader.Document) (string, error) {
-	filePath := document.DocumentPath
-	bytesData, err := os.ReadFile(filePath)
+	bytesData, err := os.ReadFile(document.DocumentPath)
 	if err != nil {
 		log.Println("Failed while reading file: ", err)
 		return "", err

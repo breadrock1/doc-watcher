@@ -6,11 +6,10 @@ import (
 	"doc-notifier/internal/pkg/searcher"
 	"doc-notifier/internal/pkg/tokenizer"
 	"errors"
-	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"log"
 	"math"
-	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -18,7 +17,12 @@ import (
 )
 
 type NotifyWatcher struct {
-	stopCh        chan bool
+	mu                  *sync.RWMutex
+	stopCh              chan bool
+	AppendCh            chan *reader.Document
+	ReturnCh            chan []*reader.Document
+	RecognizedDocuments map[string]*reader.Document
+
 	PauseWatchers bool
 
 	directories []string
@@ -56,69 +60,62 @@ func New(options *Options) *NotifyWatcher {
 	}
 
 	return &NotifyWatcher{
-		stopCh:        make(chan bool),
-		PauseWatchers: false,
-		directories:   options.WatchedDirectories,
-		Ocr:           ocrService,
-		Watcher:       notifyWatcher,
-		Reader:        readerService,
-		Searcher:      searcherService,
-		Tokenizer:     tokenizerService,
+		mu:                  &sync.RWMutex{},
+		stopCh:              make(chan bool),
+		AppendCh:            make(chan *reader.Document),
+		ReturnCh:            make(chan []*reader.Document),
+		RecognizedDocuments: make(map[string]*reader.Document),
+		PauseWatchers:       false,
+		directories:         options.WatchedDirectories,
+		Ocr:                 ocrService,
+		Watcher:             notifyWatcher,
+		Reader:              readerService,
+		Searcher:            searcherService,
+		Tokenizer:           tokenizerService,
 	}
 }
 
-func (nw *NotifyWatcher) RunWatcher() {
+func (nw *NotifyWatcher) RunWatchers() {
 	defer func() { _ = nw.Watcher.Close() }()
 	go nw.parseEventSlot()
+	go nw.runDocumentsProcessing()
 	go func() { _ = nw.AppendDirectories(nw.directories) }()
 	<-nw.stopCh
 }
 
-func (nw *NotifyWatcher) StopWatcher() {
+func (nw *NotifyWatcher) TerminateWatchers() {
 	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
-func (nw *NotifyWatcher) WatchedDirsList() []string {
+func (nw *NotifyWatcher) GetWatchedDirectories() []string {
 	return nw.Watcher.WatchList()
-}
-
-func (nw *NotifyWatcher) UnrecognizedFiles() []*reader.Document {
-	return nw.Reader.ParseCaughtFiles("./indexer/unrecognized/")
-}
-
-func (nw *NotifyWatcher) AppendDirectory(directory string) error {
-	directory = "./indexer/" + directory
-	if err := os.Mkdir(directory, os.ModePerm); err != nil {
-		msg := fmt.Sprintf("Failed while creating directory: %s", err)
-		return errors.New(msg)
-	}
-
-	directories := []string{directory}
-	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
-func (nw *NotifyWatcher) RemoveDirectory(directory string) error {
-	directory = "./indexer/" + directory
-	if err := consumeWatcherDirectories([]string{directory}, nw.Watcher.Remove); err != nil {
-		log.Printf("Failed while detaching watched directory: %s", err)
+func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
+}
+
+func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
+	var collectedErrs []string
+	for _, watchDir := range directories {
+		if err := consumer(watchDir); err != nil {
+			collectedErrs = append(collectedErrs, err.Error())
+			continue
+		}
 	}
 
-	if err := os.RemoveAll(directory); err != nil {
-		msg := fmt.Sprintf("Failed while removing directory: %s", err)
+	if len(collectedErrs) > 0 {
+		msg := strings.Join(collectedErrs, "\n")
 		return errors.New(msg)
 	}
 
 	return nil
-}
-
-func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
 func (nw *NotifyWatcher) parseEventSlot() {
@@ -127,8 +124,8 @@ func (nw *NotifyWatcher) parseEventSlot() {
 		timers  = make(map[string]*time.Timer)
 		waitFor = 100 * time.Millisecond
 
-		testFunc = func(e fsnotify.Event) {
-			nw.switchEventCase(&e)
+		processFileCallback = func(e fsnotify.Event) {
+			nw.runProcessingPipeline(&e)
 
 			mu.Lock()
 			delete(timers, e.Name)
@@ -162,7 +159,7 @@ func (nw *NotifyWatcher) parseEventSlot() {
 			mu.Unlock()
 
 			if !ok {
-				t = time.AfterFunc(math.MaxInt64, func() { testFunc(event) })
+				t = time.AfterFunc(math.MaxInt64, func() { processFileCallback(event) })
 				t.Stop()
 
 				mu.Lock()
@@ -175,7 +172,7 @@ func (nw *NotifyWatcher) parseEventSlot() {
 	}
 }
 
-func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
+func (nw *NotifyWatcher) runProcessingPipeline(event *fsnotify.Event) {
 	absFilePath, err := filepath.Abs(event.Name)
 	if err != nil {
 		log.Println("Failed while getting abs path of file: ", err)
@@ -186,19 +183,53 @@ func (nw *NotifyWatcher) switchEventCase(event *fsnotify.Event) {
 	nw.storeExtractedDocuments(triggeredFiles)
 }
 
-func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
-	var collectedErrs []string
-	for _, watchDir := range directories {
-		if err := consumer(watchDir); err != nil {
-			collectedErrs = append(collectedErrs, err.Error())
-			continue
+func (nw *NotifyWatcher) runDocumentsProcessing() {
+	for {
+		select {
+		case newDocument := <-nw.AppendCh:
+			contentData, recognizeErr := nw.Ocr.Ocr.RecognizeFile(newDocument)
+			if recognizeErr == nil {
+				newDocument.SetQuality(reader.MaxQualityValue)
+				nw.Reader.SetContentData(newDocument, contentData)
+				nw.Reader.ComputeMd5Hash(newDocument)
+				nw.Reader.ComputeSsdeepHash(newDocument)
+				nw.Reader.ComputeUUID(newDocument)
+				nw.Reader.ComputeContentMd5Hash(newDocument)
+				nw.Reader.SetContentVector(newDocument, []float64{})
+
+				oldLocation := newDocument.DocumentPath
+				newLocation := newDocument.OcrMetadata.DocType
+				targetPath := path.Join("./indexer/", newLocation)
+				_ = nw.Reader.MoveFileTo(oldLocation, targetPath)
+				newDocument.DocumentPath = targetPath
+
+				nw.AppendRecognizedDocument(newDocument)
+				_ = nw.Searcher.StoreDocument(newDocument)
+			} else {
+				newDocument.SetQuality(1)
+			}
 		}
 	}
+}
 
-	if len(collectedErrs) > 0 {
-		msg := strings.Join(collectedErrs, "\n")
-		return errors.New(msg)
-	}
+func (nw *NotifyWatcher) IsRecognizedDocument(documentID string) bool {
+	nw.mu.RLock()
+	_, ok := nw.RecognizedDocuments[documentID]
+	nw.mu.RUnlock()
+	return ok
+}
 
-	return nil
+func (nw *NotifyWatcher) PopRecognizedDocument(documentID string) *reader.Document {
+	var document *reader.Document
+	nw.mu.Lock()
+	document, _ = nw.RecognizedDocuments[documentID]
+	delete(nw.RecognizedDocuments, documentID)
+	nw.mu.Unlock()
+	return document
+}
+
+func (nw *NotifyWatcher) AppendRecognizedDocument(document *reader.Document) {
+	nw.mu.Lock()
+	nw.RecognizedDocuments[document.DocumentMD5] = document
+	nw.mu.Unlock()
 }
