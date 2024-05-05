@@ -6,13 +6,14 @@ import (
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/sender"
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"mime/multipart"
 	"os"
-	"path/filepath"
 	"time"
 )
+
+const RecognitionURL = "/api/v1/extract_text"
 
 type Service struct {
 	address string
@@ -26,96 +27,46 @@ func New(address string, timeout time.Duration) *Service {
 	}
 }
 
-const RecognitionURL = "/api/v1/extract_text"
-
-type DocumentForm struct {
-	Context string `json:"text"`
-}
-
-func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
+func (s *Service) RecognizeFile(document *reader.Document) error {
 	filePath := document.DocumentPath
-	fileHandle, err := os.Open(filePath)
-	if err != nil {
-		log.Println("Failed while opening file: ", err)
-		return "", err
+
+	var recErr error
+	var fileHandle *os.File
+	if fileHandle, recErr = os.Open(filePath); recErr != nil {
+		return fmt.Errorf("file %s not found: %e", filePath, recErr)
 	}
 	defer func() { _ = fileHandle.Close() }()
 
 	var reqBody bytes.Buffer
-	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
-	if err != nil {
-		log.Println("Failed while creating form file: ", err)
-		return "", err
+	var writer *multipart.Writer
+	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody); recErr != nil {
+		return fmt.Errorf("failed create forl file: %e", recErr)
 	}
 
-	if _, err = io.Copy(part, fileHandle); err != nil {
-		log.Println("Failed while coping file form part to file handle: ", err)
-		return "", err
-	}
-
-	if err := writer.Close(); err != nil {
-		log.Println("Failed while closing req body writer: ", err)
-		return "", err
-	}
-
-	targetURL := do.address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
 
+	var respData []byte
+	targetURL := s.address + RecognitionURL
 	mimeType := writer.FormDataContentType()
-	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, do.timeout)
-	if err != nil {
-		log.Println("Failed while sending request: ", err)
-		return "", err
+	respData, recErr = sender.SendRequest(&reqBody, &targetURL, &mimeType, s.timeout)
+	if recErr != nil {
+		return fmt.Errorf("failed send request: %e", recErr)
 	}
 
 	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 
 	if len(resTest.Context) == 0 {
-		log.Println("Failed: returned empty string data...")
-		return "", err
+		return fmt.Errorf("returned empty content data")
 	}
 
-	return resTest.Context, nil
+	return nil
 }
 
-func (do *Service) RecognizeFileData(data []byte) (string, error) {
-	var reqBody bytes.Buffer
-	writer := multipart.NewWriter(&reqBody)
-
-	part, _ := writer.CreateFormField("file")
-	_, err := part.Write(data)
-	if err != nil {
-		log.Println("Failed while creating form file: ", err)
-		return "", err
-	}
-
-	if err := writer.Close(); err != nil {
-		log.Println("Failed while closing req body writer: ", err)
-		return "", err
-	}
-
-	targetURL := do.address + RecognitionURL
-	log.Printf("Sending file to recognize file data")
-
-	mimeType := writer.FormDataContentType()
-	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, do.timeout)
-	if err != nil {
-		log.Println("Failed while sending request: ", err)
-		return "", err
-	}
-
-	var resTest = &DocumentForm{}
-	_ = json.Unmarshal(respData, resTest)
-
-	return resTest.Context, nil
-}
-
-func (do *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
 	return make(map[string]*processing.ProcessJob)
 }
 
-func (do *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+func (s *Service) GetProcessingJob(_ string) *processing.ProcessJob {
 	return nil
 }

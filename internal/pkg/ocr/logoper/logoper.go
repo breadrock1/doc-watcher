@@ -12,10 +12,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
+
+const CheckJobStatusTimeout = 5 * time.Second
+const RecognitionURL = "/api/v2/text/create_extraction"
+const GetResultURL = "/api/v2/text/get"
 
 type Service struct {
 	mu             *sync.Mutex
@@ -36,128 +39,67 @@ func New(address string, timeout time.Duration) *Service {
 	return service
 }
 
-const RecognitionURL = "/api/v2/text/create_extraction"
-const GetResultURL = "/api/v2/text/get/"
-
-type OcrJobErrorType int
-
-const (
-	Processing OcrJobErrorType = iota
-	FailedResponse
-)
-
-type OcrJobError struct {
-	Type    OcrJobErrorType
-	Message string
-}
-
-type OcrJob struct {
-	JobId string `json:"job_id"`
-}
-
-func (do *Service) RecognizeFile(document *reader.Document) (string, error) {
+func (s *Service) RecognizeFile(document *reader.Document) error {
 	filePath := document.DocumentPath
-	fileHandle, err := os.Open(filePath)
-	if err != nil {
-		log.Println("Failed while opening file: ", err)
-		return "", err
+
+	var recErr error
+	var fileHandle *os.File
+	if fileHandle, recErr = os.Open(filePath); recErr != nil {
+		return fmt.Errorf("file %s not found: %e", filePath, recErr)
 	}
 	defer func() { _ = fileHandle.Close() }()
 
 	var reqBody bytes.Buffer
-	writer := multipart.NewWriter(&reqBody)
-	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
-	if err != nil {
-		log.Println("Failed while creating form file: ", err)
-		return "", err
+	var writer *multipart.Writer
+	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody); recErr != nil {
+		return fmt.Errorf("failed create forl file: %e", recErr)
 	}
 
-	if _, err = io.Copy(part, fileHandle); err != nil {
-		log.Println("Failed while coping file form part to file handle: ", err)
-		return "", err
-	}
-
-	if err := writer.Close(); err != nil {
-		log.Println("Failed while closing req body writer: ", err)
-		return "", err
-	}
-
-	targetURL := do.Address + RecognitionURL
 	log.Printf("Sending file %s to recognize", filePath)
 
+	var respData []byte
+	targetURL := s.Address + RecognitionURL
 	mimeType := writer.FormDataContentType()
-	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, do.timeout)
-	if err != nil {
-		log.Println("Failed while sending request: ", err)
-		return "", err
+	respData, recErr = sender.SendRequest(&reqBody, &targetURL, &mimeType, s.timeout)
+	if recErr != nil {
+		return fmt.Errorf("failed send request: %e", recErr)
 	}
 
 	var ocrJob = &OcrJob{}
 	_ = json.Unmarshal(respData, ocrJob)
+	document.OcrMetadata = s.launchAndAwait(ocrJob.JobId, document)
 
-	jaba := &processing.ProcessJob{
-		JobId:    ocrJob.JobId,
+	return nil
+}
+
+func (s *Service) launchAndAwait(jobID string, document *reader.Document) *reader.OcrMetadata {
+	var ocrResult *reader.OcrMetadata
+	processingJob := &processing.ProcessJob{
+		JobId:    jobID,
 		Status:   false,
 		Document: document,
 	}
 
-	do.mu.Lock()
-	do.ProcessingJobs[ocrJob.JobId] = jaba
-	do.mu.Unlock()
+	s.mu.Lock()
+	s.ProcessingJobs[jobID] = processingJob
+	s.mu.Unlock()
 
-	waitCh := make(chan *reader.OcrResult)
-	go do.awaitOcrResult(ocrJob.JobId, waitCh)
-	result := <-waitCh
+	waitCh := make(chan *reader.OcrMetadata)
+	go s.checkOcrJobStatus(jobID, waitCh)
+	ocrResult = <-waitCh
 
-	do.mu.Lock()
-	do.ProcessingJobs[ocrJob.JobId].Status = true
-	do.mu.Unlock()
+	s.mu.Lock()
+	s.ProcessingJobs[jobID].Status = true
+	s.mu.Unlock()
 
-	document.OcrMetadata = result
-	return result.Text, nil
+	return ocrResult
 }
 
-func (do *Service) RecognizeFileData(data []byte) (string, error) {
-	var reqBody bytes.Buffer
-	writer := multipart.NewWriter(&reqBody)
-
-	part, _ := writer.CreateFormField("file")
-	_, err := part.Write(data)
-	if err != nil {
-		log.Println("Failed while creating form file: ", err)
-		return "", err
-	}
-
-	if err := writer.Close(); err != nil {
-		log.Println("Failed while closing req body writer: ", err)
-		return "", err
-	}
-
-	targetURL := do.Address + RecognitionURL
-	log.Printf("Sending file to recognize file data")
-
-	mimeType := writer.FormDataContentType()
-	respData, err := sender.SendRequest(&reqBody, &targetURL, &mimeType, do.timeout)
-	if err != nil {
-		log.Println("Failed while sending request: ", err)
-		return "", err
-	}
-
-	var resTest = &OcrJob{}
-	_ = json.Unmarshal(respData, resTest)
-
-	waitCh := make(chan *reader.OcrResult)
-	go do.awaitOcrResult(resTest.JobId, waitCh)
-	result := <-waitCh
-
-	return result.Text, nil
-}
-
-func (do *Service) awaitOcrResult(jobId string, waitCh chan *reader.OcrResult) {
-	getURLAddress := do.Address + GetResultURL + jobId
+func (s *Service) checkOcrJobStatus(jobId string, waitCh chan *reader.OcrMetadata) {
+	getURLAddress := fmt.Sprintf("%s%s/%s", s.Address, GetResultURL, jobId)
 	for {
-		time.Sleep(5 * time.Second)
-		res, err := do.checkOcrJobStatus(getURLAddress, jobId)
+		time.Sleep(CheckJobStatusTimeout)
+		res, err := s.sendCheckJobStatus(getURLAddress, jobId)
 		if err != nil {
 			log.Println(err.Message)
 			switch err.Type {
@@ -174,8 +116,8 @@ func (do *Service) awaitOcrResult(jobId string, waitCh chan *reader.OcrResult) {
 	}
 }
 
-func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*reader.OcrResult, *OcrJobError) {
-	var ocrResult = &reader.OcrResult{}
+func (s *Service) sendCheckJobStatus(targetURL string, jobId string) (*reader.OcrMetadata, *OcrJobError) {
+	var ocrResult = &reader.OcrMetadata{}
 	response, err := http.Get(targetURL)
 	if err != nil {
 		msg := fmt.Sprintf("Error while creating request: %s", err)
@@ -187,16 +129,16 @@ func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*reader.Oc
 		return ocrResult, &OcrJobError{Type: Processing, Message: msg}
 	}
 
-	if response.StatusCode > 200 {
+	if response.StatusCode > 210 {
 		msg := fmt.Sprintf("Error response for job '%s'", jobId)
 		return ocrResult, &OcrJobError{Type: FailedResponse, Message: msg}
 	}
 
 	log.Printf("Successful response for job '%s': %s", jobId, response.Status)
 	defer func() { _ = response.Body.Close() }()
-	respData, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Println("Failed while reading response reqBody: ", err)
+
+	var respData []byte
+	if respData, err = io.ReadAll(response.Body); err != nil {
 		msg := fmt.Sprintf("Failed while reading response reqBody: %s", err)
 		return ocrResult, &OcrJobError{Type: FailedResponse, Message: msg}
 	}
@@ -205,14 +147,14 @@ func (do *Service) checkOcrJobStatus(targetURL string, jobId string) (*reader.Oc
 	return ocrResult, nil
 }
 
-func (do *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
-	return do.ProcessingJobs
+func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+	return s.ProcessingJobs
 }
 
-func (do *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
-	do.mu.Lock()
-	value, ok := do.ProcessingJobs[jobId]
-	do.mu.Unlock()
+func (s *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+	s.mu.Lock()
+	value, ok := s.ProcessingJobs[jobId]
+	s.mu.Unlock()
 
 	if !ok {
 		return nil
@@ -221,17 +163,17 @@ func (do *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
 	return value
 }
 
-func (do *Service) clearSuccessfulTasks() {
+func (s *Service) clearSuccessfulTasks() {
 	var collectedJobs []string
-	for key, value := range do.ProcessingJobs {
+	for key, value := range s.ProcessingJobs {
 		if value.Status {
 			collectedJobs = append(collectedJobs, key)
 		}
 	}
 
-	do.mu.Lock()
+	s.mu.Lock()
 	for _, jobId := range collectedJobs {
-		delete(do.ProcessingJobs, jobId)
+		delete(s.ProcessingJobs, jobId)
 	}
-	do.mu.Unlock()
+	s.mu.Unlock()
 }
