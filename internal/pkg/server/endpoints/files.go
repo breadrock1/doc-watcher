@@ -5,133 +5,110 @@ import (
 	watcher2 "doc-notifier/internal/pkg/watcher"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
-	"io"
 	"log"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path"
 )
 
-const UploadHTMLForm = `
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Single file upload</title>
-</head>
-<body>
-	<h1>Upload single file</h1>
-	<form action="/files/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="files" multiple>
-        <input type="submit" value="Upload">
-    </form>
-</form>
-</body>
-</html>
-`
-
-// UploadFileForm
-// @Summary Get upload file form
-// @Description Get upload file form
-// @ID upload-form
-// @Tags files
-// @Produce  html
-// @Success 200 {object} ResponseForm "Done"
-// @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/upload [get]
-func UploadFileForm(c echo.Context) error {
-	return c.HTML(http.StatusOK, UploadHTMLForm)
+// AnalyseFilesForm example
+type AnalyseFilesForm struct {
+	DocumentIDs []string `json:"document_ids" example:"886f7e11874040ca8b8461fb4cd1aa2c"`
 }
 
-// UploadFiles
-// @Summary Upload file to server
-// @Description Upload file to server
-// @ID upload
+// UnrecognizedDocuments example
+type UnrecognizedDocuments struct {
+	Unrecognized []*reader.DocumentPreview `json:"unrecognized"`
+}
+
+// MoveFilesForm example
+type MoveFilesForm struct {
+	TargetDirectory string   `json:"target_directory" example:"unrecognized"`
+	DocumentPaths   []string `json:"document_paths" example:"./indexer/upload/test.txt"`
+}
+
+// RemoveFilesForm example
+type RemoveFilesForm struct {
+	DocumentPaths []string `json:"document_paths" example:"./indexer/upload/test.txt"`
+}
+
+// RemoveFilesError example
+type RemoveFilesError struct {
+	Code      int      `json:"code" example:"403"`
+	Message   string   `json:"message" example:"File not found"`
+	FilePaths []string `json:"file_paths" example:"./indexer/upload/test.txt"`
+}
+
+// UploadFilesToUnrecognized
+// @Summary Upload files to analyse
+// @Description Upload files to analyse
+// @ID files-upload
 // @Tags files
 // @Accept  multipart/form
 // @Produce  json
-// @Param files formData file true "File entity"
-// @Success 200 {object} ResponseForm "Done"
+// @Param files formData file true "Files multipart form"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/upload [post]
-func UploadFiles(c echo.Context) error {
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/upload [post]
+func UploadFilesToUnrecognized(c echo.Context) error {
 	var uploadErr error
 	var multipartForm *multipart.Form
+
 	if multipartForm, uploadErr = c.MultipartForm(); uploadErr != nil {
-		return uploadErr
+		respErr := createStatusResponse(400, uploadErr.Error())
+		return c.JSON(400, respErr)
 	}
 
-	var dstStream *os.File
-	var srcStream multipart.File
-	var uploadFiles []*reader.DocumentPreview
-
+	uploadFiles := make([]*reader.DocumentPreview, 0)
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-
 	for _, fileForm := range multipartForm.File["files"] {
-		if srcStream, uploadErr = fileForm.Open(); uploadErr != nil {
-			_ = srcStream.Close()
-			return uploadErr
-		}
-
 		filePath := path.Join("./indexer/unrecognized/", fileForm.Filename)
-		if dstStream, uploadErr = os.Create(filePath); uploadErr != nil {
-			_ = srcStream.Close()
-			_ = dstStream.Close()
-			return uploadErr
+		if uploadErr = writeMultipart(fileForm, filePath); uploadErr != nil {
+			log.Println(uploadErr)
+			continue
 		}
 
-		if _, uploadErr = io.Copy(dstStream, srcStream); uploadErr != nil {
-			_ = srcStream.Close()
-			_ = dstStream.Close()
-			return uploadErr
-		}
-
-		_ = srcStream.Close()
-		_ = dstStream.Close()
-
-		docs := watcher.Reader.ParseCaughtFiles(filePath)
-		prevDoc := reader.From(docs[0])
+		document := watcher.Reader.ParseCaughtFiles(filePath)[0]
+		prevDoc := reader.FromDocument(document)
 		uploadFiles = append(uploadFiles, prevDoc)
-		watcher.Reader.AddAwaitDocument(docs[0])
+		watcher.Reader.AddAwaitDocument(document)
 	}
 
 	return c.JSON(200, uploadFiles)
 }
 
-type AnalyseFilesForm struct {
-	DocumentIDs []string `json:"document_ids"`
-}
-
 // AnalyseFiles
 // @Summary Analyse uploaded files by ids
 // @Description Analyse uploaded files by ids
-// @ID analyse
+// @ID files-analyse
 // @Tags files
 // @Accept  json
 // @Produce  json
 // @Param jsonQuery body AnalyseFilesForm true "Document ids to analyse"
-// @Success 200 {object} ResponseForm "Done"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/analyse [post]
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/analyse [post]
 func AnalyseFiles(c echo.Context) error {
 	jsonForm := &AnalyseFilesForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
-	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	processedDocuments := make([]*reader.DocumentPreview, 0)
+	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	for _, documentID := range jsonForm.DocumentIDs {
 		// 1. Check does document id stored into recognized documents?!
-		// 2.1. YES?! Stored this document to processedDocuments array
-		// 2.2. NO?!  Get document by id from unrecognized documents and send to channel
-		// 3. Return processedDocuments as Response
+		// 2.1. YES?! Stored this document to processedDocuments array;
+		// 2.2. NO?!  Get document by id from unrecognized documents and send to channel;
+		// 3. Return processedDocuments as Response.
 
 		if watcher.IsRecognizedDocument(documentID) {
 			recognizedDoc := watcher.PopRecognizedDocument(documentID)
-			recPrevDoc := reader.From(recognizedDoc)
+			recPrevDoc := reader.FromDocument(recognizedDoc)
 			processedDocuments = append(processedDocuments, recPrevDoc)
 			continue
 		}
@@ -150,42 +127,24 @@ func AnalyseFiles(c echo.Context) error {
 	return c.JSON(102, processedDocuments)
 }
 
-type UnrecognizedDocuments struct {
-	Unrecognized []*reader.DocumentPreview `json:"unrecognized"`
-}
-
 // GetUnrecognized
 // @Summary Get unrecognized documents
 // @Description Get unrecognized documents
-// @ID unrecognized
+// @ID files-unrecognized
 // @Tags files
 // @Produce  json
-// @Success 200 {object} UnrecognizedDocuments "Done"
+// @Success 200 {object} UnrecognizedDocuments "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/unrecognized [get]
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/unrecognized [get]
 func GetUnrecognized(c echo.Context) error {
+	collectedPreviews := make([]*reader.DocumentPreview, 0)
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	var collectedPreviews []*reader.DocumentPreview
 	for _, document := range watcher.Reader.GetAwaitDocuments() {
-		collectedPreviews = append(collectedPreviews, reader.From(document))
+		collectedPreviews = append(collectedPreviews, reader.FromDocument(document))
 	}
 
 	return c.JSON(200, collectedPreviews)
-}
-
-type MoveFilesForm struct {
-	TargetDirectory string   `json:"target_directory"`
-	DocumentPaths   []string `json:"document_paths"`
-}
-
-type RemoveFilesForm struct {
-	DocumentPaths []string `json:"document_paths"`
-}
-
-type RemoveFilesError struct {
-	Code      int      `json:"code" example:"403"`
-	Message   string   `json:"message" example:"File not found"`
-	FilePaths []string `json:"file_paths" example:"[]"`
 }
 
 // MoveFiles
@@ -196,54 +155,57 @@ type RemoveFilesError struct {
 // @Accept  json
 // @Produce  json
 // @Param jsonQuery body MoveFilesForm true "Document ids to move"
-// @Success 200 {object} ResponseForm "Done"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/move [post]
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/move [post]
 func MoveFiles(c echo.Context) error {
 	jsonForm := &MoveFilesForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
 	var collectedErrors []string
 	targetDir := jsonForm.TargetDirectory
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	for _, documentPath := range jsonForm.DocumentPaths {
-		if err := watcher.Reader.MoveFileTo(documentPath, targetDir); err != nil {
-			log.Println(err)
+		err := watcher.Reader.MoveFileToDir(documentPath, targetDir)
+		if err != nil {
 			collectedErrors = append(collectedErrors, documentPath)
+			log.Println(err)
 			continue
 		}
 	}
 
 	if len(collectedErrors) > 0 {
-		return c.JSON(206, RemoveFilesError{
-			Code:      206,
-			Message:   "These files hasn't been moved",
-			FilePaths: collectedErrors,
-		})
+		msg := "These files hasn't been moved"
+		respErr := RemoveFilesError{Code: 400, Message: msg, FilePaths: collectedErrors}
+		return c.JSON(400, respErr)
 	}
 
-	return c.JSON(200, returnStatusResponse(200, "Ok"))
+	return c.JSON(200, createStatusResponse(200, "Ok"))
 }
 
 // RemoveFiles
 // @Summary Remove files from directory
 // @Description Remove files from directory
-// @ID remove
+// @ID files-remove
 // @Tags files
 // @Accept  json
 // @Produce  json
 // @Param jsonQuery body RemoveFilesForm true "Document paths to remove"
-// @Success 200 {object} ResponseForm "Done"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} RemoveFilesError "Bad Request message"
-// @Router /files/remove [post]
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/remove [post]
 func RemoveFiles(c echo.Context) error {
 	jsonForm := &RemoveFilesForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	if err := decoder.Decode(jsonForm); err != nil {
-		return c.JSON(403, returnStatusResponse(403, err.Error()))
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
 	var collectedErrors []string
@@ -254,26 +216,25 @@ func RemoveFiles(c echo.Context) error {
 	}
 
 	if len(collectedErrors) > 0 {
-		return c.JSON(206, RemoveFilesError{
-			Code:      206,
-			Message:   "These files hasn't been removed",
-			FilePaths: collectedErrors,
-		})
+		msg := "These files hasn't been removed"
+		resErr := RemoveFilesError{Code: 400, Message: msg, FilePaths: collectedErrors}
+		return c.JSON(400, resErr)
 	}
 
-	return c.JSON(200, returnStatusResponse(200, "Ok"))
+	return c.JSON(200, createStatusResponse(200, "Ok"))
 }
 
 // DownloadFile
-// @Summary Download file from server
-// @Description Download file from server
-// @ID download
+// @Summary Download file by path
+// @Description Download file by path
+// @ID files-download
 // @Tags files
 // @Produce  multipart/form
-// @Param file_path formData string true "Path to file on server"
-// @Success 200 {object} ResponseForm "Done"
+// @Param file_path formData string true "Path to file"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Router /files/download [post]
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/download [post]
 func DownloadFile(c echo.Context) error {
 	filePath := c.FormValue("file_path")
 	return c.File(filePath)
