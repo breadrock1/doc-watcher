@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const TestcaseOtherDirPath = "../../testcases/directory/"
+const TestcaseOtherDirPath = "../testcases/directory/"
 const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
