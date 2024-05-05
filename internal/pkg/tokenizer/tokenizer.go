@@ -1,28 +1,36 @@
 package tokenizer
 
+import (
+	"doc-notifier/internal/pkg/tokenizer/assistant"
+	"doc-notifier/internal/pkg/tokenizer/forms"
+	"doc-notifier/internal/pkg/tokenizer/langchain"
+	"doc-notifier/internal/pkg/tokenizer/none"
+	"doc-notifier/internal/pkg/tokenizer/tokoptions"
+)
+
 type Service struct {
 	Tokenizer        Tokenizer
-	TokenizerOptions *Options
+	TokenizerOptions *tokoptions.Options
 }
 
 type Tokenizer interface {
-	TokenizeTextData(text string) (*ComputedTokens, error)
+	TokenizeTextData(text string) (*forms.ComputedTokens, error)
 }
 
-func New(options *Options) *Service {
+func New(options *tokoptions.Options) *Service {
 	service := &Service{
 		TokenizerOptions: options,
 	}
 
 	switch options.Mode {
-	case Assistant:
-		service.Tokenizer = NewAssistant(options)
-	case LangChain:
-		service.Tokenizer = NewLangChain(options)
-	case None:
-		service.Tokenizer = NewNone()
+	case tokoptions.None:
+		service.Tokenizer = none.New()
+	case tokoptions.Assistant:
+		service.Tokenizer = assistant.New(options)
+	case tokoptions.LangChain:
+		service.Tokenizer = langchain.New(options)
 	default:
-		service.Tokenizer = NewNone()
+		service.Tokenizer = none.New()
 	}
 
 	return service
