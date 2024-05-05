@@ -67,7 +67,9 @@ func (s *Service) RecognizeFile(document *reader.Document) error {
 
 	var ocrJob = &OcrJob{}
 	_ = json.Unmarshal(respData, ocrJob)
-	document.OcrMetadata = s.launchAndAwait(ocrJob.JobId, document)
+	ocrMetadata := s.launchAndAwait(ocrJob.JobId, document)
+	document.SetOcrMetadata(ocrMetadata)
+	document.MoveMetadataTextToContent()
 
 	return nil
 }

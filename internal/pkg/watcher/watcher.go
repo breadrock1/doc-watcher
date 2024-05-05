@@ -197,17 +197,17 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 		return
 	}
 
-	document.SetQuality(reader.MaxQualityValue)
-	document.ComputeSsdeepHash()
-	document.ComputeContentUUID()
-	document.ComputeMd5Hash()
-	document.SetContentVector([]float64{})
+	srcDocPath := document.DocumentPath
+	targetDirPath := document.OcrMetadata.DocType
+	folderPath := path.Join("./indexer/", targetDirPath)
+	_ = nw.Reader.MoveFileToDir(srcDocPath, folderPath)
+	dstDocPath := path.Join(folderPath, document.DocumentName)
 
-	oldLocation := document.DocumentPath
-	newLocation := document.OcrMetadata.DocType
-	targetPath := path.Join("./indexer/", newLocation)
-	_ = nw.Reader.MoveFileToDir(oldLocation, targetPath)
-	document.DocumentPath = targetPath
+	document.SetFolderPath(folderPath)
+	document.SetDocumentPath(dstDocPath)
+	document.SetContentVector([]float64{})
+	document.SetQuality(reader.MaxQualityValue)
+	document.SetContentMd5Hash(document.DocumentMD5)
 
 	nw.AppendRecognizedDocument(document)
 	_ = nw.Searcher.StoreDocument(document)

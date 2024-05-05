@@ -101,7 +101,6 @@ func ParseFile(filePath string) (*Document, error) {
 	document := &Document{}
 	document.FolderID = bucketName
 	document.FolderPath = parseBucketName(absFilePath)
-	document.DocumentMD5 = fmt.Sprintf("%x", md5.Sum(data))
 	document.DocumentPath = absFilePath
 	document.DocumentName = fileInfo.Name()
 	document.DocumentSize = fileInfo.Size()
@@ -113,7 +112,18 @@ func ParseFile(filePath string) (*Document, error) {
 	document.DocumentCreated = createdTime.Format(timeFormat)
 	document.QualityRecognized = -1
 
+	document.ComputeMd5HashData(data)
+	document.ComputeSsdeepHashData(data)
+
 	return document, nil
+}
+
+func (d *Document) SetFolderPath(path string) {
+	d.FolderPath = path
+}
+
+func (d *Document) SetDocumentPath(path string) {
+	d.DocumentPath = path
 }
 
 func (d *Document) SetContentData(data string) {
@@ -130,6 +140,10 @@ func (d *Document) AppendContentVector(data []float64) {
 
 func (d *Document) ComputeMd5Hash() {
 	data := []byte(d.Content)
+	d.ComputeMd5HashData(data)
+}
+
+func (d *Document) ComputeMd5HashData(data []byte) {
 	d.DocumentMD5 = fmt.Sprintf("%x", md5.Sum(data))
 }
 
@@ -138,8 +152,16 @@ func (d *Document) ComputeContentMd5Hash() {
 	d.ContentMD5 = fmt.Sprintf("%x", md5.Sum(data))
 }
 
+func (d *Document) SetContentMd5Hash(contentID string) {
+	d.ContentMD5 = contentID
+}
+
 func (d *Document) ComputeSsdeepHash() {
 	data := []byte(d.Content)
+	d.ComputeSsdeepHashData(data)
+}
+
+func (d *Document) ComputeSsdeepHashData(data []byte) {
 	if hashData, err := ssdeep.FuzzyBytes(data); err == nil {
 		d.DocumentSSDEEP = hashData
 	}
@@ -191,6 +213,23 @@ func (d *Document) GetGroupedProperties() []*PreviewProperties {
 	}
 
 	return properties
+}
+
+func (d *Document) MoveMetadataTextToContent() {
+	if d.OcrMetadata == nil {
+		return
+	}
+
+	if len(d.OcrMetadata.Text) == 0 {
+		return
+	}
+
+	d.Content = d.OcrMetadata.Text
+	d.OcrMetadata.Text = ""
+}
+
+func (d *Document) SetOcrMetadata(ocr *OcrMetadata) {
+	d.OcrMetadata = ocr
 }
 
 func parseBucketName(filePath string) string {
