@@ -15,7 +15,34 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/files/analyse": {
+        "/hello/": {
+            "get": {
+                "description": "Check service is available",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hello"
+                ],
+                "summary": "Hello",
+                "operationId": "hello",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/files/analyse": {
             "post": {
                 "description": "Analyse uploaded files by ids",
                 "consumes": [
@@ -28,7 +55,7 @@ const docTemplate = `{
                     "files"
                 ],
                 "summary": "Analyse uploaded files by ids",
-                "operationId": "analyse",
+                "operationId": "files-analyse",
                 "parameters": [
                     {
                         "description": "Document ids to analyse",
@@ -42,7 +69,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -52,25 +79,31 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
                         }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
                     }
                 }
             }
         },
-        "/files/download": {
+        "/watcher/files/download": {
             "post": {
-                "description": "Download file from server",
+                "description": "Download file by path",
                 "produces": [
                     "multipart/form"
                 ],
                 "tags": [
                     "files"
                 ],
-                "summary": "Download file from server",
-                "operationId": "download",
+                "summary": "Download file by path",
+                "operationId": "files-download",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Path to file on server",
+                        "description": "Path to file",
                         "name": "file_path",
                         "in": "formData",
                         "required": true
@@ -78,7 +111,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -88,11 +121,17 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
                         }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
                     }
                 }
             }
         },
-        "/files/move": {
+        "/watcher/files/move": {
             "post": {
                 "description": "Moving files to target directory",
                 "consumes": [
@@ -119,7 +158,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -129,11 +168,17 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
                         }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
                     }
                 }
             }
         },
-        "/files/remove": {
+        "/watcher/files/remove": {
             "post": {
                 "description": "Remove files from directory",
                 "consumes": [
@@ -146,7 +191,7 @@ const docTemplate = `{
                     "files"
                 ],
                 "summary": "Remove files from directory",
-                "operationId": "remove",
+                "operationId": "files-remove",
                 "parameters": [
                     {
                         "description": "Document paths to remove",
@@ -160,7 +205,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -169,121 +214,6 @@ const docTemplate = `{
                         "description": "Bad Request message",
                         "schema": {
                             "$ref": "#/definitions/endpoints.RemoveFilesError"
-                        }
-                    }
-                }
-            }
-        },
-        "/files/unrecognized": {
-            "get": {
-                "description": "Get unrecognized documents",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get unrecognized documents",
-                "operationId": "unrecognized",
-                "responses": {
-                    "200": {
-                        "description": "Done",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.UnrecognizedDocuments"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request message",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
-                        }
-                    }
-                }
-            }
-        },
-        "/files/upload": {
-            "get": {
-                "description": "Get upload file form",
-                "produces": [
-                    "text/html"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get upload file form",
-                "operationId": "upload-form",
-                "responses": {
-                    "200": {
-                        "description": "Done",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request message",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Upload file to server",
-                "consumes": [
-                    "multipart/form"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Upload file to server",
-                "operationId": "upload",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "File entity",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Done",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request message",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
-                        }
-                    }
-                }
-            }
-        },
-        "/hello/": {
-            "get": {
-                "description": "Check service is available",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "hello"
-                ],
-                "summary": "Hello",
-                "operationId": "hello",
-                "responses": {
-                    "200": {
-                        "description": "Done",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
                         }
                     },
                     "503": {
@@ -295,28 +225,22 @@ const docTemplate = `{
                 }
             }
         },
-        "/watcher/all": {
+        "/watcher/files/unrecognized": {
             "get": {
-                "description": "Get watcher dirs list",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get unrecognized documents",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "watcher"
+                    "files"
                 ],
-                "summary": "Get watcher dirs list",
-                "operationId": "watched-dirs",
+                "summary": "Get unrecognized documents",
+                "operationId": "files-unrecognized",
                 "responses": {
                     "200": {
-                        "description": "Watched dirs",
+                        "description": "Ok",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/endpoints.UnrecognizedDocuments"
                         }
                     },
                     "400": {
@@ -324,11 +248,92 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
                         }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
                     }
                 }
             }
         },
-        "/watcher/attach": {
+        "/watcher/files/upload": {
+            "post": {
+                "description": "Upload files to analyse",
+                "consumes": [
+                    "multipart/form"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload files to analyse",
+                "operationId": "files-upload",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Files multipart form",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/": {
+            "get": {
+                "description": "Get watched directories list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Get watched directories list",
+                "operationId": "folders-all",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/attach": {
             "post": {
                 "description": "Attach new directory to watcher",
                 "consumes": [
@@ -341,7 +346,7 @@ const docTemplate = `{
                     "watcher"
                 ],
                 "summary": "Attach new directory to watcher",
-                "operationId": "attach",
+                "operationId": "folders-attach",
                 "parameters": [
                     {
                         "description": "File entity",
@@ -355,7 +360,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -364,6 +369,114 @@ const docTemplate = `{
                         "description": "Bad Request message",
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/detach": {
+            "post": {
+                "description": "Attach new directory to watcher",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Attach new directory to watcher",
+                "operationId": "folders-detach",
+                "parameters": [
+                    {
+                        "description": "Folder ids",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.WatcherDirectoriesForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/upload": {
+            "post": {
+                "description": "Upload file to watcher directory",
+                "consumes": [
+                    "multipart/form"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Upload file to watcher directory",
+                "operationId": "watcher-upload",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Files multipart form",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Directory to upload",
+                        "name": "directory",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/reader.DocumentPreview"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
                         }
                     }
                 }
@@ -379,10 +492,10 @@ const docTemplate = `{
                     "watcher"
                 ],
                 "summary": "Pause all watchers",
-                "operationId": "pause",
+                "operationId": "watcher-pause",
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -391,6 +504,12 @@ const docTemplate = `{
                         "description": "Bad Request message",
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
                         }
                     }
                 }
@@ -406,10 +525,10 @@ const docTemplate = `{
                     "watcher"
                 ],
                 "summary": "Run all watchers",
-                "operationId": "run",
+                "operationId": "watcher-run",
                 "responses": {
                     "200": {
-                        "description": "Done",
+                        "description": "Ok",
                         "schema": {
                             "$ref": "#/definitions/endpoints.ResponseForm"
                         }
@@ -419,44 +538,11 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/endpoints.BadRequestForm"
                         }
-                    }
-                }
-            }
-        },
-        "/watcher/upload": {
-            "post": {
-                "description": "Upload files to watcher directory",
-                "consumes": [
-                    "multipart/form"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "watcher"
-                ],
-                "summary": "Upload files to watcher directory",
-                "operationId": "upload-watcher",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "File entity",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Done",
-                        "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
-                        }
                     },
-                    "400": {
-                        "description": "Bad Request message",
+                    "503": {
+                        "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
                         }
                     }
                 }
@@ -471,7 +557,10 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "886f7e11874040ca8b8461fb4cd1aa2c"
+                    ]
                 }
             }
         },
@@ -495,10 +584,14 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "./indexer/upload/test.txt"
+                    ]
                 },
                 "target_directory": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "unrecognized"
                 }
             }
         },
@@ -515,7 +608,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[]"
+                        "./indexer/upload/test.txt"
                     ]
                 },
                 "message": {
@@ -531,7 +624,10 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "./indexer/upload/test.txt"
+                    ]
                 }
             }
         },
@@ -581,7 +677,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "./indexer"
+                        "./indexer/test_folder"
                     ]
                 }
             }
@@ -590,19 +686,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-05-04T22:53:57Z"
                 },
                 "file_size": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 311652
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "886f7e11874040ca8b8461fb4cd1aa2c"
                 },
                 "location": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "unrecognized"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "document_name.pdf"
                 },
                 "preview_properties": {
                     "type": "array",
@@ -611,7 +712,8 @@ const docTemplate = `{
                     }
                 },
                 "quality_recognition": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10000
                 }
             }
         },
@@ -619,13 +721,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "field_date_transaction"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Date and time of transaction"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "18.03.2024, 23:59"
                 }
             }
         }

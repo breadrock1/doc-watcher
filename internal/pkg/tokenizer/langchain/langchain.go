@@ -1,8 +1,10 @@
-package tokenizer
+package langchain
 
 import (
 	"bytes"
 	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/tokenizer/forms"
+	"doc-notifier/internal/pkg/tokenizer/tokoptions"
 	"encoding/json"
 	"log"
 	"strings"
@@ -11,7 +13,7 @@ import (
 
 const ServiceURL = "/api/v1/get_vectors"
 
-type LangChainTokenizer struct {
+type Service struct {
 	address           string
 	timeout           time.Duration
 	ChunkSize         int
@@ -19,8 +21,8 @@ type LangChainTokenizer struct {
 	ReturnChunkedText bool
 }
 
-func NewLangChain(options *Options) *LangChainTokenizer {
-	return &LangChainTokenizer{
+func New(options *tokoptions.Options) *Service {
+	return &Service{
 		address:           options.Address,
 		timeout:           options.Timeout,
 		ChunkSize:         options.ChunkSize,
@@ -29,8 +31,8 @@ func NewLangChain(options *Options) *LangChainTokenizer {
 	}
 }
 
-func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens, error) {
-	computedTokens := &ComputedTokens{
+func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error) {
+	computedTokens := &forms.ComputedTokens{
 		Chunks:      0,
 		ChunkedText: []string{},
 		Vectors:     [][]float64{},
@@ -39,9 +41,9 @@ func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	contentData := strings.ReplaceAll(content, "\n", " ")
 	textVectors := &GetTokensForm{
 		Text:              contentData,
-		ChunkSize:         lt.ChunkSize,
-		ChunkOverlap:      lt.ChunkOverlap,
-		ReturnChunkedText: lt.ReturnChunkedText,
+		ChunkSize:         s.ChunkSize,
+		ChunkOverlap:      s.ChunkOverlap,
+		ReturnChunkedText: s.ReturnChunkedText,
 	}
 
 	jsonData, err := json.Marshal(textVectors)
@@ -50,12 +52,12 @@ func (lt *LangChainTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 		return computedTokens, err
 	}
 
-	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := lt.address + ServiceURL
 	log.Printf("Sending file to extract tokens")
+	reqBody := bytes.NewBuffer(jsonData)
 
 	mimeType := "application/json"
-	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, lt.timeout)
+	targetURL := s.address + ServiceURL
+	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, s.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return computedTokens, err

@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-const TestcaseDirPath = "../../testcases/"
+const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
