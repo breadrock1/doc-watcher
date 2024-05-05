@@ -1,16 +1,12 @@
 package watcher
 
 import (
-	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/watcher"
-	"encoding/json"
-	"fmt"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
-const TestcaseDirPath = "../../testcases/"
+const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
@@ -62,14 +58,5 @@ func TestWatcherManager(t *testing.T) {
 
 		err = watch.RemoveDirectories([]string{TestcaseDirPath + "any"})
 		assert.Error(t, err, "Failed while catching error to detach")
-	})
-
-	t.Run("Parse complex structure with OcrMetadata", func(t *testing.T) {
-		file, _ := os.ReadFile(TestcaseDirPath + "ocr_result.json")
-		var previews []reader.DocumentPreview
-		if err := json.Unmarshal(file, &previews); err != nil {
-			fmt.Println(err)
-		}
-		fmt.Printf("%v", previews)
 	})
 }

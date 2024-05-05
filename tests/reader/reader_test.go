@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const TestcaseDirPath = "../../testcases/"
+const TestcaseDirPath = "../testcases/"
 
 func TestParseCaughtFiles(t *testing.T) {
 	fileReader := &reader.Service{}
