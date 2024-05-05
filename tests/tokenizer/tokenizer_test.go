@@ -4,6 +4,7 @@ import (
 	"context"
 	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/tokenizer"
+	"doc-notifier/internal/pkg/tokenizer/tokoptions"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -16,8 +17,8 @@ const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestComputeContentTokens(t *testing.T) {
 	timeoutDuration := time.Duration(10) * time.Second
-	tokenizerService := tokenizer.New(&tokenizer.Options{
-		Mode:         tokenizer.GetModeFromString("langchain"),
+	tokenizerService := tokenizer.New(&tokoptions.Options{
+		Mode:         tokoptions.GetModeFromString("langchain"),
 		Address:      "http://localhost:3451",
 		ChunkSize:    1,
 		ChunkedFlag:  false,
@@ -65,8 +66,8 @@ func TestComputeContentTokens(t *testing.T) {
 	})
 
 	t.Run("Caught error with service denied", func(t *testing.T) {
-		_ = tokenizer.New(&tokenizer.Options{
-			Mode:         tokenizer.GetModeFromString("assistant"),
+		_ = tokenizer.New(&tokoptions.Options{
+			Mode:         tokoptions.GetModeFromString("assistant"),
 			Address:      "http://localhost:4444",
 			ChunkSize:    0,
 			ChunkedFlag:  false,
