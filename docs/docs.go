@@ -559,7 +559,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[886f7e11874040ca8b8461fb4cd1aa2c]"
+                        "886f7e11874040ca8b8461fb4cd1aa2c"
                     ]
                 }
             }
@@ -586,7 +586,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[./indexer/upload/test.txt]"
+                        "./indexer/upload/test.txt"
                     ]
                 },
                 "target_directory": {
@@ -608,7 +608,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[./indexer/upload/test.txt]"
+                        "./indexer/upload/test.txt"
                     ]
                 },
                 "message": {
@@ -626,7 +626,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[./indexer/upload/test.txt]"
+                        "./indexer/upload/test.txt"
                     ]
                 }
             }
