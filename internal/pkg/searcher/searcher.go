@@ -23,7 +23,7 @@ func New(address string, timeout time.Duration) *Service {
 	}
 }
 
-func (ss *Service) StoreDocument(document *reader.Document) error {
+func (s *Service) StoreDocument(document *reader.Document) error {
 	jsonData, err := json.Marshal(document)
 	if err != nil {
 		log.Println("Failed while marshaling doc: ", err)
@@ -31,11 +31,11 @@ func (ss *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := ss.Address + ServiceURL
+	targetURL := s.Address + ServiceURL
 	log.Printf("Storing document %s to elastic", document.FolderID)
 
 	mimeType := "application/json"
-	_, err = sender.SendRequest(reqBody, &targetURL, &mimeType, ss.timeout)
+	_, err = sender.SendRequest(reqBody, &targetURL, &mimeType, s.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return err
