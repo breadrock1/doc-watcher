@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
+func (nw *NotifyWatcher) processTriggeredDocument(documents []*reader.Document) {
 	wg := sync.WaitGroup{}
 	for _, document := range documents {
 		wg.Add(1)
 		document := document
 		go func() {
 			defer wg.Done()
-			_ = nw.ProcessTriggeredFile(document)
+			nw.recognizedAndLoad(document)
 			<-time.After(1 * time.Second)
 		}()
 	}
@@ -22,35 +22,39 @@ func (nw *NotifyWatcher) storeExtractedDocuments(documents []*reader.Document) {
 	wg.Wait()
 }
 
-func (nw *NotifyWatcher) ProcessTriggeredFile(document *reader.Document) error {
+func (nw *NotifyWatcher) recognizedAndLoad(document *reader.Document) {
 	document.SetQuality(0)
-	contentData, recognizeErr := nw.Ocr.Ocr.RecognizeFile(document)
-	if recognizeErr != nil {
-		return recognizeErr
+	if err := nw.Ocr.Ocr.RecognizeFile(document); err != nil {
+		log.Println(err)
+		return
 	}
 
-	nw.Reader.SetContentData(document, contentData)
 	if nw.Tokenizer.TokenizerOptions.ChunkedFlag {
-		return nw.loadChunkedDocument(document)
+		if err := nw.loadChunkedDocument(document); err != nil {
+			log.Println(err)
+		}
+		return
 	}
 
-	return nw.loadFullDocument(document)
+	if err := nw.loadFullDocument(document); err != nil {
+		log.Println(err)
+		return
+	}
 }
 
 func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
-	nw.Reader.ComputeMd5Hash(document)
-	nw.Reader.ComputeSsdeepHash(document)
-	nw.Reader.ComputeUUID(document)
-	nw.Reader.ComputeContentMd5Hash(document)
-	nw.Reader.SetContentVector(document, []float64{})
+	document.ComputeMd5Hash()
+	document.ComputeSsdeepHash()
+	document.ComputeContentUUID()
+	document.SetContentVector([]float64{})
 
 	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for _, chunkData := range tokenVectors.Vectors {
-		nw.Reader.AppendContentVector(document, chunkData)
+		document.AppendContentVector(chunkData)
 	}
 
-	log.Println("Storing document object: ", document.DocumentName)
+	log.Println("Storing document to searcher: ", document.DocumentName)
 	if err := nw.Searcher.StoreDocument(document); err != nil {
 		log.Println("Failed while storing document: ", err)
 		return err
@@ -60,22 +64,22 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 }
 
 func (nw *NotifyWatcher) loadChunkedDocument(document *reader.Document) error {
-	nw.Reader.ComputeMd5Hash(document)
-	nw.Reader.ComputeSsdeepHash(document)
+	document.ComputeMd5Hash()
+	document.ComputeSsdeepHash()
+
 	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
 	for chunkIndex, chunkData := range tokenVectors.ChunkedText {
-		nw.Reader.SetContentData(document, chunkData)
+		document.SetContentData(chunkData)
 
 		contentVector := tokenVectors.Vectors[chunkIndex]
-		nw.Reader.SetContentVector(document, contentVector)
+		document.SetContentVector(contentVector)
+		document.ComputeContentUUID()
+		document.ComputeContentMd5Hash()
 
-		nw.Reader.ComputeUUID(document)
-		nw.Reader.ComputeContentMd5Hash(document)
 		log.Println("Storing computed chunk data: ", document.ContentMD5)
 		if err := nw.Searcher.StoreDocument(document); err != nil {
 			log.Println("Failed while storing document: ", err)
-			continue
 		}
 	}
 
