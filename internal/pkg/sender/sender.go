@@ -6,7 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -39,4 +42,26 @@ func SendRequest(body *bytes.Buffer, url, mime *string, timeout time.Duration) (
 	}
 
 	return respData, nil
+}
+
+func CreateFormFile(fileHandle *os.File, reqBody *bytes.Buffer) (*multipart.Writer, error) {
+	writer := multipart.NewWriter(reqBody)
+	filePath := filepath.Base(fileHandle.Name())
+	formFile, err := writer.CreateFormFile("file", filePath)
+	if err != nil {
+		log.Println("Failed while creating form file: ", err)
+		return nil, err
+	}
+
+	if _, err = io.Copy(formFile, fileHandle); err != nil {
+		log.Println("Failed while coping file form part to file handle: ", err)
+		return nil, err
+	}
+
+	if err = writer.Close(); err != nil {
+		log.Println("Failed while closing req body writer: ", err)
+		return nil, err
+	}
+
+	return writer, nil
 }

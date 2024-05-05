@@ -1,6 +1,12 @@
 package reader
 
-import "sync"
+import (
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"sync"
+)
 
 type Service struct {
 	mu           *sync.RWMutex
@@ -42,4 +48,57 @@ func (s *Service) GetAwaitDocuments() []*Document {
 		awaitDocs = append(awaitDocs, document)
 	}
 	return awaitDocs
+}
+
+func (s *Service) ParseCaughtFiles(filePath string) []*Document {
+	mu := &sync.Mutex{}
+	var customList []*Document
+
+	wg := &sync.WaitGroup{}
+	for _, filePath := range getEntityFiles(filePath) {
+		wg.Add(1)
+		filePath := filePath
+
+		go func() {
+			defer wg.Done()
+
+			if doc, err := ParseFile(filePath); err == nil {
+				log.Println("Caught parsed document: ", doc.DocumentName)
+				mu.Lock()
+				customList = append(customList, doc)
+				mu.Unlock()
+				return
+			}
+
+			log.Println("Failed parsing document: ", filePath)
+		}()
+	}
+
+	wg.Wait()
+
+	return customList
+}
+
+func (s *Service) MoveFileToUnrecognized(document *Document) error {
+	outputFilePath := fmt.Sprintf("%s/%s", "./indexer/unrecognized", document.DocumentName)
+	if err := moveFileTo(document.DocumentPath, outputFilePath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) MoveFileToDir(filePath string, targetDir string) error {
+	_, err := os.Stat(targetDir)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(targetDir, os.ModePerm)
+	}
+
+	_, fileName := filepath.Split(filePath)
+	outputFilePath := fmt.Sprintf("%s/%s", targetDir, fileName)
+	if err = moveFileTo(filePath, outputFilePath); err != nil {
+		return err
+	}
+
+	return nil
 }

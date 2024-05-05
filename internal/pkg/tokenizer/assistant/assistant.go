@@ -1,8 +1,10 @@
-package tokenizer
+package assistant
 
 import (
 	"bytes"
 	"doc-notifier/internal/pkg/sender"
+	"doc-notifier/internal/pkg/tokenizer/forms"
+	"doc-notifier/internal/pkg/tokenizer/tokoptions"
 	"encoding/json"
 	"log"
 	"math"
@@ -12,7 +14,7 @@ import (
 
 const EmbeddingsAssistantURL = "/embed"
 
-type AssistantTokenizer struct {
+type Service struct {
 	address           string
 	timeout           time.Duration
 	ChunkSize         int
@@ -20,8 +22,8 @@ type AssistantTokenizer struct {
 	ReturnChunkedText bool
 }
 
-func NewAssistant(options *Options) *AssistantTokenizer {
-	return &AssistantTokenizer{
+func New(options *tokoptions.Options) *Service {
+	return &Service{
 		address:           options.Address,
 		timeout:           options.Timeout,
 		ChunkSize:         options.ChunkSize,
@@ -30,22 +32,17 @@ func NewAssistant(options *Options) *AssistantTokenizer {
 	}
 }
 
-type EmbedAllForm struct {
-	Inputs   string `json:"inputs"`
-	Truncate bool   `json:"truncate"`
-}
-
-func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens, error) {
-	computedTokens := &ComputedTokens{
+func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error) {
+	computedTokens := &forms.ComputedTokens{
 		Chunks:      1,
 		ChunkedText: []string{},
 		Vectors:     [][]float64{},
 	}
 
 	contentData := strings.ReplaceAll(content, "\n", " ")
-	chunkedText := at.splitContent(contentData, at.ChunkSize)
+	chunkedText := s.splitContent(contentData, s.ChunkSize)
 	for _, textData := range chunkedText {
-		if tokens, err := at.loadTextDataTokens(textData); err == nil {
+		if tokens, err := s.loadTextDataTokens(textData); err == nil {
 			computedTokens.Chunks++
 			computedTokens.Vectors = append(computedTokens.Vectors, tokens)
 			computedTokens.ChunkedText = append(computedTokens.ChunkedText, textData)
@@ -55,23 +52,25 @@ func (at *AssistantTokenizer) TokenizeTextData(content string) (*ComputedTokens,
 	return computedTokens, nil
 }
 
-func (at *AssistantTokenizer) loadTextDataTokens(content string) ([]float64, error) {
+func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 	textVectors := &EmbedAllForm{
 		Inputs:   content,
 		Truncate: false,
 	}
 
-	jsonData, err := json.Marshal(textVectors)
-	if err != nil {
-		log.Println("Failed while marshaling text vectors: ", err)
-		return []float64{}, err
+	var tokenErr error
+	var jsonData []byte
+	if jsonData, tokenErr = json.Marshal(textVectors); tokenErr != nil {
+		log.Println("Failed while marshaling text vectors: ", tokenErr)
+		return []float64{}, tokenErr
 	}
 
-	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := at.address + EmbeddingsAssistantURL
 	log.Printf("Sending file to extract tokens")
+	reqBody := bytes.NewBuffer(jsonData)
+
 	mimeType := "application/json"
-	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, at.timeout)
+	targetURL := s.address + EmbeddingsAssistantURL
+	respData, err := sender.SendRequest(reqBody, &targetURL, &mimeType, s.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return []float64{}, err
@@ -79,11 +78,12 @@ func (at *AssistantTokenizer) loadTextDataTokens(content string) ([]float64, err
 
 	tokensDense := &[][]float64{}
 	_ = json.Unmarshal(respData, tokensDense)
+
 	tmp := *tokensDense
 	return tmp[0], nil
 }
 
-func (at *AssistantTokenizer) splitContent(content string, chunkSize int) []string {
+func (s *Service) splitContent(content string, chunkSize int) []string {
 	strLength := len(content)
 	splitLength := int(math.Ceil(float64(strLength) / float64(chunkSize)))
 	splitString := make([]string, splitLength)
