@@ -3,7 +3,7 @@ definitions:
     properties:
       document_ids:
         example:
-        - '[886f7e11874040ca8b8461fb4cd1aa2c]'
+        - 886f7e11874040ca8b8461fb4cd1aa2c
         items:
           type: string
         type: array
@@ -21,7 +21,7 @@ definitions:
     properties:
       document_paths:
         example:
-        - '[./indexer/upload/test.txt]'
+        - ./indexer/upload/test.txt
         items:
           type: string
         type: array
@@ -36,7 +36,7 @@ definitions:
         type: integer
       file_paths:
         example:
-        - '[./indexer/upload/test.txt]'
+        - ./indexer/upload/test.txt
         items:
           type: string
         type: array
@@ -48,7 +48,7 @@ definitions:
     properties:
       document_paths:
         example:
-        - '[./indexer/upload/test.txt]'
+        - ./indexer/upload/test.txt
         items:
           type: string
         type: array

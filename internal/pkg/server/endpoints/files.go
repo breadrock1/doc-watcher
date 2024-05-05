@@ -13,7 +13,7 @@ import (
 
 // AnalyseFilesForm example
 type AnalyseFilesForm struct {
-	DocumentIDs []string `json:"document_ids" example:"[886f7e11874040ca8b8461fb4cd1aa2c]"`
+	DocumentIDs []string `json:"document_ids" example:"886f7e11874040ca8b8461fb4cd1aa2c"`
 }
 
 // UnrecognizedDocuments example
@@ -24,19 +24,19 @@ type UnrecognizedDocuments struct {
 // MoveFilesForm example
 type MoveFilesForm struct {
 	TargetDirectory string   `json:"target_directory" example:"unrecognized"`
-	DocumentPaths   []string `json:"document_paths" example:"[./indexer/upload/test.txt]"`
+	DocumentPaths   []string `json:"document_paths" example:"./indexer/upload/test.txt"`
 }
 
 // RemoveFilesForm example
 type RemoveFilesForm struct {
-	DocumentPaths []string `json:"document_paths" example:"[./indexer/upload/test.txt]"`
+	DocumentPaths []string `json:"document_paths" example:"./indexer/upload/test.txt"`
 }
 
 // RemoveFilesError example
 type RemoveFilesError struct {
 	Code      int      `json:"code" example:"403"`
 	Message   string   `json:"message" example:"File not found"`
-	FilePaths []string `json:"file_paths" example:"[./indexer/upload/test.txt]"`
+	FilePaths []string `json:"file_paths" example:"./indexer/upload/test.txt"`
 }
 
 // UploadFilesToUnrecognized
