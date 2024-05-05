@@ -60,7 +60,7 @@ type OcrResult struct {
 
 type Artifacts struct {
 	TransportInvoiceDate      string `json:"date_of_transport_invoice" name:"Дата транспортной накладной"`
-	TransportInvoiceNumber    string `json:"number_of_transport_invoice" name:"Transport invoice number"`
+	TransportInvoiceNumber    string `json:"number_of_transport_invoice" name:"Номер транспортной накладной"`
 	TransferCompany           string `json:"transfer_company" name:"Трансферная Компания"`
 	OrderNumber               string `json:"order_number" name:"Номер заказа"`
 	Carrier                   string `json:"carrier" name:"Перевозчик"`
