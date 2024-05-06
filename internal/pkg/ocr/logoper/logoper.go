@@ -17,7 +17,7 @@ import (
 )
 
 const CheckJobStatusTimeout = 5 * time.Second
-const RecognitionURL = "/api/v2/text/create_extraction"
+const RecognitionURL = "/api/v3/text/create_extraction"
 const GetResultURL = "/api/v2/text/get"
 
 type Service struct {
