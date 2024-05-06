@@ -3,7 +3,6 @@ package reader
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/fatih/structs"
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
 	"log"
@@ -49,40 +48,22 @@ type Document struct {
 }
 
 type OcrMetadata struct {
-	JobId      string     `json:"job_id"`
-	Text       string     `json:"text"`
-	PagesCount int        `json:"pages_count"`
-	DocType    string     `json:"doc_type"`
-	Artifacts  *Artifacts `json:"artifacts"`
+	JobId      string       `json:"job_id"`
+	Text       string       `json:"text"`
+	PagesCount int          `json:"pages_count"`
+	DocType    string       `json:"doc_type"`
+	Artifacts  []*Artifacts `json:"artifacts"`
 }
 
 type Artifacts struct {
-	TransportInvoiceDate      string `json:"date_of_transport_invoice" name:"Дата транспортной накладной"`
-	TransportInvoiceNumber    string `json:"number_of_transport_invoice" name:"Номер транспортной накладной"`
-	TransferCompany           string `json:"transfer_company" name:"Трансферная Компания"`
-	OrderNumber               string `json:"order_number" name:"Номер заказа"`
-	Carrier                   string `json:"carrier" name:"Перевозчик"`
-	VehicleNumber             string `json:"vehicle_number" name:"Номер автомобиля"`
-	CargoDateArrival          string `json:"arrival_of_cargo_date_time" name:"Дата прибытия груза"`
-	CargoDateDeparture        string `json:"departure_of_cargo_date_time" name:"Дата отправления груза"`
-	AddressRedirection        string `json:"redirection_address" name:"Адрес перенаправление"`
-	DateRedirection           string `json:"redirection_date_time" name:"Дата перенаправления"`
-	CargoIssueAddress         string `json:"cargo_issue_address" name:"Адрес выдачи груза"`
-	CargoIssueDate            string `json:"cargo_issue_date" name:"Дата выдачи груза"`
-	CargoWeight               string `json:"cargo_weight" name:"Вес груза"`
-	CargoPlacesNumber         string `json:"number_of_cargo_places" name:"Номер места для автомобиля"`
-	ContainerReceiptActNumber string `json:"container_receipt_act_number" name:"Номер акта получения контейнера"`
-	ContainerReceiptActDate   string `json:"container_receipt_act_date_time" name:"Дата акта приема контейнера"`
-	ContainerNumber           string `json:"container_number" name:"Номер контейнера"`
-	TerminalName              string `json:"terminal_name" name:"Имя терминала"`
-	KtkName                   string `json:"ktk_state" name:"Имя ктк"`
-	DriverFullName            string `json:"driver_full_name" name:"Полное имя водителя"`
-	DocumentNumber            string `json:"document_number" name:"Номер документа"`
-	ShipName                  string `json:"ship_name" name:"Название корабля"`
-	FlightNumber              string `json:"flight_number" name:"Номер рейса"`
-	ShipDate                  string `json:"ship_date" name:"Дата отправки"`
-	DocumentType              string `json:"document_type" name:"Тип документа"`
-	Seals                     bool   `json:"seals" name:"Морские котики?"`
+	GroupName     string `json:"group_name"`
+	GroupJsonName string `json:"group_json_name"`
+	GroupValues   []struct {
+		Name     string `json:"name"`
+		JsonName string `json:"json_name"`
+		Type     string `json:"type"`
+		Value    string `json:"value"`
+	} `json:"group_values"`
 }
 
 func ParseFile(filePath string) (*Document, error) {
@@ -182,37 +163,20 @@ func (d *Document) SetQuality(quality int32) {
 	d.QualityRecognized = quality
 }
 
-func (d *Document) GetGroupedProperties() []*PreviewProperties {
-	properties := make([]*PreviewProperties, 0)
+func (d *Document) SetOcrMetadata(ocr *OcrMetadata) {
+	d.OcrMetadata = ocr
+}
+
+func (d *Document) GetArtifacts() []*Artifacts {
+	if d.OcrMetadata == nil {
+		return make([]*Artifacts, 0)
+	}
+
 	if d.OcrMetadata.Artifacts == nil {
-		return properties
+		return make([]*Artifacts, 0)
 	}
 
-	for _, field := range structs.Fields(d.OcrMetadata.Artifacts) {
-		if field.Tag("json") == "seals" {
-			continue
-		}
-
-		fieldData := field.Value()
-		if fieldData == nil {
-			continue
-		}
-
-		value := fieldData.(string)
-		if len(value) == 0 {
-			continue
-		}
-
-		key := field.Tag("json")
-		name := field.Tag("name")
-		properties = append(properties, &PreviewProperties{
-			Key:   key,
-			Name:  name,
-			Value: value,
-		})
-	}
-
-	return properties
+	return d.OcrMetadata.Artifacts
 }
 
 func (d *Document) MoveMetadataTextToContent() {
@@ -226,10 +190,6 @@ func (d *Document) MoveMetadataTextToContent() {
 
 	d.Content = d.OcrMetadata.Text
 	d.OcrMetadata.Text = ""
-}
-
-func (d *Document) SetOcrMetadata(ocr *OcrMetadata) {
-	d.OcrMetadata = ocr
 }
 
 func parseBucketName(filePath string) string {
