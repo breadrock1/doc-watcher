@@ -3,13 +3,13 @@ package reader
 const MaxQualityValue = 10000
 
 type DocumentPreview struct {
-	DocumentID        string               `json:"id" example:"886f7e11874040ca8b8461fb4cd1aa2c"`
-	DocumentName      string               `json:"name" example:"document_name.pdf"`
-	CreatedAt         string               `json:"created_at" example:"2024-05-04T22:53:57Z"`
-	QualityOCR        int                  `json:"quality_recognition" example:"10000"`
-	FileSize          int64                `json:"file_size" example:"311652"`
-	Location          string               `json:"location" example:"unrecognized"`
-	PreviewProperties []*PreviewProperties `json:"preview_properties"`
+	DocumentID        string       `json:"id" example:"886f7e11874040ca8b8461fb4cd1aa2c"`
+	DocumentName      string       `json:"name" example:"document_name.pdf"`
+	CreatedAt         string       `json:"created_at" example:"2024-05-04T22:53:57Z"`
+	QualityOCR        int          `json:"quality_recognition" example:"10000"`
+	FileSize          int64        `json:"file_size" example:"311652"`
+	Location          string       `json:"location" example:"unrecognized"`
+	PreviewProperties []*Artifacts `json:"preview_properties"`
 }
 
 type PreviewProperties struct {
@@ -20,17 +20,19 @@ type PreviewProperties struct {
 
 func FromDocument(document *Document) *DocumentPreview {
 	var location string
-	var previewProperties []*PreviewProperties
+	var previewProperties []*Artifacts
+	ocrQuality := 1
 	if document.OcrMetadata != nil {
+		ocrQuality = MaxQualityValue
 		location = document.OcrMetadata.DocType
-		previewProperties = document.GetGroupedProperties()
+		previewProperties = document.GetArtifacts()
 	}
 
 	return &DocumentPreview{
 		DocumentID:        document.DocumentMD5,
 		DocumentName:      document.DocumentName,
 		CreatedAt:         document.DocumentCreated,
-		QualityOCR:        -1,
+		QualityOCR:        ocrQuality,
 		FileSize:          document.DocumentSize,
 		Location:          location,
 		PreviewProperties: previewProperties,
