@@ -9,9 +9,9 @@ services:
     environment:
       - DOC_NOTIFIER_SERVICE_ADDRESS=0.0.0.0:2893
       - DOC_NOTIFIER_WATCHED_DIRS=./indexer/watcher
-      - OCR_SERVICE_ADDRESS=http://dedoc:9092
+      - OCR_SERVICE_ADDRESS=http://10.11.34.214:9092
       - OCR_SERVICE_MODE=logoper
-      - DOC_SEARCHER_SERVICE_ADDRESS=http://docsearcher:2892
+      - DOC_SEARCHER_SERVICE_ADDRESS=http://10.11.34.212:2892
       - TOKENIZER_MODE=none
       - TOKENIZER_CHUNK_SIZE=800
       - TOKENIZER_CHUNK_OVERLAP=100
