@@ -176,6 +176,7 @@ func MoveFiles(c echo.Context) error {
 	for _, documentName := range jsonForm.DocumentPaths {
 		srcFilePath := path.Join("./indexer", sourceDir, documentName)
 		targetDirPath := path.Join("./indexer", targetDir)
+
 		err := watcher.Reader.MoveFileToDir(srcFilePath, targetDirPath)
 		if err != nil {
 			collectedErrors = append(collectedErrors, documentName)
