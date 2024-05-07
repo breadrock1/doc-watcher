@@ -677,7 +677,7 @@ const docTemplate = `{
         "endpoints.MoveFilesForm": {
             "type": "object",
             "properties": {
-                "document_paths": {
+                "document_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -686,7 +686,11 @@ const docTemplate = `{
                         "./indexer/upload/test.txt"
                     ]
                 },
-                "target_directory": {
+                "location": {
+                    "type": "string",
+                    "example": "common_folder"
+                },
+                "src_folder_id": {
                     "type": "string",
                     "example": "unrecognized"
                 }

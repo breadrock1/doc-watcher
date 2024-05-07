@@ -23,8 +23,9 @@ type UnrecognizedDocuments struct {
 
 // MoveFilesForm example
 type MoveFilesForm struct {
-	TargetDirectory string   `json:"target_directory" example:"unrecognized"`
-	DocumentPaths   []string `json:"document_paths" example:"./indexer/upload/test.txt"`
+	TargetDirectory string   `json:"location" example:"common_folder"`
+	SourceDirectory string   `json:"src_folder_id" example:"unrecognized"`
+	DocumentPaths   []string `json:"document_ids" example:"./indexer/upload/test.txt"`
 }
 
 // RemoveFilesForm example
@@ -169,11 +170,15 @@ func MoveFiles(c echo.Context) error {
 
 	var collectedErrors []string
 	targetDir := jsonForm.TargetDirectory
+	sourceDir := jsonForm.SourceDirectory
+
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
-	for _, documentPath := range jsonForm.DocumentPaths {
-		err := watcher.Reader.MoveFileToDir(documentPath, targetDir)
+	for _, documentName := range jsonForm.DocumentPaths {
+		srcFilePath := path.Join("./indexer", sourceDir, documentName)
+		targetDirPath := path.Join("./indexer", targetDir)
+		err := watcher.Reader.MoveFileToDir(srcFilePath, targetDirPath)
 		if err != nil {
-			collectedErrors = append(collectedErrors, documentPath)
+			collectedErrors = append(collectedErrors, documentName)
 			log.Println(err)
 			continue
 		}
