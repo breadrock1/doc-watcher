@@ -25,8 +25,11 @@ definitions:
         items:
           type: string
         type: array
-      target_directory:
+      source_directory:
         example: unrecognized
+        type: string
+      target_directory:
+        example: common_folder
         type: string
     type: object
   endpoints.RemoveFilesError:
@@ -87,6 +90,26 @@ definitions:
           type: string
         type: array
     type: object
+  reader.Artifacts:
+    properties:
+      group_json_name:
+        type: string
+      group_name:
+        type: string
+      group_values:
+        items:
+          properties:
+            json_name:
+              type: string
+            name:
+              type: string
+            type:
+              type: string
+            value:
+              type: string
+          type: object
+        type: array
+    type: object
   reader.DocumentPreview:
     properties:
       created_at:
@@ -106,23 +129,11 @@ definitions:
         type: string
       preview_properties:
         items:
-          $ref: '#/definitions/reader.PreviewProperties'
+          $ref: '#/definitions/reader.Artifacts'
         type: array
       quality_recognition:
         example: 10000
         type: integer
-    type: object
-  reader.PreviewProperties:
-    properties:
-      key:
-        example: field_date_transaction
-        type: string
-      name:
-        example: Date and time of transaction
-        type: string
-      value:
-        example: 18.03.2024, 23:59
-        type: string
     type: object
 info:
   contact: {}

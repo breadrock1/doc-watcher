@@ -589,9 +589,13 @@ const docTemplate = `{
                         "./indexer/upload/test.txt"
                     ]
                 },
-                "target_directory": {
+                "source_directory": {
                     "type": "string",
                     "example": "unrecognized"
+                },
+                "target_directory": {
+                    "type": "string",
+                    "example": "common_folder"
                 }
             }
         },
@@ -682,6 +686,37 @@ const docTemplate = `{
                 }
             }
         },
+        "reader.Artifacts": {
+            "type": "object",
+            "properties": {
+                "group_json_name": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "group_values": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "json_name": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "reader.DocumentPreview": {
             "type": "object",
             "properties": {
@@ -708,29 +743,12 @@ const docTemplate = `{
                 "preview_properties": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/reader.PreviewProperties"
+                        "$ref": "#/definitions/reader.Artifacts"
                     }
                 },
                 "quality_recognition": {
                     "type": "integer",
                     "example": 10000
-                }
-            }
-        },
-        "reader.PreviewProperties": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string",
-                    "example": "field_date_transaction"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Date and time of transaction"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "18.03.2024, 23:59"
                 }
             }
         }
