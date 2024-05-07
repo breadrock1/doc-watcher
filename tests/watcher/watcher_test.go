@@ -1,12 +1,16 @@
 package watcher
 
 import (
+	"doc-notifier/internal/pkg/reader"
 	"doc-notifier/internal/pkg/watcher"
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
-const TestcaseDirPath = "../../testcases/"
+const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
@@ -33,7 +37,7 @@ func TestWatcherManager(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})
 		assert.NoError(t, err, "Failed while appending dir to watch")
 
-		dirs := watch.WatchedDirsList()
+		dirs := watch.GetWatchedDirectories()
 		assert.Equal(t, len(dirs), 1, "Not equal appended dirs")
 
 		err = watch.RemoveDirectories([]string{TestcaseDirPath})
@@ -45,7 +49,7 @@ func TestWatcherManager(t *testing.T) {
 		err := watch.AppendDirectories(dirs)
 		assert.NoError(t, err, "Failed while appending dir to watch")
 
-		attached := watch.WatchedDirsList()
+		attached := watch.GetWatchedDirectories()
 		assert.Equal(t, len(dirs), len(attached), "Not equal appended dirs")
 
 		err = watch.RemoveDirectories(dirs)
@@ -58,5 +62,14 @@ func TestWatcherManager(t *testing.T) {
 
 		err = watch.RemoveDirectories([]string{TestcaseDirPath + "any"})
 		assert.Error(t, err, "Failed while catching error to detach")
+	})
+
+	t.Run("Parse complex structure with OcrMetadata", func(t *testing.T) {
+		file, _ := os.ReadFile(TestcaseDirPath + "ocr_result.json")
+		var previews []reader.DocumentPreview
+		if err := json.Unmarshal(file, &previews); err != nil {
+			fmt.Println(err)
+		}
+		fmt.Printf("%v", previews)
 	})
 }

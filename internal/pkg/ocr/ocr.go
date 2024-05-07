@@ -3,7 +3,9 @@ package ocr
 import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/ocr/dedoc"
+	"doc-notifier/internal/pkg/ocr/logoper"
 	"doc-notifier/internal/pkg/ocr/raw"
+	"doc-notifier/internal/pkg/reader"
 )
 
 type Service struct {
@@ -11,8 +13,7 @@ type Service struct {
 }
 
 type Recognizer interface {
-	RecognizeFile(filePath string) (string, error)
-	RecognizeFileData(data []byte) (string, error)
+	RecognizeFile(document *reader.Document) error
 }
 
 func New(options *Options) *Service {
@@ -25,6 +26,8 @@ func New(options *Options) *Service {
 		service.Ocr = dedoc.New(options.Address, options.Timeout)
 	case AssistantMode:
 		service.Ocr = assistant.New(options.Address, options.Timeout)
+	case Logoper:
+		service.Ocr = logoper.New(options.Address, options.Timeout)
 	default:
 		service.Ocr = raw.New()
 	}

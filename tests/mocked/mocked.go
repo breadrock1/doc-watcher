@@ -3,8 +3,8 @@ package mocked
 import (
 	"doc-notifier/internal/pkg/ocr/assistant"
 	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/searcher"
-	"doc-notifier/internal/pkg/tokenizer"
+	"doc-notifier/internal/pkg/tokenizer/forms"
+	"doc-notifier/internal/pkg/tokenizer/langchain"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"log"
@@ -20,8 +20,8 @@ type TokenizerForm struct {
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
-	e.POST(tokenizer.ServiceURL, ComputeTokens)
-	e.POST(searcher.ServiceURL, StoreDocument)
+	e.POST(langchain.ServiceURL, ComputeTokens)
+	e.POST("/documents/create", StoreDocument)
 
 	return e
 }
@@ -46,8 +46,15 @@ func StoreDocument(c echo.Context) error {
 	return c.JSON(200, document)
 }
 
+type GetTokensForm struct {
+	Text              string `json:"text"`
+	ChunkSize         int    `json:"chunk_size"`
+	ChunkOverlap      int    `json:"chunk_overlap"`
+	ReturnChunkedText bool   `json:"return_chunked_text"`
+}
+
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &tokenizer.GetTokensForm{}
+	tokensForm := &GetTokensForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 
@@ -57,7 +64,7 @@ func ComputeTokens(c echo.Context) error {
 		return c.JSON(403, tokensForm)
 	}
 
-	tokenizedVector := tokenizer.ComputedTokens{
+	tokenizedVector := forms.ComputedTokens{
 		Chunks:      1,
 		ChunkedText: []string{"test_file_1"},
 		Vectors:     [][]float64{{0.345, 0.045}},
