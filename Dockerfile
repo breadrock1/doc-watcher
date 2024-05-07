@@ -3,7 +3,7 @@ FROM alpine:3.19.1
 WORKDIR /app
 COPY . .
 
-RUN mkdir -p indexer upload
+RUN mkdir -p ./indexer/{uploads,watcher,unrecognized}
 
 RUN apk add --no-cache curl
 
