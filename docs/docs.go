@@ -686,9 +686,13 @@ const docTemplate = `{
                         "./indexer/upload/test.txt"
                     ]
                 },
-                "target_directory": {
+                "source_directory": {
                     "type": "string",
                     "example": "unrecognized"
+                },
+                "target_directory": {
+                    "type": "string",
+                    "example": "common_folder"
                 }
             }
         },

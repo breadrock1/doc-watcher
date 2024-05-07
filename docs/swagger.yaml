@@ -31,8 +31,11 @@ definitions:
         items:
           type: string
         type: array
-      target_directory:
+      source_directory:
         example: unrecognized
+        type: string
+      target_directory:
+        example: common_folder
         type: string
     type: object
   endpoints.RemoveFilesError:
