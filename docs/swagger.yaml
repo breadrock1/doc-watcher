@@ -17,6 +17,12 @@ definitions:
         example: 400
         type: integer
     type: object
+  endpoints.FolderNameForm:
+    properties:
+      folder_name:
+        example: test_folder
+        type: string
+    type: object
   endpoints.MoveFilesForm:
     properties:
       document_paths:
@@ -87,6 +93,26 @@ definitions:
           type: string
         type: array
     type: object
+  reader.Artifacts:
+    properties:
+      group_json_name:
+        type: string
+      group_name:
+        type: string
+      group_values:
+        items:
+          properties:
+            json_name:
+              type: string
+            name:
+              type: string
+            type:
+              type: string
+            value:
+              type: string
+          type: object
+        type: array
+    type: object
   reader.DocumentPreview:
     properties:
       created_at:
@@ -106,23 +132,11 @@ definitions:
         type: string
       preview_properties:
         items:
-          $ref: '#/definitions/reader.PreviewProperties'
+          $ref: '#/definitions/reader.Artifacts'
         type: array
       quality_recognition:
         example: 10000
         type: integer
-    type: object
-  reader.PreviewProperties:
-    properties:
-      key:
-        example: field_date_transaction
-        type: string
-      name:
-        example: Date and time of transaction
-        type: string
-      value:
-        example: 18.03.2024, 23:59
-        type: string
     type: object
 info:
   contact: {}
@@ -369,6 +383,35 @@ paths:
       summary: Attach new directory to watcher
       tags:
       - watcher
+  /watcher/folders/create:
+    post:
+      description: Create folder to store documents
+      operationId: folder-create
+      parameters:
+      - description: Folder name to create
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.FolderNameForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/endpoints.ServerErrorForm'
+      summary: Create folder to store documents
+      tags:
+      - files
   /watcher/folders/detach:
     post:
       consumes:
@@ -400,6 +443,35 @@ paths:
       summary: Attach new directory to watcher
       tags:
       - watcher
+  /watcher/folders/remove:
+    post:
+      description: Remove folder
+      operationId: folder-remove
+      parameters:
+      - description: Folder name to remove
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/endpoints.FolderNameForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/endpoints.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/endpoints.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/endpoints.ServerErrorForm'
+      summary: Remove folder
+      tags:
+      - files
   /watcher/folders/upload:
     post:
       consumes:

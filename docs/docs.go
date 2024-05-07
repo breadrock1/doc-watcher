@@ -380,6 +380,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/watcher/folders/create": {
+            "post": {
+                "description": "Create folder to store documents",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Create folder to store documents",
+                "operationId": "folder-create",
+                "parameters": [
+                    {
+                        "description": "Folder name to create",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.FolderNameForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
         "/watcher/folders/detach": {
             "post": {
                 "description": "Attach new directory to watcher",
@@ -402,6 +446,50 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/endpoints.WatcherDirectoriesForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/remove": {
+            "post": {
+                "description": "Remove folder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Remove folder",
+                "operationId": "folder-remove",
+                "parameters": [
+                    {
+                        "description": "Folder name to remove",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.FolderNameForm"
                         }
                     }
                 ],
@@ -577,6 +665,15 @@ const docTemplate = `{
                 }
             }
         },
+        "endpoints.FolderNameForm": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "test_folder"
+                }
+            }
+        },
         "endpoints.MoveFilesForm": {
             "type": "object",
             "properties": {
@@ -682,6 +779,37 @@ const docTemplate = `{
                 }
             }
         },
+        "reader.Artifacts": {
+            "type": "object",
+            "properties": {
+                "group_json_name": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "group_values": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "json_name": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "reader.DocumentPreview": {
             "type": "object",
             "properties": {
@@ -708,29 +836,12 @@ const docTemplate = `{
                 "preview_properties": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/reader.PreviewProperties"
+                        "$ref": "#/definitions/reader.Artifacts"
                     }
                 },
                 "quality_recognition": {
                     "type": "integer",
                     "example": 10000
-                }
-            }
-        },
-        "reader.PreviewProperties": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string",
-                    "example": "field_date_transaction"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Date and time of transaction"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "18.03.2024, 23:59"
                 }
             }
         }
