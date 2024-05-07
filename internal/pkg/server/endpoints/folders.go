@@ -9,11 +9,17 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path"
 )
 
 // WatcherDirectoriesForm example
 type WatcherDirectoriesForm struct {
 	Paths []string `json:"paths" example:"./indexer/test_folder"`
+}
+
+// FolderNameForm example
+type FolderNameForm struct {
+	FolderName string `json:"folder_name" example:"test_folder"`
 }
 
 // GetWatchedDirectories
@@ -29,6 +35,62 @@ func GetWatchedDirectories(c echo.Context) error {
 	watcher := c.Get("Watcher").(*watcher2.NotifyWatcher)
 	watcherDirs := watcher.GetWatchedDirectories()
 	return c.JSON(200, watcherDirs)
+}
+
+// CreateFolder
+// @Summary Create folder to store documents
+// @Description Create folder to store documents
+// @ID folder-create
+// @Tags files
+// @Produce  json
+// @Param jsonQuery body FolderNameForm true "Folder name to create"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/create [post]
+func CreateFolder(c echo.Context) error {
+	jsonForm := &FolderNameForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	folderPath := path.Join("./indexer", jsonForm.FolderName)
+	if err := os.Mkdir(folderPath, os.ModePerm); err != nil {
+		respErr := createStatusResponse(208, err.Error())
+		return c.JSON(208, respErr)
+	}
+
+	return c.JSON(200, createStatusResponse(200, "Ok"))
+}
+
+// RemoveFolder
+// @Summary Remove folder
+// @Description Remove folder
+// @ID folder-remove
+// @Tags files
+// @Produce  json
+// @Param jsonQuery body FolderNameForm true "Folder name to remove"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/remove [post]
+func RemoveFolder(c echo.Context) error {
+	jsonForm := &FolderNameForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	folderPath := path.Join("./indexer", jsonForm.FolderName)
+	if err := os.RemoveAll(folderPath); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	return c.JSON(200, createStatusResponse(200, "Ok"))
 }
 
 // AttachDirectories

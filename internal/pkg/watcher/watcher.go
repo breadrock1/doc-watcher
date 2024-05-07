@@ -62,7 +62,7 @@ func New(options *Options) *NotifyWatcher {
 	return &NotifyWatcher{
 		mu:                  &sync.RWMutex{},
 		stopCh:              make(chan bool),
-		AppendCh:            make(chan *reader.Document),
+		AppendCh:            make(chan *reader.Document, 10),
 		ReturnCh:            make(chan []*reader.Document),
 		RecognizedDocuments: make(map[string]*reader.Document),
 		PauseWatchers:       false,
@@ -198,7 +198,10 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 	}
 
 	srcDocPath := document.DocumentPath
-	targetDirPath := document.OcrMetadata.DocType
+	targetDirPath := strings.ToLower(document.OcrMetadata.DocType)
+	if len(targetDirPath) == 0 {
+		targetDirPath = "неизвестно"
+	}
 	folderPath := path.Join("./indexer/", targetDirPath)
 	_ = nw.Reader.MoveFileToDir(srcDocPath, folderPath)
 	dstDocPath := path.Join(folderPath, document.DocumentName)
@@ -210,7 +213,11 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 	document.SetContentMd5Hash(document.DocumentMD5)
 
 	nw.AppendRecognizedDocument(document)
-	_ = nw.Searcher.StoreDocument(document)
+	if err := nw.Searcher.StoreDocument(document); err != nil {
+		log.Println("Failed while storing document: ", err)
+		return
+	}
+	log.Printf("Store successful document %s to %s: ", document.DocumentName, targetDirPath)
 }
 
 func consumeWatcherDirectories(directories []string, consumer func(name string) error) error {
