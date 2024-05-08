@@ -380,6 +380,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/watcher/folders/create": {
+            "post": {
+                "description": "Create folder to store documents",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Create folder to store documents",
+                "operationId": "folder-create",
+                "parameters": [
+                    {
+                        "description": "Folder name to create",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.FolderNameForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
         "/watcher/folders/detach": {
             "post": {
                 "description": "Attach new directory to watcher",
@@ -402,6 +446,50 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/endpoints.WatcherDirectoriesForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/folders/remove": {
+            "post": {
+                "description": "Remove folder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Remove folder",
+                "operationId": "folder-remove",
+                "parameters": [
+                    {
+                        "description": "Folder name to remove",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/endpoints.FolderNameForm"
                         }
                     }
                 ],
@@ -577,10 +665,19 @@ const docTemplate = `{
                 }
             }
         },
+        "endpoints.FolderNameForm": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "test_folder"
+                }
+            }
+        },
         "endpoints.MoveFilesForm": {
             "type": "object",
             "properties": {
-                "document_paths": {
+                "document_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -589,13 +686,13 @@ const docTemplate = `{
                         "./indexer/upload/test.txt"
                     ]
                 },
-                "source_directory": {
-                    "type": "string",
-                    "example": "unrecognized"
-                },
-                "target_directory": {
+                "location": {
                     "type": "string",
                     "example": "common_folder"
+                },
+                "src_folder_id": {
+                    "type": "string",
+                    "example": "unrecognized"
                 }
             }
         },
