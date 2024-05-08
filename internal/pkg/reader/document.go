@@ -99,6 +99,10 @@ func ParseFile(filePath string) (*Document, error) {
 	return document, nil
 }
 
+func (d *Document) SetFolderID(folderID string) {
+	d.FolderID = folderID
+}
+
 func (d *Document) SetFolderPath(path string) {
 	d.FolderPath = path
 }
