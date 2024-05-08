@@ -46,6 +46,8 @@ func (s *EchoServer) RunServer() {
 	s.server.POST("/watcher/folders/attach", endpoints.AttachDirectories)
 	s.server.POST("/watcher/folders/detach", endpoints.DetachDirectories)
 	s.server.POST("/watcher/folders/upload", endpoints.UploadFilesToWatcher)
+	s.server.POST("/watcher/folders/create", endpoints.CreateFolder)
+	s.server.POST("/watcher/folders/delete", endpoints.RemoveFolder)
 
 	s.server.POST("/watcher/files/upload", endpoints.UploadFilesToUnrecognized)
 	s.server.POST("/watcher/files/analyse", endpoints.AnalyseFiles)
