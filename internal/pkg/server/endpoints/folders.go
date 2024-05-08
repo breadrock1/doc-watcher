@@ -198,7 +198,6 @@ func RunWatchers(c echo.Context) error {
 // @Accept  multipart/form
 // @Produce  json
 // @Param files formData file true "Files multipart form"
-// @Param directory formData string true "Directory to upload"
 // @Success 200 {array} reader.DocumentPreview "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
 // @Failure	503 {object} ServerErrorForm "Server does not available"
@@ -212,9 +211,8 @@ func UploadFilesToWatcher(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	targetDir := c.FormValue("directory")
 	for _, fileForm := range multipartForm.File["files"] {
-		filePath := fmt.Sprintf("./indexer/%s/%s", targetDir, fileForm.Filename)
+		filePath := fmt.Sprintf("./indexer/watcher/%s", fileForm.Filename)
 		if uploadErr = writeMultipart(fileForm, filePath); uploadErr != nil {
 			log.Println(uploadErr)
 			continue
