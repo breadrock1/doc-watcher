@@ -47,6 +47,7 @@ func (nw *NotifyWatcher) loadFullDocument(document *reader.Document) error {
 	document.ComputeSsdeepHash()
 	document.ComputeContentUUID()
 	document.SetContentVector([]float64{})
+	document.SetContentMd5Hash(document.DocumentMD5)
 
 	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
