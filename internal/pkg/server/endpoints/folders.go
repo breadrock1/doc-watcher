@@ -19,7 +19,7 @@ type WatcherDirectoriesForm struct {
 
 // FolderNameForm example
 type FolderNameForm struct {
-	FolderName string `json:"folder_name" example:"test_folder"`
+	FolderName string `json:"folder_id" example:"test_folder"`
 }
 
 // GetWatchedDirectories
@@ -58,8 +58,8 @@ func CreateFolder(c echo.Context) error {
 
 	folderPath := path.Join("./indexer", jsonForm.FolderName)
 	if err := os.Mkdir(folderPath, os.ModePerm); err != nil {
-		respErr := createStatusResponse(208, err.Error())
-		return c.JSON(208, respErr)
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
 	return c.JSON(200, createStatusResponse(200, "Ok"))
