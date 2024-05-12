@@ -3,7 +3,6 @@ package options
 import (
 	"doc-notifier/internal/pkg/server"
 	"errors"
-	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 	"strings"
@@ -29,9 +28,9 @@ type Options struct {
 }
 
 func LoadFromEnv(disabledDotenv bool) (*Options, error) {
-	if !disabledDotenv {
-		_ = godotenv.Load()
-	}
+	//if !disabledDotenv {
+	//	_ = godotenv.Load()
+	//}
 
 	var envExists bool
 	var tmpOptionVar string
