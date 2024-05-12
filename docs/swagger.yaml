@@ -19,19 +19,22 @@ definitions:
     type: object
   endpoints.FolderNameForm:
     properties:
-      folder_name:
+      folder_id:
         example: test_folder
         type: string
     type: object
   endpoints.MoveFilesForm:
     properties:
-      document_paths:
+      document_ids:
         example:
         - ./indexer/upload/test.txt
         items:
           type: string
         type: array
-      target_directory:
+      location:
+        example: common_folder
+        type: string
+      src_folder_id:
         example: unrecognized
         type: string
     type: object
@@ -484,11 +487,6 @@ paths:
         name: files
         required: true
         type: file
-      - description: Directory to upload
-        in: formData
-        name: directory
-        required: true
-        type: string
       produces:
       - application/json
       responses:

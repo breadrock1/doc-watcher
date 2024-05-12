@@ -19,7 +19,7 @@ type WatcherDirectoriesForm struct {
 
 // FolderNameForm example
 type FolderNameForm struct {
-	FolderName string `json:"folder_name" example:"test_folder"`
+	FolderName string `json:"folder_id" example:"test_folder"`
 }
 
 // GetWatchedDirectories
@@ -58,8 +58,8 @@ func CreateFolder(c echo.Context) error {
 
 	folderPath := path.Join("./indexer", jsonForm.FolderName)
 	if err := os.Mkdir(folderPath, os.ModePerm); err != nil {
-		respErr := createStatusResponse(208, err.Error())
-		return c.JSON(208, respErr)
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
 	return c.JSON(200, createStatusResponse(200, "Ok"))
@@ -198,7 +198,6 @@ func RunWatchers(c echo.Context) error {
 // @Accept  multipart/form
 // @Produce  json
 // @Param files formData file true "Files multipart form"
-// @Param directory formData string true "Directory to upload"
 // @Success 200 {array} reader.DocumentPreview "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
 // @Failure	503 {object} ServerErrorForm "Server does not available"
@@ -212,9 +211,8 @@ func UploadFilesToWatcher(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	targetDir := c.FormValue("directory")
 	for _, fileForm := range multipartForm.File["files"] {
-		filePath := fmt.Sprintf("./indexer/%s/%s", targetDir, fileForm.Filename)
+		filePath := fmt.Sprintf("./indexer/watcher/%s", fileForm.Filename)
 		if uploadErr = writeMultipart(fileForm, filePath); uploadErr != nil {
 			log.Println(uploadErr)
 			continue

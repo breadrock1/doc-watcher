@@ -536,13 +536,6 @@ const docTemplate = `{
                         "name": "files",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Directory to upload",
-                        "name": "directory",
-                        "in": "formData",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -668,7 +661,7 @@ const docTemplate = `{
         "endpoints.FolderNameForm": {
             "type": "object",
             "properties": {
-                "folder_name": {
+                "folder_id": {
                     "type": "string",
                     "example": "test_folder"
                 }
@@ -677,7 +670,7 @@ const docTemplate = `{
         "endpoints.MoveFilesForm": {
             "type": "object",
             "properties": {
-                "document_paths": {
+                "document_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -686,7 +679,11 @@ const docTemplate = `{
                         "./indexer/upload/test.txt"
                     ]
                 },
-                "target_directory": {
+                "location": {
+                    "type": "string",
+                    "example": "common_folder"
+                },
+                "src_folder_id": {
                     "type": "string",
                     "example": "unrecognized"
                 }
