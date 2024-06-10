@@ -10,7 +10,7 @@ WatchedDirectories="./indexer/unrecognized"
 
 [ocr]
 Address="http://localhost:8004"
-Mode="assistant"
+Mode="raw"
 
 [searcher]
 Address="http://localhost:2892"
@@ -31,4 +31,4 @@ User="metabase"
 Password="metabase"
 Address="localhost"
 Port=5432
-DbName=documents
+DbName="documents"

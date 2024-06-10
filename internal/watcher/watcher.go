@@ -189,10 +189,8 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 
 	srcDocPath := document.DocumentPath
 	targetDirPath := strings.ToLower(document.OcrMetadata.DocType)
-	if len(targetDirPath) == 0 {
-		targetDirPath = "unrecognized"
-	}
-	folderPath := path.Join("./indexer/", targetDirPath)
+	folderID, _ := nw.Searcher.GetFolderID(document.FolderID)
+	folderPath := path.Join("./indexer/", folderID)
 	_ = nw.Reader.MoveFileToDir(srcDocPath, folderPath)
 	dstDocPath := path.Join(folderPath, document.DocumentName)
 
