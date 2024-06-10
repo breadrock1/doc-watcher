@@ -2,8 +2,8 @@ package searcher
 
 import (
 	"context"
-	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/searcher"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/searcher"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
 	"testing"
