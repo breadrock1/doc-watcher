@@ -22,7 +22,8 @@ func SendRequest(body *bytes.Buffer, url, method, mime *string, timeout time.Dur
 
 	req.Header.Set(echo.HeaderContentType, *mime)
 
-	client := &http.Client{Timeout: timeout}
+	//client := &http.Client{Timeout: timeout}
+	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		log.Println("Error while creating request:", err)
@@ -39,6 +40,22 @@ func SendRequest(body *bytes.Buffer, url, method, mime *string, timeout time.Dur
 	if response.StatusCode > 200 {
 		log.Printf("Non Ok response status %s: %s", response.Status, string(respData))
 		return nil, errors.New("non 200 response code status")
+	}
+
+	return respData, nil
+}
+
+func SendGETRequest(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Println("Error creating request:", err)
+		return nil, err
+	}
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Failed while reading response reqBody: ", err)
+		return nil, err
 	}
 
 	return respData, nil

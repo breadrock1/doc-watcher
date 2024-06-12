@@ -1,6 +1,8 @@
 package watcher
 
 import (
+	"context"
+	"doc-notifier/internal/storage"
 	"errors"
 	"log"
 	"math"
@@ -34,6 +36,7 @@ type NotifyWatcher struct {
 	Reader    *reader.Service
 	Searcher  *searcher.Service
 	Tokenizer *tokenizer.Service
+	Storage   *storage.Service
 }
 
 func New(
@@ -42,11 +45,14 @@ func New(
 	ocrService *ocr.Service,
 	searcherService *searcher.Service,
 	tokenService *tokenizer.Service,
+	storageService *storage.Service,
 ) *NotifyWatcher {
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal("Stopped watching: ", err)
 	}
+
+	_ = storageService.Connect(context.Background())
 
 	return &NotifyWatcher{
 		mu:                  &sync.RWMutex{},
@@ -62,6 +68,7 @@ func New(
 		Reader:              readerService,
 		Searcher:            searcherService,
 		Tokenizer:           tokenService,
+		Storage:             storageService,
 	}
 }
 
@@ -187,23 +194,30 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 		return
 	}
 
-	srcDocPath := document.DocumentPath
-	targetDirPath := strings.ToLower(document.OcrMetadata.DocType)
-	folderID, _ := nw.Searcher.GetFolderID(document.FolderID)
+	targetDirPath := strings.ToLower(document.GetDocType())
+	folderID, _ := nw.Searcher.GetFolderID(targetDirPath)
 	folderPath := path.Join("./indexer/", folderID)
-	_ = nw.Reader.MoveFileToDir(srcDocPath, folderPath)
+	_ = nw.Reader.MoveFileToDir(document.DocumentPath, folderPath)
 	dstDocPath := path.Join(folderPath, document.DocumentName)
 
+	document.SetFolderID(folderID)
 	document.SetFolderPath(folderPath)
 	document.SetDocumentPath(dstDocPath)
 	document.SetEmbeddings([]*reader.Embeddings{})
 	document.SetQuality(reader.MaxQualityValue)
 
-	nw.AppendRecognizedDocument(document)
-	if err := nw.Searcher.StoreDocument(document); err != nil {
-		log.Println("Failed while storing document: ", err)
-		return
+	log.Println("Computing tokens for extracted text: ", document.DocumentName)
+	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
+	for chunkID, chunkData := range tokenVectors.Vectors {
+		text := tokenVectors.ChunkedText[chunkID]
+		document.AppendContentVector(text, chunkData)
 	}
+
+	nw.AppendRecognizedDocument(document)
+	//if err := nw.Searcher.StoreDocument(document); err != nil {
+	//	log.Println("Failed while storing document: ", err)
+	//	return
+	//}
 	log.Printf("Store successful document %s to %s: ", document.DocumentName, targetDirPath)
 }
 

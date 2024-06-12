@@ -2,14 +2,16 @@ package searcher
 
 import (
 	"bytes"
-	"doc-notifier/internal/config"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/sender"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/sender"
 )
 
 type Service struct {
@@ -22,7 +24,7 @@ func New(config *config.SearcherConfig) *Service {
 	return &Service{
 		Address:    config.Address,
 		Timeout:    config.Timeout,
-		FoldersMap: make(map[string]*Folder, 0),
+		FoldersMap: make(map[string]*Folder),
 	}
 }
 
@@ -34,7 +36,7 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := fmt.Sprintf("/storage/folders/%s/documents/%s", document.FolderID, document.DocumentMD5)
+	targetURL := fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, document.FolderID, document.DocumentMD5)
 	log.Printf("Storing document %s to elastic", document.FolderID)
 
 	method := "PUT"
@@ -42,21 +44,20 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
-		return err
 	}
 
-	targetURL = fmt.Sprintf("/storage/folders/%s/documents/%s", "history", document.DocumentMD5)
+	reqBody = bytes.NewBuffer(jsonData)
+	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, "history", document.DocumentMD5)
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
-		return err
 	}
 
-	targetURL = fmt.Sprintf("/storage/folders/%s/documents/%s?document_type=vectors", document.FolderID, document.DocumentMD5)
+	reqBody = bytes.NewBuffer(jsonData)
+	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, document.FolderID, document.DocumentMD5)
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
-		return err
 	}
 
 	return nil
@@ -77,15 +78,13 @@ type Folder struct {
 }
 
 func (s *Service) GetFolderID(folderName string) (string, error) {
-	folder, exists := s.FoldersMap[folderName]
+	folder, exists := s.FoldersMap[strings.ToLower(folderName)]
 	if exists {
 		return folder.ID, nil
 	}
 
-	method := "GET"
-	mimeType := "application/json"
-	targetURL := "/storage/folders"
-	respData, err := sender.SendRequest(nil, &targetURL, &method, &mimeType, s.Timeout)
+	targetURL := fmt.Sprintf("%s%s", s.Address, "/storage/folders")
+	respData, err := sender.SendGETRequest(targetURL)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return "unrecognized", err
@@ -98,7 +97,7 @@ func (s *Service) GetFolderID(folderName string) (string, error) {
 	}
 
 	for _, fold := range folders {
-		s.FoldersMap[fold.Name] = fold
+		s.FoldersMap[strings.ToLower(fold.Name)] = fold
 	}
 
 	folder, exists = s.FoldersMap[folderName]

@@ -9,18 +9,18 @@ import (
 
 	"doc-notifier/internal/reader"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 func (s *Service) CreateFilesGroup() error {
 	group := s.server.Group("/watcher/files")
 
-	timeoutMW := middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: s.watcher.Searcher.Timeout,
-	})
+	//timeoutMW := middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	//	Timeout: s.watcher.Searcher.Timeout,
+	//})
 
 	group.POST("/upload", s.UploadFilesToUnrecognized)
-	group.POST("/analyse", s.AnalyseFiles, timeoutMW)
+	//group.POST("/analyse", s.AnalyseFiles, timeoutMW)
+	group.POST("/analyse", s.AnalyseFiles)
 	group.POST("/download", s.DownloadFile)
 	group.POST("/move", s.MoveFiles)
 	group.POST("/remove", s.RemoveFiles)
@@ -52,7 +52,7 @@ func (s *Service) UploadFilesToUnrecognized(c echo.Context) error {
 
 	uploadFiles := make([]*reader.Document, 0)
 	for _, fileForm := range multipartForm.File["files"] {
-		filePath := path.Join("./indexer/unrecognized/", fileForm.Filename)
+		filePath := path.Join("./indexer/uploads/", fileForm.Filename)
 		if uploadErr = s.writeMultipart(fileForm, filePath); uploadErr != nil {
 			log.Println(uploadErr)
 			continue

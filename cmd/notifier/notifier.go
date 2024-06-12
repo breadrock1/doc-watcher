@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"doc-notifier/internal/storage"
 	"log"
 	"os"
 	"os/signal"
@@ -28,12 +29,14 @@ func main() {
 	ocrService := ocr.New(&serviceConfig.Ocr)
 	searchService := searcher.New(&serviceConfig.Searcher)
 	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
+	storeService := storage.New(&serviceConfig.Storage)
 	watchService := watcher.New(
 		&serviceConfig.Watcher,
 		readService,
 		ocrService,
 		searchService,
 		tokenService,
+		storeService,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())

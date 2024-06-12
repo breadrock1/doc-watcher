@@ -3,10 +3,12 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"doc-notifier/internal/config"
-	"doc-notifier/internal/reader"
 	"fmt"
 	"log"
+
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/reader"
+	_ "github.com/lib/pq"
 )
 
 type Service struct {
@@ -15,14 +17,23 @@ type Service struct {
 }
 
 func New(config *config.StorageConfig) *Service {
-	address := fmt.Sprintf("%s://%s:%s@%s:%d/%s", config.DriverName, config.User, config.Password, config.Address, config.Port, config.DbName)
+	address := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		config.Address,
+		config.Port,
+		config.User,
+		config.Password,
+		config.DbName,
+		config.EnableSSL,
+	)
+
 	return &Service{
 		address: address,
 	}
 }
 
-func (s *Service) Connect(ctx context.Context, connect string) error {
-	db, err := sql.Open("pgx", connect)
+func (s *Service) Connect(ctx context.Context) error {
+	db, err := sql.Open("postgres", s.address)
 	if err != nil {
 		log.Fatalln(err.Error())
 		return err
@@ -35,30 +46,12 @@ func (s *Service) Close(_ context.Context) error {
 	return s.db.Close()
 }
 
-//  FolderID            string        `json:"folder_id"`
-//	FolderPath          string        `json:"folder_path"`
-//	Content             string        `json:"content"`
-//	DocumentMD5         string        `json:"document_md5"`
-//	DocumentSSDEEP      string        `json:"document_ssdeep"`
-//	DocumentName        string        `json:"document_name"`
-//	DocumentPath        string        `json:"document_path"`
-//	DocumentSize        int64         `json:"document_size"`
-//	DocumentType        string        `json:"document_type"`
-//	DocumentExtension   string        `json:"document_extension"`
-//	DocumentPermissions int32         `json:"document_permissions"`
-//	DocumentCreated     string        `json:"document_created"`
-//	DocumentModified    string        `json:"document_modified"`
-//	QualityRecognized   int32         `json:"quality_recognition"`
-//	OcrMetadata         *OcrMetadata  `json:"ocr_metadata"`
-//	Embeddings          []*Embeddings `json:"embeddings"`
-
 func (s *Service) Create(ctx context.Context, document *reader.Document) (int, error) {
 	query := `
-		INSERT INTO event (folder_id, folder_path, content, document_id, document_ssdeep, 
-		                   document_name, document_path, document_size, document_type,
-		                   document_ext, document_perm, document_created, document_modified, class)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-		RETURNING document_id;
+		INSERT INTO documents (folder_id, folder_path, content, document_id, document_ssdeep, 
+		                       document_name, document_path, document_size, document_type, 
+		                       document_ext, document_perm, document_created, document_modified, class)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, DATE($12), DATE($13), $14);
 	`
 
 	args := []interface{}{
@@ -75,14 +68,13 @@ func (s *Service) Create(ctx context.Context, document *reader.Document) (int, e
 		document.DocumentPermissions,
 		document.DocumentCreated,
 		document.DocumentModified,
-		document.DocumentModified,
 		document.DocumentClass,
 	}
 
 	var id int
-	err := s.db.QueryRowContext(ctx, query, args...).Scan(id)
+	err := s.db.QueryRowContext(ctx, query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("db exec: %w", err)
+		return 0, fmt.Errorf("db exec: %v", err)
 	}
 	return id, nil
 }

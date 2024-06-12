@@ -155,6 +155,14 @@ func (d *Document) ComputeSsdeepHashData(data []byte) {
 	}
 }
 
+func (d *Document) GetDocType() string {
+	if d.OcrMetadata == nil {
+		return ""
+	}
+
+	return d.OcrMetadata.DocType
+}
+
 func (d *Document) SetQuality(quality int32) {
 	d.QualityRecognized = quality
 }
