@@ -2,9 +2,9 @@ package tokenizer
 
 import (
 	"context"
-	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/tokenizer"
-	"doc-notifier/internal/pkg/tokenizer/tokoptions"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/tokenizer"
+	"doc-notifier/internal/tokenizer/tokoptions"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
 	"testing"
