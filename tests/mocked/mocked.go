@@ -1,10 +1,10 @@
 package mocked
 
 import (
-	"doc-notifier/internal/pkg/ocr/assistant"
-	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/tokenizer/forms"
-	"doc-notifier/internal/pkg/tokenizer/langchain"
+	"doc-notifier/internal/ocr/assistant"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/tokenizer/forms"
+	"doc-notifier/internal/tokenizer/langchain"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"log"

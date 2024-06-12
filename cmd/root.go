@@ -1,17 +1,18 @@
 package cmd
 
 import (
-	"doc-notifier/internal/pkg/options"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
+
+	"doc-notifier/internal/config"
+	"github.com/spf13/cobra"
 )
 
-var serviceOptions *options.Options
+var serviceConfig *config.Config
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:   "internal",
+	Use:   "./notifier",
 	Short: "Launch internal service to load endpoints from watcher directory",
 	Long: `
 		Launch internal service to load endpoints from watcher directory.
@@ -19,127 +20,35 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, _ []string) {
 		fromEnv, _ := cmd.Flags().GetBool("from-env")
-		disabledDotenv, _ := cmd.Flags().GetBool("without-dotenv")
 
 		var parseErr error
 		if fromEnv {
-			serviceOptions, parseErr = options.LoadFromEnv(disabledDotenv)
+			disabledDotenv, _ := cmd.Flags().GetBool("with-dotenv")
+			serviceConfig, parseErr = config.LoadEnv(disabledDotenv)
 		} else {
-			serviceOptions, parseErr = LoadFromCli(cmd)
+			filePath, _ := cmd.Flags().GetString("config")
+			serviceConfig, parseErr = config.FromFile(filePath)
 		}
 
 		if parseErr != nil {
 			log.Fatal(parseErr)
 		}
-
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() *options.Options {
+func Execute() *config.Config {
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
-	return serviceOptions
+	return serviceConfig
 }
 
 func init() {
 	flags := rootCmd.Flags()
-	flags.StringArrayP("watched-dirs", "w", []string{"./indexer"}, "A local directory path to watch fs-events")
-	flags.StringP("service-address", "n", "0.0.0.0:2893", "Address of current watcher service")
-
-	flags.StringP("ocr-address", "o", "http://localhost:1231", "Address of current watcher service")
-	flags.StringP("ocr-mode", "a", "read-raw-file", "Address of current watcher service")
-
-	flags.StringP("docsearch-address", "d", "http://localhost:2892", "An doc-seacher address with port")
-
-	flags.StringP("tokenizer-address", "t", "http://localhost:8001", "fs-notifier service host address")
-	flags.StringP("tokenizer-mode", "b", "assistant", "An llm address with port")
-	flags.IntP("chunk-size", "l", 800, "An llm address with port")
-	flags.IntP("size-overlap", "p", 100, "An llm address with port")
-	flags.UintP("tokenizer-timeout", "x", 300, "Tokenizer timeout seconds")
-	flags.BoolP("return-chunks", "r", true, "Load config from env.")
-	flags.BoolP("chunk-by-self", "c", false, "Store document as doc-chunks.")
-	flags.BoolP("enable-file-log", "z", false, "Translate log output to file.")
-
+	flags.StringP("config", "c", "./configs/config.toml", "Parse options from config file.")
 	flags.BoolP("from-env", "e", false, "Parse options from env.")
-	flags.BoolP("without-dotenv", "j", false, "Parse options from native env.")
-}
-
-func LoadFromCli(cmd *cobra.Command) (*options.Options, error) {
-	var parseOptionErr error
-
-	var watchedDirectories []string
-	var tokenizerTimeout uint
-	var chunkSize, chunkOverlap int
-	var returnChunksFlag, chunkBySelfFlag, enableFileLog bool
-	var tokenizerServiceAddr, tokenizerServiceMode string
-	var notifierAddr, docSearchAddr, ocrServiceAddr, ocrServiceMode string
-
-	flags := cmd.Flags()
-
-	if notifierAddr, parseOptionErr = flags.GetString("service-address"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if watchedDirectories, parseOptionErr = flags.GetStringArray("watched-dirs"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-
-	if ocrServiceAddr, parseOptionErr = flags.GetString("ocr-address"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if ocrServiceMode, parseOptionErr = flags.GetString("ocr-mode"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-
-	if docSearchAddr, parseOptionErr = flags.GetString("docsearch-address"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-
-	if tokenizerServiceAddr, parseOptionErr = flags.GetString("tokenizer-address"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if tokenizerServiceMode, parseOptionErr = flags.GetString("tokenizer-mode"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if chunkSize, parseOptionErr = flags.GetInt("chunk-size"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if chunkOverlap, parseOptionErr = flags.GetInt("size-overlap"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if tokenizerTimeout, parseOptionErr = flags.GetUint("tokenizer-timeout"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if returnChunksFlag, parseOptionErr = flags.GetBool("return-chunks"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-	if chunkBySelfFlag, parseOptionErr = flags.GetBool("chunk-by-self"); parseOptionErr != nil {
-		return nil, parseOptionErr
-	}
-
-	if enableFileLog, parseOptionErr = flags.GetBool("enable-file-log"); parseOptionErr != nil {
-		enableFileLog = false
-	}
-
-	return &options.Options{
-		WatcherServiceAddress: notifierAddr,
-		WatchedDirectories:    watchedDirectories,
-		EnableFileLog:         enableFileLog,
-
-		OcrServiceAddress: ocrServiceAddr,
-		OcrServiceMode:    ocrServiceMode,
-
-		DocSearchAddress: docSearchAddr,
-
-		TokenizerServiceAddress: tokenizerServiceAddr,
-		TokenizerServiceMode:    tokenizerServiceMode,
-		TokenizerChunkSize:      chunkSize,
-		TokenizerChunkOverlap:   chunkOverlap,
-		TokenizerReturnChunks:   returnChunksFlag,
-		TokenizerChunkBySelf:    chunkBySelfFlag,
-		TokenizerTimeout:        tokenizerTimeout,
-	}, nil
+	flags.BoolP("with-dotenv", "j", false, "Parse options from existing .env file.")
 }

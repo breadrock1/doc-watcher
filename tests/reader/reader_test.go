@@ -1,7 +1,7 @@
 package reader
 
 import (
-	"doc-notifier/internal/pkg/reader"
+	"doc-notifier/internal/reader"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

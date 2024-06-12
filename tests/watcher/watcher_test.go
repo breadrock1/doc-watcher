@@ -2,7 +2,7 @@ package watcher
 
 import (
 	"doc-notifier/internal/pkg/reader"
-	"doc-notifier/internal/pkg/watcher"
+	watcher2 "doc-notifier/internal/watcher"
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
-	watch := watcher.New(&watcher.Options{
+	watch := watcher2.New(&watcher2.Options{
 
 		WatcherServiceAddress: "0.0.0.0:2893",
 		WatchedDirectories:    []string{IndexerDirPath},
