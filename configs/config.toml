@@ -10,10 +10,11 @@ WatchedDirectories="./indexer/watcher"
 [ocr]
 Address="http://localhost:8004"
 Mode="raw"
+Timeout=300
 
 [searcher]
 Address="http://localhost:2892"
-Timeout=30
+Timeout=300
 
 [tokenizer]
 Address="http://localhost:8001"

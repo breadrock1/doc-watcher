@@ -70,12 +70,31 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		Timeout:      time.Duration(tokenizerTimeout),
 	}
 
+	storageDriver := loadString("STORAGE_DRIVER_NAME")
+	storageUser := loadString("STORAGE_USERNAME")
+	storagePasswd := loadString("STORAGE_PASSWORD")
+	storageAddress := loadString("STORAGE_ADDRESS")
+	storagePort := loadNumber("STORAGE_PORT", 64)
+	storageDB := loadString("STORAGE_DB_NAME")
+	storageEnableSSL := loadString("STORAGE_ENABLE_SSL")
+
+	storageConfig := StorageConfig{
+		DriverName: storageDriver,
+		User:       storageUser,
+		Password:   storagePasswd,
+		Address:    storageAddress,
+		Port:       storagePort,
+		DbName:     storageDB,
+		EnableSSL:  storageEnableSSL,
+	}
+
 	return &Config{
 		Logger:    loggerConfig,
 		Watcher:   watcherConfig,
 		Ocr:       ocrConfig,
 		Searcher:  searcherConfig,
 		Tokenizer: tokenizerConfig,
+		Storage:   storageConfig,
 	}, nil
 }
 
