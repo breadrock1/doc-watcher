@@ -1,4 +1,3 @@
-
 [logger]
 Level="INFO"
 FilePath="./logs/app.log"
@@ -6,7 +5,7 @@ EnableFileLog=false
 
 [watcher]
 Address="0.0.0.0:2893"
-WatchedDirectories="./indexer/unrecognized"
+WatchedDirectories="./indexer/watcher"
 
 [ocr]
 Address="http://localhost:8004"
@@ -26,9 +25,10 @@ ChunkBySelf=false
 Timeout=30
 
 [storage]
-DriverName="postgresql"
+DriverName="postgres"
 User="metabase"
 Password="metabase"
 Address="localhost"
 Port=5432
 DbName="documents"
+EnableSSL="disable"
