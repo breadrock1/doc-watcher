@@ -12,8 +12,9 @@ import (
 )
 
 type Service struct {
-	address string
-	db      *sql.DB
+	address    string
+	LLMAddress string
+	db         *sql.DB
 }
 
 func New(config *config.StorageConfig) *Service {
@@ -28,7 +29,8 @@ func New(config *config.StorageConfig) *Service {
 	)
 
 	return &Service{
-		address: address,
+		address:    address,
+		LLMAddress: config.AddressLLM,
 	}
 }
 

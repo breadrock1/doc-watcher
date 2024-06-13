@@ -2,13 +2,13 @@ package langchain
 
 import (
 	"bytes"
-	"doc-notifier/internal/sender"
 	"encoding/json"
 	"log"
 	"strings"
 	"time"
 
 	"doc-notifier/internal/config"
+	"doc-notifier/internal/sender"
 	"doc-notifier/internal/tokenizer/forms"
 )
 

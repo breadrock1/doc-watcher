@@ -77,6 +77,7 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 	storagePort := loadNumber("STORAGE_PORT", 64)
 	storageDB := loadString("STORAGE_DB_NAME")
 	storageEnableSSL := loadString("STORAGE_ENABLE_SSL")
+	storageAddressLLM := loadString("STORAGE_LLM_ADDRESS")
 
 	storageConfig := StorageConfig{
 		DriverName: storageDriver,
@@ -86,6 +87,7 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		Port:       storagePort,
 		DbName:     storageDB,
 		EnableSSL:  storageEnableSSL,
+		AddressLLM: storageAddressLLM,
 	}
 
 	return &Config{

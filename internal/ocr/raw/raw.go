@@ -1,11 +1,12 @@
 package raw
 
 import (
-	"doc-notifier/internal/ocr/processing"
-	"doc-notifier/internal/reader"
 	"fmt"
 	"log"
 	"os"
+
+	"doc-notifier/internal/ocr/processing"
+	"doc-notifier/internal/reader"
 )
 
 type Service struct {
@@ -26,8 +27,6 @@ func (re *Service) RecognizeFile(document *reader.Document) error {
 	if len(stringData) == 0 {
 		return fmt.Errorf("returned empty content data for: %s", document.DocumentMD5)
 	}
-
-	//time.Sleep(10 * time.Second)
 
 	document.SetContentData(stringData)
 	return nil

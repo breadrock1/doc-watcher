@@ -33,3 +33,4 @@ Address="localhost"
 Port=5432
 DbName="documents"
 EnableSSL="disable"
+AddressLLM="http://localhost:8081"

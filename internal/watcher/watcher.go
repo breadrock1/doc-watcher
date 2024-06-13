@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"context"
-	"doc-notifier/internal/storage"
 	"errors"
 	"log"
 	"math"
@@ -16,6 +15,7 @@ import (
 	"doc-notifier/internal/ocr"
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
+	"doc-notifier/internal/storage"
 	"doc-notifier/internal/tokenizer"
 	"github.com/fsnotify/fsnotify"
 )
@@ -214,10 +214,6 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 	}
 
 	nw.AppendRecognizedDocument(document)
-	//if err := nw.Searcher.StoreDocument(document); err != nil {
-	//	log.Println("Failed while storing document: ", err)
-	//	return
-	//}
 	log.Printf("Store successful document %s to %s: ", document.DocumentName, targetDirPath)
 }
 

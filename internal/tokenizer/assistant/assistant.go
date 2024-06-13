@@ -2,14 +2,15 @@ package assistant
 
 import (
 	"bytes"
-	"doc-notifier/internal/config"
-	"doc-notifier/internal/sender"
-	"doc-notifier/internal/tokenizer/forms"
 	"encoding/json"
 	"log"
 	"math"
 	"strings"
 	"time"
+
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/sender"
+	"doc-notifier/internal/tokenizer/forms"
 )
 
 const EmbeddingsAssistantURL = "/embed"

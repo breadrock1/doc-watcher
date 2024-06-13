@@ -51,4 +51,5 @@ type StorageConfig struct {
 	Port       int
 	DbName     string
 	EnableSSL  string
+	AddressLLM string
 }

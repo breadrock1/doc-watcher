@@ -2,9 +2,6 @@ package logoper
 
 import (
 	"bytes"
-	"doc-notifier/internal/ocr/processing"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/sender"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +11,10 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"doc-notifier/internal/ocr/processing"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/sender"
 )
 
 const CheckJobStatusTimeout = 5 * time.Second

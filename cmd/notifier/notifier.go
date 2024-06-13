@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"doc-notifier/internal/storage"
 	"log"
 	"os"
 	"os/signal"
@@ -14,6 +13,7 @@ import (
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/server"
+	"doc-notifier/internal/storage"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
 )

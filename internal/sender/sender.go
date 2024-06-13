@@ -3,7 +3,6 @@ package sender
 import (
 	"bytes"
 	"errors"
-	"github.com/labstack/echo/v4"
 	"io"
 	"log"
 	"mime/multipart"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/labstack/echo/v4"
 )
 
 func SendRequest(body *bytes.Buffer, url, method, mime *string, timeout time.Duration) ([]byte, error) {

@@ -2,17 +2,16 @@ package assistant
 
 import (
 	"bytes"
-	"doc-notifier/internal/ocr/processing"
-
-	//"doc-notifier/internal/ocr"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/sender"
 	"encoding/json"
 	"fmt"
 	"log"
 	"mime/multipart"
 	"os"
 	"time"
+
+	"doc-notifier/internal/ocr/processing"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/sender"
 )
 
 const RecognitionURL = "/ocr_extract_text"
