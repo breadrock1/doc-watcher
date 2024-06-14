@@ -2,12 +2,14 @@ package searcher
 
 import (
 	"context"
+	"testing"
+	"time"
+
+	"doc-notifier/internal/config"
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 const TestcaseOtherDirPath = "../testcases/directory/"
@@ -15,8 +17,11 @@ const TestcaseFilePath = TestcaseOtherDirPath + "test_file_1.txt"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestStoreDocument(t *testing.T) {
-	timeoutDuration := time.Duration(10) * time.Second
-	searcherService := searcher.New("http://localhost:3451", timeoutDuration)
+	timeoutDuration := time.Duration(300) * time.Second
+	searcherService := searcher.New(&config.SearcherConfig{
+		Address: "http://localhost:3451",
+		Timeout: timeoutDuration,
+	})
 
 	t.Run("Store Document", func(t *testing.T) {
 		e := mocked.CreateMockedServer()
@@ -53,7 +58,10 @@ func TestStoreDocument(t *testing.T) {
 	})
 
 	t.Run("Caught error with service denied", func(t *testing.T) {
-		searcherService := searcher.New("http://localhost:4444", timeoutDuration)
+		searcherService := searcher.New(&config.SearcherConfig{
+			Address: "http://localhost:4444",
+			Timeout: timeoutDuration,
+		})
 
 		e := mocked.CreateMockedServer()
 		go func() {

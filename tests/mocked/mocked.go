@@ -21,7 +21,7 @@ func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
 	e.POST(langchain.ServiceURL, ComputeTokens)
-	e.POST("/documents/create", StoreDocument)
+	e.PUT("/storage/folders/common_folder/documents/c31964293145484954679b19a114188e", StoreDocument)
 
 	return e
 }

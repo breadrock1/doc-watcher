@@ -1,37 +1,60 @@
 package watcher
 
 import (
-	"doc-notifier/internal/pkg/reader"
-	watcher2 "doc-notifier/internal/watcher"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
+
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/ocr"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/searcher"
+	"doc-notifier/internal/storage"
+	"doc-notifier/internal/tokenizer"
+	"doc-notifier/internal/watcher"
+	"github.com/stretchr/testify/assert"
 )
 
 const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
-	watch := watcher2.New(&watcher2.Options{
-
-		WatcherServiceAddress: "0.0.0.0:2893",
-		WatchedDirectories:    []string{IndexerDirPath},
-
-		OcrServiceAddress: "http://localhost:8004",
-		OcrServiceMode:    "read-raw-file",
-
-		DocSearchAddress: "http://localhost:2892",
-
-		TokenizerServiceAddress: "http://localhost:8001",
-		TokenizerServiceMode:    "none",
-		TokenizerChunkSize:      0,
-		TokenizerChunkOverlap:   0,
-		TokenizerReturnChunks:   false,
-		TokenizerChunkBySelf:    false,
-		TokenizerTimeout:        10,
+	fileReader := &reader.Service{}
+	timeoutDuration := time.Duration(10) * time.Second
+	ocrService := ocr.New(&config.OcrConfig{
+		Mode:    "raw",
+		Address: "http://localhost:3451",
+		Timeout: timeoutDuration,
 	})
+	searcherService := searcher.New(&config.SearcherConfig{
+		Address: "http://localhost:3451",
+		Timeout: timeoutDuration,
+	})
+	tokenizerService := tokenizer.New(&config.TokenizerConfig{
+		Address:      "http://localhost:3451",
+		Mode:         "langchain",
+		ChunkSize:    1,
+		ChunkOverlap: 1,
+		ReturnChunks: false,
+		ChunkBySelf:  false,
+		Timeout:      timeoutDuration,
+	})
+	storeService := storage.New(&config.StorageConfig{
+		DriverName: "postgres",
+		User:       "postgres",
+		Password:   "postgres",
+		Address:    "localhost",
+		Port:       5432,
+		DbName:     "postgres",
+		EnableSSL:  "disable",
+		AddressLLM: "http://localhost:8081",
+	})
+	watch := watcher.New(&config.WatcherConfig{
+		Address:            "0.0.0.0:2893",
+		WatchedDirectories: []string{IndexerDirPath},
+	}, fileReader, ocrService, searcherService, tokenizerService, storeService)
 
 	t.Run("Append directory to watch", func(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})
@@ -66,7 +89,7 @@ func TestWatcherManager(t *testing.T) {
 
 	t.Run("Parse complex structure with OcrMetadata", func(t *testing.T) {
 		file, _ := os.ReadFile(TestcaseDirPath + "ocr_result.json")
-		var previews []reader.DocumentPreview
+		var previews []reader.Document
 		if err := json.Unmarshal(file, &previews); err != nil {
 			fmt.Println(err)
 		}

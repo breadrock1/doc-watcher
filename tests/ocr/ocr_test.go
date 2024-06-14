@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"doc-notifier/internal/config"
 	ocr2 "doc-notifier/internal/ocr"
 	"doc-notifier/internal/reader"
 	"github.com/stretchr/testify/assert"
@@ -13,10 +14,10 @@ const TestcaseOtherDirPath = "../testcases/directory/"
 const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestReadRawFileData(t *testing.T) {
-	timeoutDuration := time.Duration(10) * time.Second
 	readerService := reader.New()
-	ocrService := ocr2.New(&ocr2.Options{
-		Mode:    ocr2.GetModeFromString("read-raw-file"),
+	timeoutDuration := time.Duration(10) * time.Second
+	ocrService := ocr2.New(&config.OcrConfig{
+		Mode:    "raw",
 		Address: "http://localhost:3451",
 		Timeout: timeoutDuration,
 	})

@@ -56,7 +56,7 @@ func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error
 	log.Printf("Sending file to extract tokens")
 	reqBody := bytes.NewBuffer(jsonData)
 
-	method := "PUT"
+	method := "POST"
 	mimeType := "application/json"
 	targetURL := s.address + ServiceURL
 	respData, err := sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.timeout)

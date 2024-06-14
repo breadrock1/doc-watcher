@@ -44,6 +44,7 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
+		return err
 	}
 
 	reqBody = bytes.NewBuffer(jsonData)

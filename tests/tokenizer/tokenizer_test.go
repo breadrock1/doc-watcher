@@ -2,13 +2,14 @@ package tokenizer
 
 import (
 	"context"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/tokenizer"
-	"doc-notifier/internal/tokenizer/tokoptions"
-	"doc-notifier/tests/mocked"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/reader"
+	"doc-notifier/internal/tokenizer"
+	"doc-notifier/tests/mocked"
+	"github.com/stretchr/testify/assert"
 )
 
 const TestcaseOtherDirPath = "../testcases/directory/"
@@ -17,12 +18,13 @@ const TestcaseNonExistingFilePath = TestcaseOtherDirPath + "any_file.txt"
 
 func TestComputeContentTokens(t *testing.T) {
 	timeoutDuration := time.Duration(10) * time.Second
-	tokenizerService := tokenizer.New(&tokoptions.Options{
-		Mode:         tokoptions.GetModeFromString("langchain"),
+	tokenizerService := tokenizer.New(&config.TokenizerConfig{
 		Address:      "http://localhost:3451",
+		Mode:         "langchain",
 		ChunkSize:    1,
-		ChunkedFlag:  false,
 		ChunkOverlap: 1,
+		ReturnChunks: false,
+		ChunkBySelf:  false,
 		Timeout:      timeoutDuration,
 	})
 
@@ -39,9 +41,9 @@ func TestComputeContentTokens(t *testing.T) {
 
 		assert.NoError(t, parseErr, "Returned error while parsing file")
 		assert.NoError(t, computeErr, "Returned error while storing document")
-		assert.Equal(t, tokens.Chunks, 1, "Non correct returned chunks size")
-		assert.Equal(t, tokens.ChunkedText[0], "test_file_1", "Non correct returned chunks data")
-		assert.Equal(t, tokens.Vectors[0], []float64{0.345, 0.045}, "Non correct returned vectors")
+		assert.Equal(t, 1, tokens.Chunks, "Non correct returned chunks size")
+		assert.Equal(t, "test_file_1", tokens.ChunkedText[0], "Non correct returned chunks data")
+		assert.Equal(t, []float64{0.345, 0.045}, tokens.Vectors[0], "Non correct returned vectors")
 
 		time.AfterFunc(200*time.Second, func() {
 			_ = e.Shutdown(context.Background())
@@ -66,12 +68,13 @@ func TestComputeContentTokens(t *testing.T) {
 	})
 
 	t.Run("Caught error with service denied", func(t *testing.T) {
-		_ = tokenizer.New(&tokoptions.Options{
-			Mode:         tokoptions.GetModeFromString("assistant"),
+		_ = tokenizer.New(&config.TokenizerConfig{
 			Address:      "http://localhost:4444",
+			Mode:         "assistant",
 			ChunkSize:    0,
-			ChunkedFlag:  false,
 			ChunkOverlap: 0,
+			ReturnChunks: false,
+			ChunkBySelf:  false,
 			Timeout:      timeoutDuration,
 		})
 
