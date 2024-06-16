@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN rm -rf .env && go mod download && go build -o doc-notifier .
+RUN rm -rf .env && go mod download && go build -o ./doc-notifier ./cmd/notifier
 
 FROM golang:1.21-alpine
 
