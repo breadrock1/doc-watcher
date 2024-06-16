@@ -13,6 +13,6 @@ WORKDIR /app
 COPY --from=builder /app/doc-notifier .
 RUN mkdir indexer && mkdir upload
 
-CMD ["/app/doc-notifier", "-ej"]
+CMD ["/app/doc-notifier", "-e"]
 
 EXPOSE 2893
