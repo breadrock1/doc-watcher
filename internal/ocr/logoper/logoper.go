@@ -72,6 +72,7 @@ func (s *Service) RecognizeFile(document *reader.Document) error {
 	ocrMetadata := s.launchAndAwait(ocrJob.JobId, document)
 	document.SetOcrMetadata(ocrMetadata)
 	document.MoveMetadataTextToContent()
+	document.SetQuality(reader.MaxQualityValue)
 
 	return nil
 }

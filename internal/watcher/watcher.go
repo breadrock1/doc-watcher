@@ -196,6 +196,10 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 
 	targetDirPath := strings.ToLower(document.GetDocType())
 	folderID, _ := nw.Searcher.GetFolderID(targetDirPath)
+	if folderID == "unrecognized" {
+		document.SetQuality(0)
+	}
+
 	folderPath := path.Join("./indexer/", folderID)
 	_ = nw.Reader.MoveFileToDir(document.DocumentPath, folderPath)
 	dstDocPath := path.Join(folderPath, document.DocumentName)
@@ -204,7 +208,6 @@ func (nw *NotifyWatcher) execDocumentProcessing(document *reader.Document) {
 	document.SetFolderPath(folderPath)
 	document.SetDocumentPath(dstDocPath)
 	document.SetEmbeddings([]*reader.Embeddings{})
-	document.SetQuality(reader.MaxQualityValue)
 
 	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
