@@ -115,7 +115,7 @@ func (nw *NotifyWatcher) PopRecognizedDocument(documentID string) *reader.Docume
 
 func (nw *NotifyWatcher) AppendRecognizedDocument(document *reader.Document) {
 	nw.mu.Lock()
-	nw.RecognizedDocuments[document.DocumentMD5] = document
+	nw.RecognizedDocuments[document.DocumentID] = document
 	nw.mu.Unlock()
 }
 

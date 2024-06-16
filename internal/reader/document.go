@@ -33,7 +33,7 @@ type Document struct {
 	FolderID            string        `json:"folder_id"`
 	FolderPath          string        `json:"folder_path"`
 	Content             string        `json:"content"`
-	DocumentMD5         string        `json:"document_md5"`
+	DocumentID          string        `json:"document_id"`
 	DocumentSSDEEP      string        `json:"document_ssdeep"`
 	DocumentName        string        `json:"document_name"`
 	DocumentPath        string        `json:"document_path"`
@@ -142,7 +142,7 @@ func (d *Document) ComputeMd5Hash() {
 }
 
 func (d *Document) ComputeMd5HashData(data []byte) {
-	d.DocumentMD5 = fmt.Sprintf("%x", md5.Sum(data))
+	d.DocumentID = fmt.Sprintf("%x", md5.Sum(data))
 }
 
 func (d *Document) ComputeSsdeepHash() {

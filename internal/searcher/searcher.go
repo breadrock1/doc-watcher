@@ -36,7 +36,7 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, document.FolderID, document.DocumentMD5)
+	targetURL := fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, document.FolderID, document.DocumentID)
 	log.Printf("Storing document %s to elastic", document.FolderID)
 
 	method := "PUT"
@@ -48,14 +48,14 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody = bytes.NewBuffer(jsonData)
-	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, "history", document.DocumentMD5)
+	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, "history", document.DocumentID)
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 	}
 
 	reqBody = bytes.NewBuffer(jsonData)
-	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, document.FolderID, document.DocumentMD5)
+	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, document.FolderID, document.DocumentID)
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)

@@ -22,7 +22,7 @@ func New() *Service {
 
 func (s *Service) AddAwaitDocument(document *Document) {
 	s.mu.Lock()
-	s.AwaitingDocs[document.DocumentMD5] = document
+	s.AwaitingDocs[document.DocumentID] = document
 	s.mu.Unlock()
 }
 

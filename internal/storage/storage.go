@@ -60,7 +60,7 @@ func (s *Service) Create(ctx context.Context, document *reader.Document) (int, e
 		document.FolderID,
 		document.FolderPath,
 		document.Content,
-		document.DocumentMD5,
+		document.DocumentID,
 		document.DocumentSSDEEP,
 		document.DocumentName,
 		document.DocumentPath,

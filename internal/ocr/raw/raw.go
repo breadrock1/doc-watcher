@@ -25,7 +25,7 @@ func (re *Service) RecognizeFile(document *reader.Document) error {
 
 	stringData := string(bytesData)
 	if len(stringData) == 0 {
-		return fmt.Errorf("returned empty content data for: %s", document.DocumentMD5)
+		return fmt.Errorf("returned empty content data for: %s", document.DocumentID)
 	}
 
 	document.SetContentData(stringData)
