@@ -20,6 +20,7 @@ func (s *Service) CreateFilesGroup() error {
 
 	group.POST("/upload", s.UploadFilesToUnrecognized)
 	//group.POST("/analyse", s.AnalyseFiles, timeoutMW)
+	group.GET("/artifacts", s.GetArtifactsTemplate)
 	group.POST("/analyse", s.AnalyseFiles)
 	group.POST("/download", s.DownloadFile)
 	group.POST("/move", s.MoveFiles)
@@ -125,6 +126,34 @@ func (s *Service) AnalyseFiles(c echo.Context) error {
 // @Router /watcher/files/unrecognized [get]
 func (s *Service) GetUnrecognized(c echo.Context) error {
 	return c.JSON(200, s.watcher.Reader.GetAwaitDocuments())
+}
+
+// GetArtifactsTemplate
+// @Summary Get available artifacts
+// @Description Get available artifacts
+// @ID files-artifacts
+// @Tags files
+// @Produce  json
+// @Param   document_type   query      string  true  "document_type"
+// @Success 200 {object} map[string]interface{} "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/artifacts [get]
+func (s *Service) GetArtifactsTemplate(c echo.Context) error {
+	artifacts := s.watcher.Ocr.Ocr.GetArtifacts()
+
+	docType := c.QueryParam("document_type")
+	switch docType {
+	case "tn":
+		return c.JSON(200, artifacts.AllDocTypes.TN)
+	case "smgs":
+		return c.JSON(200, artifacts.AllDocTypes.Smgs)
+
+	case "conosament":
+		return c.JSON(200, artifacts.AllDocTypes.Conosament)
+	default:
+		return c.JSON(200, artifacts)
+	}
 }
 
 // MoveFiles

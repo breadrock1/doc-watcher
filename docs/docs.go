@@ -30,13 +30,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -63,7 +63,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.AnalyseFilesForm"
+                            "$ref": "#/definitions/server.AnalyseFilesForm"
                         }
                     }
                 ],
@@ -71,19 +71,62 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/files/artifacts": {
+            "get": {
+                "description": "Get available artifacts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get available artifacts",
+                "operationId": "files-artifacts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "document_type",
+                        "name": "document_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -113,19 +156,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -152,7 +195,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.MoveFilesForm"
+                            "$ref": "#/definitions/server.MoveFilesForm"
                         }
                     }
                 ],
@@ -160,19 +203,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -199,7 +242,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.RemoveFilesForm"
+                            "$ref": "#/definitions/server.RemoveFilesForm"
                         }
                     }
                 ],
@@ -207,19 +250,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.RemoveFilesError"
+                            "$ref": "#/definitions/server.RemoveFilesError"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -240,19 +283,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.UnrecognizedDocuments"
+                            "$ref": "#/definitions/server.UnrecognizedDocuments"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -285,19 +328,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -327,7 +370,7 @@ const docTemplate = `{
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -354,7 +397,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.WatcherDirectoriesForm"
+                            "$ref": "#/definitions/server.WatcherDirectoriesForm"
                         }
                     }
                 ],
@@ -362,19 +405,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -398,7 +441,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.FolderNameForm"
+                            "$ref": "#/definitions/server.FolderNameForm"
                         }
                     }
                 ],
@@ -406,19 +449,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -445,7 +488,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.WatcherDirectoriesForm"
+                            "$ref": "#/definitions/server.WatcherDirectoriesForm"
                         }
                     }
                 ],
@@ -453,19 +496,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -489,7 +532,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/endpoints.FolderNameForm"
+                            "$ref": "#/definitions/server.FolderNameForm"
                         }
                     }
                 ],
@@ -497,19 +540,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -544,20 +587,23 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/reader.DocumentPreview"
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/reader.Document"
+                                }
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -578,19 +624,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -611,19 +657,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Ok",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ResponseForm"
+                            "$ref": "#/definitions/server.ResponseForm"
                         }
                     },
                     "400": {
                         "description": "Bad Request message",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.BadRequestForm"
+                            "$ref": "#/definitions/server.BadRequestForm"
                         }
                     },
                     "503": {
                         "description": "Server does not available",
                         "schema": {
-                            "$ref": "#/definitions/endpoints.ServerErrorForm"
+                            "$ref": "#/definitions/server.ServerErrorForm"
                         }
                     }
                 }
@@ -631,151 +677,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "endpoints.AnalyseFilesForm": {
-            "type": "object",
-            "properties": {
-                "document_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "886f7e11874040ca8b8461fb4cd1aa2c"
-                    ]
-                }
-            }
-        },
-        "endpoints.BadRequestForm": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Bad Request message"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 400
-                }
-            }
-        },
-        "endpoints.FolderNameForm": {
-            "type": "object",
-            "properties": {
-                "folder_id": {
-                    "type": "string",
-                    "example": "test_folder"
-                }
-            }
-        },
-        "endpoints.MoveFilesForm": {
-            "type": "object",
-            "properties": {
-                "document_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "./indexer/upload/test.txt"
-                    ]
-                },
-                "location": {
-                    "type": "string",
-                    "example": "common_folder"
-                },
-                "src_folder_id": {
-                    "type": "string",
-                    "example": "unrecognized"
-                }
-            }
-        },
-        "endpoints.RemoveFilesError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 403
-                },
-                "file_paths": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "./indexer/upload/test.txt"
-                    ]
-                },
-                "message": {
-                    "type": "string",
-                    "example": "File not found"
-                }
-            }
-        },
-        "endpoints.RemoveFilesForm": {
-            "type": "object",
-            "properties": {
-                "document_paths": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "./indexer/upload/test.txt"
-                    ]
-                }
-            }
-        },
-        "endpoints.ResponseForm": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Done"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 200
-                }
-            }
-        },
-        "endpoints.ServerErrorForm": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "Server Error message"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 503
-                }
-            }
-        },
-        "endpoints.UnrecognizedDocuments": {
-            "type": "object",
-            "properties": {
-                "unrecognized": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/reader.DocumentPreview"
-                    }
-                }
-            }
-        },
-        "endpoints.WatcherDirectoriesForm": {
-            "type": "object",
-            "properties": {
-                "paths": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "./indexer/test_folder"
-                    ]
-                }
-            }
-        },
         "reader.Artifacts": {
             "type": "object",
             "properties": {
@@ -807,38 +708,247 @@ const docTemplate = `{
                 }
             }
         },
-        "reader.DocumentPreview": {
+        "reader.Document": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string",
-                    "example": "2024-05-04T22:53:57Z"
+                "content": {
+                    "type": "string"
                 },
-                "file_size": {
-                    "type": "integer",
-                    "example": 311652
+                "document_class": {
+                    "type": "string"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "886f7e11874040ca8b8461fb4cd1aa2c"
+                "document_created": {
+                    "type": "string"
                 },
-                "location": {
-                    "type": "string",
-                    "example": "unrecognized"
+                "document_extension": {
+                    "type": "string"
                 },
-                "name": {
-                    "type": "string",
-                    "example": "document_name.pdf"
+                "document_id": {
+                    "type": "string"
                 },
-                "preview_properties": {
+                "document_modified": {
+                    "type": "string"
+                },
+                "document_name": {
+                    "type": "string"
+                },
+                "document_path": {
+                    "type": "string"
+                },
+                "document_permissions": {
+                    "type": "integer"
+                },
+                "document_size": {
+                    "type": "integer"
+                },
+                "document_ssdeep": {
+                    "type": "string"
+                },
+                "document_type": {
+                    "type": "string"
+                },
+                "embeddings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reader.Embeddings"
+                    }
+                },
+                "folder_id": {
+                    "type": "string"
+                },
+                "folder_path": {
+                    "type": "string"
+                },
+                "ocr_metadata": {
+                    "$ref": "#/definitions/reader.OcrMetadata"
+                },
+                "quality_recognition": {
+                    "type": "integer"
+                }
+            }
+        },
+        "reader.Embeddings": {
+            "type": "object",
+            "properties": {
+                "chunk_id": {
+                    "type": "string"
+                },
+                "text_chunk": {
+                    "type": "string"
+                },
+                "vector": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "reader.OcrMetadata": {
+            "type": "object",
+            "properties": {
+                "artifacts": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/reader.Artifacts"
                     }
                 },
-                "quality_recognition": {
+                "doc_type": {
+                    "type": "string"
+                },
+                "job_id": {
+                    "type": "string"
+                },
+                "pages_count": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.AnalyseFilesForm": {
+            "type": "object",
+            "properties": {
+                "document_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "886f7e11874040ca8b8461fb4cd1aa2c"
+                    ]
+                }
+            }
+        },
+        "server.BadRequestForm": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Bad Request message"
+                },
+                "status": {
                     "type": "integer",
-                    "example": 10000
+                    "example": 400
+                }
+            }
+        },
+        "server.FolderNameForm": {
+            "type": "object",
+            "properties": {
+                "folder_name": {
+                    "type": "string",
+                    "example": "test_folder"
+                }
+            }
+        },
+        "server.MoveFilesForm": {
+            "type": "object",
+            "properties": {
+                "document_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "./indexer/upload/test.txt"
+                    ]
+                },
+                "location": {
+                    "type": "string",
+                    "example": "common_folder"
+                },
+                "src_folder_id": {
+                    "type": "string",
+                    "example": "unrecognized"
+                }
+            }
+        },
+        "server.RemoveFilesError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 403
+                },
+                "file_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "./indexer/upload/test.txt"
+                    ]
+                },
+                "message": {
+                    "type": "string",
+                    "example": "File not found"
+                }
+            }
+        },
+        "server.RemoveFilesForm": {
+            "type": "object",
+            "properties": {
+                "document_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "./indexer/upload/test.txt"
+                    ]
+                }
+            }
+        },
+        "server.ResponseForm": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Done"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "server.ServerErrorForm": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Server Error message"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 503
+                }
+            }
+        },
+        "server.UnrecognizedDocuments": {
+            "type": "object",
+            "properties": {
+                "unrecognized": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reader.Document"
+                    }
+                }
+            }
+        },
+        "server.WatcherDirectoriesForm": {
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "./indexer/test_folder"
+                    ]
                 }
             }
         }

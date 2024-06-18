@@ -1,101 +1,4 @@
 definitions:
-  endpoints.AnalyseFilesForm:
-    properties:
-      document_ids:
-        example:
-        - 886f7e11874040ca8b8461fb4cd1aa2c
-        items:
-          type: string
-        type: array
-    type: object
-  endpoints.BadRequestForm:
-    properties:
-      message:
-        example: Bad Request message
-        type: string
-      status:
-        example: 400
-        type: integer
-    type: object
-  endpoints.FolderNameForm:
-    properties:
-      folder_id:
-        example: test_folder
-        type: string
-    type: object
-  endpoints.MoveFilesForm:
-    properties:
-      document_ids:
-        example:
-        - ./indexer/upload/test.txt
-        items:
-          type: string
-        type: array
-      location:
-        example: common_folder
-        type: string
-      src_folder_id:
-        example: unrecognized
-        type: string
-    type: object
-  endpoints.RemoveFilesError:
-    properties:
-      code:
-        example: 403
-        type: integer
-      file_paths:
-        example:
-        - ./indexer/upload/test.txt
-        items:
-          type: string
-        type: array
-      message:
-        example: File not found
-        type: string
-    type: object
-  endpoints.RemoveFilesForm:
-    properties:
-      document_paths:
-        example:
-        - ./indexer/upload/test.txt
-        items:
-          type: string
-        type: array
-    type: object
-  endpoints.ResponseForm:
-    properties:
-      message:
-        example: Done
-        type: string
-      status:
-        example: 200
-        type: integer
-    type: object
-  endpoints.ServerErrorForm:
-    properties:
-      message:
-        example: Server Error message
-        type: string
-      status:
-        example: 503
-        type: integer
-    type: object
-  endpoints.UnrecognizedDocuments:
-    properties:
-      unrecognized:
-        items:
-          $ref: '#/definitions/reader.DocumentPreview'
-        type: array
-    type: object
-  endpoints.WatcherDirectoriesForm:
-    properties:
-      paths:
-        example:
-        - ./indexer/test_folder
-        items:
-          type: string
-        type: array
-    type: object
   reader.Artifacts:
     properties:
       group_json_name:
@@ -116,30 +19,167 @@ definitions:
           type: object
         type: array
     type: object
-  reader.DocumentPreview:
+  reader.Document:
     properties:
-      created_at:
-        example: "2024-05-04T22:53:57Z"
+      content:
         type: string
-      file_size:
-        example: 311652
+      document_class:
+        type: string
+      document_created:
+        type: string
+      document_extension:
+        type: string
+      document_id:
+        type: string
+      document_modified:
+        type: string
+      document_name:
+        type: string
+      document_path:
+        type: string
+      document_permissions:
         type: integer
-      id:
-        example: 886f7e11874040ca8b8461fb4cd1aa2c
+      document_size:
+        type: integer
+      document_ssdeep:
         type: string
-      location:
-        example: unrecognized
+      document_type:
         type: string
-      name:
-        example: document_name.pdf
+      embeddings:
+        items:
+          $ref: '#/definitions/reader.Embeddings'
+        type: array
+      folder_id:
         type: string
-      preview_properties:
+      folder_path:
+        type: string
+      ocr_metadata:
+        $ref: '#/definitions/reader.OcrMetadata'
+      quality_recognition:
+        type: integer
+    type: object
+  reader.Embeddings:
+    properties:
+      chunk_id:
+        type: string
+      text_chunk:
+        type: string
+      vector:
+        items:
+          type: number
+        type: array
+    type: object
+  reader.OcrMetadata:
+    properties:
+      artifacts:
         items:
           $ref: '#/definitions/reader.Artifacts'
         type: array
-      quality_recognition:
-        example: 10000
+      doc_type:
+        type: string
+      job_id:
+        type: string
+      pages_count:
         type: integer
+      text:
+        type: string
+    type: object
+  server.AnalyseFilesForm:
+    properties:
+      document_ids:
+        example:
+        - 886f7e11874040ca8b8461fb4cd1aa2c
+        items:
+          type: string
+        type: array
+    type: object
+  server.BadRequestForm:
+    properties:
+      message:
+        example: Bad Request message
+        type: string
+      status:
+        example: 400
+        type: integer
+    type: object
+  server.FolderNameForm:
+    properties:
+      folder_name:
+        example: test_folder
+        type: string
+    type: object
+  server.MoveFilesForm:
+    properties:
+      document_ids:
+        example:
+        - ./indexer/upload/test.txt
+        items:
+          type: string
+        type: array
+      location:
+        example: common_folder
+        type: string
+      src_folder_id:
+        example: unrecognized
+        type: string
+    type: object
+  server.RemoveFilesError:
+    properties:
+      code:
+        example: 403
+        type: integer
+      file_paths:
+        example:
+        - ./indexer/upload/test.txt
+        items:
+          type: string
+        type: array
+      message:
+        example: File not found
+        type: string
+    type: object
+  server.RemoveFilesForm:
+    properties:
+      document_paths:
+        example:
+        - ./indexer/upload/test.txt
+        items:
+          type: string
+        type: array
+    type: object
+  server.ResponseForm:
+    properties:
+      message:
+        example: Done
+        type: string
+      status:
+        example: 200
+        type: integer
+    type: object
+  server.ServerErrorForm:
+    properties:
+      message:
+        example: Server Error message
+        type: string
+      status:
+        example: 503
+        type: integer
+    type: object
+  server.UnrecognizedDocuments:
+    properties:
+      unrecognized:
+        items:
+          $ref: '#/definitions/reader.Document'
+        type: array
+    type: object
+  server.WatcherDirectoriesForm:
+    properties:
+      paths:
+        example:
+        - ./indexer/test_folder
+        items:
+          type: string
+        type: array
     type: object
 info:
   contact: {}
@@ -154,11 +194,11 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Hello
       tags:
       - hello
@@ -174,23 +214,52 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.AnalyseFilesForm'
+          $ref: '#/definitions/server.AnalyseFilesForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Analyse uploaded files by ids
+      tags:
+      - files
+  /watcher/files/artifacts:
+    get:
+      description: Get available artifacts
+      operationId: files-artifacts
+      parameters:
+      - description: document_type
+        in: query
+        name: document_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Get available artifacts
       tags:
       - files
   /watcher/files/download:
@@ -209,15 +278,15 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Download file by path
       tags:
       - files
@@ -233,22 +302,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.MoveFilesForm'
+          $ref: '#/definitions/server.MoveFilesForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Moving files to target directory
       tags:
       - files
@@ -264,22 +333,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.RemoveFilesForm'
+          $ref: '#/definitions/server.RemoveFilesForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.RemoveFilesError'
+            $ref: '#/definitions/server.RemoveFilesError'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Remove files from directory
       tags:
       - files
@@ -293,15 +362,15 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.UnrecognizedDocuments'
+            $ref: '#/definitions/server.UnrecognizedDocuments'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Get unrecognized documents
       tags:
       - files
@@ -323,15 +392,15 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Upload files to analyse
       tags:
       - files
@@ -351,7 +420,7 @@ paths:
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Get watched directories list
       tags:
       - watcher
@@ -367,22 +436,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.WatcherDirectoriesForm'
+          $ref: '#/definitions/server.WatcherDirectoriesForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Attach new directory to watcher
       tags:
       - watcher
@@ -396,22 +465,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.FolderNameForm'
+          $ref: '#/definitions/server.FolderNameForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Create folder to store documents
       tags:
       - files
@@ -427,22 +496,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.WatcherDirectoriesForm'
+          $ref: '#/definitions/server.WatcherDirectoriesForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Attach new directory to watcher
       tags:
       - watcher
@@ -456,22 +525,22 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/endpoints.FolderNameForm'
+          $ref: '#/definitions/server.FolderNameForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Remove folder
       tags:
       - files
@@ -494,16 +563,18 @@ paths:
           description: Ok
           schema:
             items:
-              $ref: '#/definitions/reader.DocumentPreview'
+              items:
+                $ref: '#/definitions/reader.Document'
+              type: array
             type: array
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Upload file to watcher directory
       tags:
       - watcher
@@ -517,15 +588,15 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Pause all watchers
       tags:
       - watcher
@@ -539,15 +610,15 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/endpoints.ResponseForm'
+            $ref: '#/definitions/server.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/endpoints.BadRequestForm'
+            $ref: '#/definitions/server.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/endpoints.ServerErrorForm'
+            $ref: '#/definitions/server.ServerErrorForm'
       summary: Run all watchers
       tags:
       - watcher

@@ -2,6 +2,7 @@ package logoper
 
 import (
 	"bytes"
+	"doc-notifier/internal/ocr/artifacts"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 
 const CheckJobStatusTimeout = 5 * time.Second
 const RecognitionURL = "/api/v3/text/create_extraction"
+const TemplatesURL = "/api/v2/artifacts/doc_types"
 const GetResultURL = "/api/v2/text/get"
 
 type Service struct {
@@ -181,4 +183,26 @@ func (s *Service) clearSuccessfulTasks() {
 		delete(s.ProcessingJobs, jobId)
 	}
 	s.mu.Unlock()
+}
+
+func (s *Service) GetArtifacts() *artifacts.OcrArtifacts {
+	var arts *artifacts.OcrArtifacts
+
+	targetURL := fmt.Sprintf("%s%s", s.Address, TemplatesURL)
+	response, err := http.Get(targetURL)
+	if err != nil {
+		log.Printf("Error while creating request: %s", err)
+		return arts
+	}
+
+	var respData []byte
+	if respData, err = io.ReadAll(response.Body); err != nil {
+		log.Printf("Failed while reading response reqBody: %s", err)
+		return arts
+	}
+
+	if err = json.Unmarshal(respData, &arts); err != nil {
+		log.Println(err)
+	}
+	return arts
 }

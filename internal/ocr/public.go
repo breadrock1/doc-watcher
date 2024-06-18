@@ -2,6 +2,7 @@ package ocr
 
 import (
 	"doc-notifier/internal/config"
+	"doc-notifier/internal/ocr/artifacts"
 	"doc-notifier/internal/ocr/assistant"
 	"doc-notifier/internal/ocr/logoper"
 	"doc-notifier/internal/ocr/raw"
@@ -14,6 +15,7 @@ type Service struct {
 
 type Recognizer interface {
 	RecognizeFile(document *reader.Document) error
+	GetArtifacts() *artifacts.OcrArtifacts
 }
 
 func New(config *config.OcrConfig) *Service {

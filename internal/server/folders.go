@@ -205,7 +205,7 @@ func (s *Service) RunWatchers(c echo.Context) error {
 // @Accept  multipart/form
 // @Produce  json
 // @Param files formData file true "Files multipart form"
-// @Success 200 {array} reader.DocumentPreview "Ok"
+// @Success 200 {array} []reader.Document "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
 // @Failure	503 {object} ServerErrorForm "Server does not available"
 // @Router /watcher/folders/upload [post]

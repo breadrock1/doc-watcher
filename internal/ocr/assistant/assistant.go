@@ -2,6 +2,7 @@ package assistant
 
 import (
 	"bytes"
+	"doc-notifier/internal/ocr/artifacts"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -71,5 +72,9 @@ func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
 }
 
 func (s *Service) GetProcessingJob(_ string) *processing.ProcessJob {
+	return nil
+}
+
+func (s *Service) GetArtifacts() *artifacts.OcrArtifacts {
 	return nil
 }

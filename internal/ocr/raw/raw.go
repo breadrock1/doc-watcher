@@ -1,6 +1,7 @@
 package raw
 
 import (
+	"doc-notifier/internal/ocr/artifacts"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +17,7 @@ func New() *Service {
 	return &Service{}
 }
 
-func (re *Service) RecognizeFile(document *reader.Document) error {
+func (s *Service) RecognizeFile(document *reader.Document) error {
 	bytesData, err := os.ReadFile(document.DocumentPath)
 	if err != nil {
 		log.Println("Failed while reading file: ", err)
@@ -32,10 +33,14 @@ func (re *Service) RecognizeFile(document *reader.Document) error {
 	return nil
 }
 
-func (re *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
+func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
 	return make(map[string]*processing.ProcessJob)
 }
 
-func (re *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+func (s *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
+	return nil
+}
+
+func (s *Service) GetArtifacts() *artifacts.OcrArtifacts {
 	return nil
 }
