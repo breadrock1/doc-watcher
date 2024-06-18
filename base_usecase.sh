@@ -103,7 +103,7 @@ print_info_message "Waiting storing documents to elastic..." && sleep 10
 print_info_message "Check documents are stored successful into elastic..."
 for TESTCASE_FILE in $(ls $TESTCASE_DIR_PATH); do
     EXEC_CODE=$(check_document_stored_successful $TESTCASE_DIR_PATH/$TESTCASE_FILE)
-    EXEC_STATUS=$(echo $RESPONSE | jq '.document_md5')
+    EXEC_STATUS=$(echo $RESPONSE | jq '.document_id')
     if [[ $( echo $? ) != 0 && -z $EXEC_STATUS ]]; then
         print_err_message "Failed while storing document to elastic!"
         clear_all_data
@@ -113,7 +113,7 @@ done
 
 print_info_message "Searching data by loaded documents..."
 EXEC_CODE=$(search_document_data 'System of indexing and storing documents')
-FOUNDED_DOC_1=$(cat /tmp/result_output.json | jq ".founded.$TESTCASE_FILE_1_HASH.[0].document_md5")
+FOUNDED_DOC_1=$(cat /tmp/result_output.json | jq ".founded.$TESTCASE_FILE_1_HASH.[0].document_id")
 if [[ -z $FOUNDED_DOC_1 && $FOUNDED_DOC_1 == $TESTCASE_FILE_1_HASH ]]; then
     print_err_message "Failed while searching document!"
     clear_all_data
@@ -121,7 +121,7 @@ if [[ -z $FOUNDED_DOC_1 && $FOUNDED_DOC_1 == $TESTCASE_FILE_1_HASH ]]; then
 fi
 
 EXEC_CODE=$(search_document_data 'Quickly find documents based on content')
-FOUNDED_DOC_2=$(cat /tmp/result_output.json | jq ".founded.$TESTCASE_FILE_2_HASH.[0].document_md5")
+FOUNDED_DOC_2=$(cat /tmp/result_output.json | jq ".founded.$TESTCASE_FILE_2_HASH.[0].document_id")
 if [[ -z $FOUNDED_DOC_2 && $$FOUNDED_DOC_2 == $TESTCASE_FILE_2_HASH ]]; then
     print_err_message "Failed while searching document!"
     clear_all_data
