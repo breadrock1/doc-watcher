@@ -404,6 +404,34 @@ paths:
       summary: Upload files to analyse
       tags:
       - files
+  /watcher/files/upload-from-office:
+    post:
+      description: Upload files to analyse from onlyoffice
+      operationId: files-upload-office
+      parameters:
+      - description: File name to download from office
+        in: query
+        name: fileName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Upload files to analyse from onlyoffice
+      tags:
+      - files
   /watcher/folders/:
     get:
       description: Get watched directories list

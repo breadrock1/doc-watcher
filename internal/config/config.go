@@ -9,6 +9,7 @@ type Config struct {
 	Searcher  SearcherConfig
 	Tokenizer TokenizerConfig
 	Storage   StorageConfig
+	Office    OfficeConfig
 }
 
 type LoggerConfig struct {
@@ -52,4 +53,8 @@ type StorageConfig struct {
 	DbName     string
 	EnableSSL  string
 	AddressLLM string
+}
+
+type OfficeConfig struct {
+	Address string
 }

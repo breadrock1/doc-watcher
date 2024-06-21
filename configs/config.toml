@@ -34,3 +34,6 @@ Port=5432
 DbName="documents"
 EnableSSL="disable"
 AddressLLM="http://localhost:8081"
+
+[office]
+Address="http://localhost:8087/example"

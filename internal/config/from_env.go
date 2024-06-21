@@ -90,6 +90,9 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		AddressLLM: storageAddressLLM,
 	}
 
+	officeAddress := loadString("OFFICE_SERVICE_ADDRESS")
+	officeConfig := OfficeConfig{Address: officeAddress}
+
 	return &Config{
 		Logger:    loggerConfig,
 		Watcher:   watcherConfig,
@@ -97,6 +100,7 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		Searcher:  searcherConfig,
 		Tokenizer: tokenizerConfig,
 		Storage:   storageConfig,
+		Office:    officeConfig,
 	}, nil
 }
 

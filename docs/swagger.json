@@ -335,6 +335,48 @@
                 }
             }
         },
+        "/watcher/files/upload-from-office": {
+            "post": {
+                "description": "Upload files to analyse from onlyoffice",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload files to analyse from onlyoffice",
+                "operationId": "files-upload-office",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File name to download from office",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/server.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
         "/watcher/folders/": {
             "get": {
                 "description": "Get watched directories list",

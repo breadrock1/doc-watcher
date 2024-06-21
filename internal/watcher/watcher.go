@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"context"
+	"doc-notifier/internal/office"
 	"errors"
 	"log"
 	"math"
@@ -37,6 +38,7 @@ type NotifyWatcher struct {
 	Searcher  *searcher.Service
 	Tokenizer *tokenizer.Service
 	Storage   *storage.Service
+	Office    *office.Service
 }
 
 func New(
@@ -46,6 +48,7 @@ func New(
 	searcherService *searcher.Service,
 	tokenService *tokenizer.Service,
 	storageService *storage.Service,
+	officeService *office.Service,
 ) *NotifyWatcher {
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -69,6 +72,7 @@ func New(
 		Searcher:            searcherService,
 		Tokenizer:           tokenService,
 		Storage:             storageService,
+		Office:              officeService,
 	}
 }
 

@@ -19,6 +19,7 @@ func (s *Service) CreateFilesGroup() error {
 	//})
 
 	group.POST("/upload", s.UploadFilesToUnrecognized)
+	group.POST("/upload-from-office", s.UploadFileFromOnlyOffice)
 	//group.POST("/analyse", s.AnalyseFiles, timeoutMW)
 	group.GET("/artifacts", s.GetArtifactsTemplate)
 	group.POST("/analyse", s.AnalyseFiles)
@@ -65,6 +66,25 @@ func (s *Service) UploadFilesToUnrecognized(c echo.Context) error {
 	}
 
 	return c.JSON(200, uploadFiles)
+}
+
+// UploadFileFromOnlyOffice
+// @Summary Upload files to analyse from onlyoffice
+// @Description Upload files to analyse from onlyoffice
+// @ID files-upload-office
+// @Tags files
+// @Produce  json
+// @Param fileName query string true "File name to download from office"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/files/upload-from-office [post]
+func (s *Service) UploadFileFromOnlyOffice(c echo.Context) error {
+	fileName := c.QueryParam("fileName")
+	if err := s.watcher.Office.DownloadDocument(fileName); err != nil {
+		return c.JSON(400, createStatusResponse(400, err.Error()))
+	}
+	return c.JSON(200, createStatusResponse(200, "Done"))
 }
 
 // AnalyseFiles

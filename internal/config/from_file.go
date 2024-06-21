@@ -33,6 +33,8 @@ func FromFile(filePath string) (*Config, error) {
 	viperInstance.SetDefault("tokenizer.ChunkBySelf", false)
 	viperInstance.SetDefault("tokenizer.Timeout", 300)
 
+	viperInstance.SetDefault("office.Address", "http://localhost:8087")
+
 	if err := viperInstance.ReadInConfig(); err != nil {
 		confErr := fmt.Errorf("failed while reading config file %s: %w", filePath, err)
 		return config, confErr

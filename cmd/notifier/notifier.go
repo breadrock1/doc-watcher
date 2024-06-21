@@ -10,6 +10,7 @@ import (
 	"doc-notifier/cmd"
 	"doc-notifier/internal/logger"
 	"doc-notifier/internal/ocr"
+	"doc-notifier/internal/office"
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/server"
@@ -26,6 +27,7 @@ func main() {
 	}
 
 	readService := reader.New()
+	officeService := office.New(&serviceConfig.Office)
 	ocrService := ocr.New(&serviceConfig.Ocr)
 	searchService := searcher.New(&serviceConfig.Searcher)
 	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
@@ -37,6 +39,7 @@ func main() {
 		searchService,
 		tokenService,
 		storeService,
+		officeService,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
