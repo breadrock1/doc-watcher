@@ -48,14 +48,8 @@ func (s *Service) StoreDocument(document *reader.Document) error {
 	}
 
 	reqBody = bytes.NewBuffer(jsonData)
-	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, "history", document.DocumentID)
-	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
-	if err != nil {
-		log.Println("Failed while sending request: ", err)
-	}
-
-	reqBody = bytes.NewBuffer(jsonData)
-	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, document.FolderID, document.DocumentID)
+	folderID := fmt.Sprintf("%s-vector", document.FolderID)
+	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, folderID, document.DocumentID)
 	_, err = sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.Timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)

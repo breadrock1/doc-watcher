@@ -3,6 +3,7 @@ package office
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	"doc-notifier/internal/config"
@@ -20,7 +21,8 @@ func New(config *config.OfficeConfig) *Service {
 }
 
 func (s *Service) DownloadDocument(fileName string) error {
-	targetUrl := fmt.Sprintf("%s/download?fileName=%s", s.address, fileName)
+	fileNameQuery := url.QueryEscape(fileName)
+	targetUrl := fmt.Sprintf("%s/download?fileName=%s", s.address, fileNameQuery)
 	fileData, err := sender.SendGETRequest(targetUrl)
 	if err != nil {
 		log.Println("failed to download file from office: ")

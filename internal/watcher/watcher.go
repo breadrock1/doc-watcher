@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"context"
-	"doc-notifier/internal/office"
 	"errors"
 	"log"
 	"math"
@@ -14,6 +13,7 @@ import (
 
 	"doc-notifier/internal/config"
 	"doc-notifier/internal/ocr"
+	"doc-notifier/internal/office"
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/storage"
