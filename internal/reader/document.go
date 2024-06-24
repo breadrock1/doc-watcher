@@ -230,7 +230,7 @@ func parseDocumentType(extension string) string {
 	case "application":
 		return extractApplicationMimeType(attributes[1])
 	default:
-		return "unknown"
+		return "document"
 	}
 }
 
@@ -241,5 +241,5 @@ func extractApplicationMimeType(attribute string) string {
 		}
 	}
 
-	return "unknown"
+	return "document"
 }
