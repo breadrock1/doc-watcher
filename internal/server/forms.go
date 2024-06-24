@@ -48,7 +48,7 @@ type UnrecognizedDocuments struct {
 
 // MoveFilesForm example
 type MoveFilesForm struct {
-	TargetDirectory string   `json:"location" example:"common_folder"`
+	TargetDirectory string   `json:"location" example:"common-folder"`
 	SourceDirectory string   `json:"src_folder_id" example:"unrecognized"`
 	DocumentPaths   []string `json:"document_ids" example:"./indexer/upload/test.txt"`
 }

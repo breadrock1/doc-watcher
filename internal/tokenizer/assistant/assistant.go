@@ -55,8 +55,9 @@ func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error
 
 func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 	textVectors := &EmbedAllForm{
-		Inputs:   content,
-		Truncate: false,
+		Inputs:    content,
+		Truncate:  false,
+		Normalize: true,
 	}
 
 	var tokenErr error
@@ -69,7 +70,7 @@ func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 	log.Printf("Sending file to extract tokens")
 	reqBody := bytes.NewBuffer(jsonData)
 
-	method := "PUT"
+	method := "POST"
 	mimeType := "application/json"
 	targetURL := s.address + EmbeddingsAssistantURL
 	respData, err := sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.timeout)

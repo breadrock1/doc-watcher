@@ -17,7 +17,7 @@ import (
 const MaxQualityValue = 10000
 
 var (
-	bucketName    = "common_folder"
+	bucketName    = "common-folder"
 	timeFormat    = time.RFC3339
 	documentMimes = []string{
 		"csv", "msword", "html", "json", "pdf",

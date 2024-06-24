@@ -899,7 +899,7 @@ const docTemplate = `{
                 },
                 "location": {
                     "type": "string",
-                    "example": "common_folder"
+                    "example": "common-folder"
                 },
                 "src_folder_id": {
                     "type": "string",

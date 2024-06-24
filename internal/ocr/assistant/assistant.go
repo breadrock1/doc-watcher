@@ -59,6 +59,13 @@ func (s *Service) RecognizeFile(document *reader.Document) error {
 	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 	document.SetContentData(resTest.Context)
+	document.SetOcrMetadata(&reader.OcrMetadata{
+		JobId:      "",
+		Text:       "",
+		PagesCount: 1,
+		DocType:    "",
+		Artifacts:  make([]*reader.Artifacts, 0),
+	})
 
 	if len(resTest.Context) == 0 {
 		return fmt.Errorf("returned empty content data")

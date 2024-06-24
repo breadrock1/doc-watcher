@@ -117,7 +117,7 @@ definitions:
           type: string
         type: array
       location:
-        example: common_folder
+        example: common-folder
         type: string
       src_folder_id:
         example: unrecognized
