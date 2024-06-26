@@ -59,7 +59,7 @@ func (s *Service) Create(ctx context.Context, document *reader.Document) (int, e
 	args := []interface{}{
 		document.FolderID,
 		document.FolderPath,
-		document.Content,
+		[]byte(document.Content),
 		document.DocumentID,
 		document.DocumentSSDEEP,
 		document.DocumentName,
@@ -74,9 +74,9 @@ func (s *Service) Create(ctx context.Context, document *reader.Document) (int, e
 	}
 
 	var id int
-	err := s.db.QueryRowContext(ctx, query, args...)
-	if err != nil {
-		return 0, fmt.Errorf("db exec: %v", err)
+	row := s.db.QueryRowContext(ctx, query, args...)
+	if row.Err() != nil {
+		return 0, fmt.Errorf("db exec: %s", row.Err().Error())
 	}
 	return id, nil
 }

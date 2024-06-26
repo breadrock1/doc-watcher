@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS metabase.documents
 (
     folder_id            TEXT COLLATE pg_catalog."default" NOT NULL,
     folder_path          TEXT NOT NULL,
-    content              TEXT COLLATE pg_catalog."default",
+    content              BYTEA,
     document_id          TEXT COLLATE pg_catalog."default" NOT NULL UNIQUE,
     document_ssdeep      TEXT COLLATE pg_catalog."default",
     document_name        TEXT COLLATE pg_catalog."default" NOT NULL,

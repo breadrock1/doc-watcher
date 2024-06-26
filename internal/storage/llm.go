@@ -74,7 +74,7 @@ func (s *Service) LoadSummary(document *reader.Document) {
 
 	summaryRequest := &SummaryRequest{
 		NPredict:         400,
-		Temperature:      0.7,
+		Temperature:      0.1,
 		Stop:             []string{"</s>", "Llama:", "User:"},
 		RepeatLastN:      256,
 		RepeatPenalty:    1.18,
@@ -126,11 +126,12 @@ func (s *Service) LoadSummary(document *reader.Document) {
 	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "\t", "")
 	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "\n", "")
 	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "`", "")
+
 	if err := json.Unmarshal([]byte(summaryWrapper.Content), &summaryResponse); err != nil {
 		log.Println("Failed while reading response reqBody: ", err)
 		return
 	}
 
 	document.Content = summaryResponse.Summary
-	document.DocumentClass = summaryResponse.Class
+	document.SetDocumentClass(summaryResponse.Class)
 }

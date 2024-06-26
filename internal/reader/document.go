@@ -168,6 +168,14 @@ func (d *Document) SetQuality(quality int32) {
 	d.QualityRecognized = quality
 }
 
+func (d *Document) SetDocumentClass(class string) {
+	if len(class) > 0 {
+		d.DocumentClass = class
+	} else {
+		d.DocumentClass = "неизвестно"
+	}
+}
+
 func (d *Document) SetOcrMetadata(ocr *OcrMetadata) {
 	d.OcrMetadata = ocr
 }
