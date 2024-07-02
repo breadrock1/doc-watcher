@@ -2,11 +2,11 @@ package searcher
 
 import (
 	"context"
+	"doc-notifier/internal/watcher"
 	"testing"
 	"time"
 
 	"doc-notifier/internal/config"
-	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +29,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseFilePath)
+		document, parseErr := watcher.ParseFile(TestcaseFilePath)
 		storeErr := searcherService.StoreDocument(document)
 
 		assert.NoError(t, parseErr, "Returned error while parsing file")
@@ -46,7 +46,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		_, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
+		_, parseErr := watcher.ParseFile(TestcaseNonExistingFilePath)
 		//storeErr := searcherService.StoreDocument(document)
 
 		assert.Error(t, parseErr, "Returned non null error pointer")
@@ -68,7 +68,7 @@ func TestStoreDocument(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseFilePath)
+		document, parseErr := watcher.ParseFile(TestcaseFilePath)
 		storeErr := searcherService.StoreDocument(document)
 
 		assert.NoError(t, parseErr, "Returned non null error pointer")

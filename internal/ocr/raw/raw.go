@@ -1,13 +1,11 @@
 package raw
 
 import (
-	"doc-notifier/internal/ocr/artifacts"
 	"fmt"
 	"log"
 	"os"
 
-	"doc-notifier/internal/ocr/processing"
-	"doc-notifier/internal/reader"
+	"doc-notifier/internal/models"
 )
 
 type Service struct {
@@ -17,7 +15,7 @@ func New() *Service {
 	return &Service{}
 }
 
-func (s *Service) RecognizeFile(document *reader.Document) error {
+func (s *Service) RecognizeFile(document *models.Document) error {
 	bytesData, err := os.ReadFile(document.DocumentPath)
 	if err != nil {
 		log.Println("Failed while reading file: ", err)
@@ -30,17 +28,5 @@ func (s *Service) RecognizeFile(document *reader.Document) error {
 	}
 
 	document.SetContentData(stringData)
-	return nil
-}
-
-func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
-	return make(map[string]*processing.ProcessJob)
-}
-
-func (s *Service) GetProcessingJob(jobId string) *processing.ProcessJob {
-	return nil
-}
-
-func (s *Service) GetArtifacts() *artifacts.OcrArtifacts {
 	return nil
 }

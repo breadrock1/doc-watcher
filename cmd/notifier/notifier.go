@@ -11,10 +11,9 @@ import (
 	"doc-notifier/internal/logger"
 	"doc-notifier/internal/ocr"
 	"doc-notifier/internal/office"
-	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/server"
-	"doc-notifier/internal/storage"
+	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
 )
@@ -26,26 +25,27 @@ func main() {
 		logger.EnableFileLogTranslating()
 	}
 
-	readService := reader.New()
-	officeService := office.New(&serviceConfig.Office)
+	summarizeService, err := summarizer.New(&serviceConfig.Storage)
+	if err != nil {
+		log.Fatalln("failed to init summarize: ", err.Error())
+	}
+
 	ocrService := ocr.New(&serviceConfig.Ocr)
 	searchService := searcher.New(&serviceConfig.Searcher)
 	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
-	storeService := storage.New(&serviceConfig.Storage)
 	watchService := watcher.New(
 		&serviceConfig.Watcher,
-		readService,
 		ocrService,
 		searchService,
 		tokenService,
-		storeService,
-		officeService,
+		summarizeService,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go awaitSystemSignals(cancel)
 
-	httpServer := server.New(watchService)
+	officeService := office.New(&serviceConfig.Office)
+	httpServer := server.New(watchService, officeService)
 	go func() {
 		err := httpServer.RunServer(ctx)
 		if err != nil {
