@@ -56,5 +56,6 @@ type StorageConfig struct {
 }
 
 type OfficeConfig struct {
-	Address string
+	Address    string
+	WatcherDir string
 }

@@ -11,7 +11,7 @@ import (
 	"doc-notifier/internal/ocr"
 	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
-	"doc-notifier/internal/storage"
+	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
-	fileReader := &reader.Service{}
+	fileReader := &watcher.Service{}
 	timeoutDuration := time.Duration(10) * time.Second
 	ocrService := ocr.New(&config.OcrConfig{
 		Mode:    "raw",
@@ -41,7 +41,7 @@ func TestWatcherManager(t *testing.T) {
 		ChunkBySelf:  false,
 		Timeout:      timeoutDuration,
 	})
-	storeService := storage.New(&config.StorageConfig{
+	storeService := summarizer.New(&config.StorageConfig{
 		DriverName: "postgres",
 		User:       "postgres",
 		Password:   "postgres",

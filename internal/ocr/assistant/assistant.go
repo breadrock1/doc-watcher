@@ -2,7 +2,6 @@ package assistant
 
 import (
 	"bytes"
-	"doc-notifier/internal/ocr/artifacts"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"doc-notifier/internal/ocr/processing"
-	"doc-notifier/internal/reader"
+	"doc-notifier/internal/config"
+	"doc-notifier/internal/models"
 	"doc-notifier/internal/sender"
 )
 
@@ -22,14 +21,14 @@ type Service struct {
 	timeout time.Duration
 }
 
-func New(address string, timeout time.Duration) *Service {
+func New(config *config.OcrConfig) *Service {
 	return &Service{
-		address: address,
-		timeout: timeout,
+		address: config.Address,
+		timeout: config.Timeout,
 	}
 }
 
-func (s *Service) RecognizeFile(document *reader.Document) error {
+func (s *Service) RecognizeFile(document *models.Document) error {
 	filePath := document.DocumentPath
 
 	var recErr error
@@ -42,46 +41,26 @@ func (s *Service) RecognizeFile(document *reader.Document) error {
 	var reqBody bytes.Buffer
 	var writer *multipart.Writer
 	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody); recErr != nil {
-		return fmt.Errorf("failed create forl file: %e", recErr)
+		return fmt.Errorf("failed create form file: %e", recErr)
 	}
 
 	log.Printf("Sending file %s to recognize", filePath)
 
 	var respData []byte
-	method := "POST"
 	targetURL := s.address + RecognitionURL
 	mimeType := writer.FormDataContentType()
-	respData, recErr = sender.SendRequest(&reqBody, &targetURL, &method, &mimeType, s.timeout)
-	if recErr != nil {
+	if respData, recErr = sender.POST(&reqBody, targetURL, mimeType, s.timeout); recErr != nil {
 		return fmt.Errorf("failed send request: %e", recErr)
 	}
 
 	var resTest = &DocumentForm{}
 	_ = json.Unmarshal(respData, resTest)
 	document.SetContentData(resTest.Context)
-	document.SetOcrMetadata(&reader.OcrMetadata{
-		JobId:      "",
-		Text:       "",
-		PagesCount: 1,
-		DocType:    "",
-		Artifacts:  make([]*reader.Artifacts, 0),
-	})
+	document.SetOcrMetadata(models.DefaultOcr())
 
 	if len(resTest.Context) == 0 {
 		return fmt.Errorf("returned empty content data")
 	}
 
-	return nil
-}
-
-func (s *Service) GetProcessingJobs() map[string]*processing.ProcessJob {
-	return make(map[string]*processing.ProcessJob)
-}
-
-func (s *Service) GetProcessingJob(_ string) *processing.ProcessJob {
-	return nil
-}
-
-func (s *Service) GetArtifacts() *artifacts.OcrArtifacts {
 	return nil
 }

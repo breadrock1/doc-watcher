@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	_ "doc-notifier/docs"
+	"doc-notifier/internal/office"
 	"doc-notifier/internal/watcher"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -11,11 +12,13 @@ import (
 
 type Service struct {
 	server  *echo.Echo
+	office  *office.Service
 	watcher *watcher.NotifyWatcher
 }
 
-func New(nw *watcher.NotifyWatcher) *Service {
+func New(nw *watcher.NotifyWatcher, officeService *office.Service) *Service {
 	server := &Service{
+		office:  officeService,
 		watcher: nw,
 	}
 
