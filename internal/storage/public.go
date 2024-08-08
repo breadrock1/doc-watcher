@@ -19,6 +19,6 @@ type ServiceStorage interface {
 }
 
 func New(config *config.StorageConfig) ServiceStorage {
-	storeService := postgress.New(config)
+	storeService := postqress.New(config)
 	return &storeService
 }
