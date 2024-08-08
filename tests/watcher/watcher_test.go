@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"doc-notifier/internal/office"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -51,10 +52,17 @@ func TestWatcherManager(t *testing.T) {
 		EnableSSL:  "disable",
 		AddressLLM: "http://localhost:8081",
 	})
-	watch := watcher.New(&config.WatcherConfig{
+
+	offenceService := office.New(&config.OfficeConfig{
+		Address: "0.0.0.0:8000",
+	})
+
+	watcherConf := &config.WatcherConfig{
 		Address:            "0.0.0.0:2893",
 		WatchedDirectories: []string{IndexerDirPath},
-	}, fileReader, ocrService, searcherService, tokenizerService, storeService)
+	}
+
+	watch := watcher.New(watcherConf, fileReader, ocrService, searcherService, tokenizerService, storeService, offenceService)
 
 	t.Run("Append directory to watch", func(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})

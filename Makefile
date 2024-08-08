@@ -1,5 +1,6 @@
+BIN_LINTER := "${GOPATH}/bin/golangci-lint"
 BIN_NOTIFIER := "./bin/doc-notifier"
-DOCKER_IMAGE="doc-notifier:latest"
+DOCKER_IMAGE := "doc-notifier:latest"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 
