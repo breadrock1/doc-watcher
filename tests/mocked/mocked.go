@@ -1,13 +1,14 @@
 package mocked
 
 import (
-	"doc-notifier/internal/ocr/assistant"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/tokenizer/forms"
-	"doc-notifier/internal/tokenizer/langchain"
 	"encoding/json"
-	"github.com/labstack/echo/v4"
 	"log"
+
+	ocr "doc-notifier/internal/ocr/assistant"
+	"doc-notifier/internal/reader"
+	tokenizer "doc-notifier/internal/tokenizer/assistant"
+	"doc-notifier/internal/tokenizer/forms"
+	"github.com/labstack/echo/v4"
 )
 
 type DocumentForm struct {
@@ -19,8 +20,8 @@ type TokenizerForm struct {
 
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
-	e.POST(assistant.RecognitionURL, RecognizeFile)
-	e.POST(langchain.ServiceURL, ComputeTokens)
+	e.POST(ocr.RecognitionURL, RecognizeFile)
+	e.POST(tokenizer.EmbeddingsAssistantURL, ComputeTokens)
 	e.PUT("/storage/folders/common-folder/documents/c31964293145484954679b19a114188e", StoreDocument)
 
 	return e
@@ -46,21 +47,14 @@ func StoreDocument(c echo.Context) error {
 	return c.JSON(200, document)
 }
 
-type GetTokensForm struct {
-	Text              string `json:"text"`
-	ChunkSize         int    `json:"chunk_size"`
-	ChunkOverlap      int    `json:"chunk_overlap"`
-	ReturnChunkedText bool   `json:"return_chunked_text"`
-}
-
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &GetTokensForm{}
+	tokensForm := &tokenizer.EmbedAllForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 
-	log.Println("Got request to tokenize doc: ", tokensForm.Text)
-	if tokensForm.Text != "test_file_1" {
-		log.Println("Non correct doc: ", tokensForm.Text)
+	log.Println("Got request to tokenize doc: ", tokensForm.Inputs)
+	if tokensForm.Inputs != "test_file_1" {
+		log.Println("Non correct doc: ", tokensForm.Inputs)
 		return c.JSON(403, tokensForm)
 	}
 
