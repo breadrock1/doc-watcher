@@ -2,11 +2,11 @@ package tokenizer
 
 import (
 	"context"
+	"doc-notifier/internal/watcher"
 	"testing"
 	"time"
 
 	"doc-notifier/internal/config"
-	"doc-notifier/internal/reader"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/tests/mocked"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +34,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		document, parseErr := reader.ParseFile(TestcaseFilePath)
+		document, parseErr := watcher.ParseFile(TestcaseFilePath)
 		document.Content = "test_file_1"
 		document.DocumentName = "test_file_1.txt"
 		tokens, computeErr := tokenizerService.Tokenizer.TokenizeTextData(document.Content)
@@ -56,7 +56,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		_, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
+		_, parseErr := watcher.ParseFile(TestcaseNonExistingFilePath)
 		//_, computeErr := tokenizerService.Tokenizer.TokenizeTextData(document.Content)
 
 		assert.Error(t, parseErr, "Returned error while parsing file")
@@ -83,7 +83,7 @@ func TestComputeContentTokens(t *testing.T) {
 			_ = e.Start("localhost:3451")
 		}()
 
-		_, parseErr := reader.ParseFile(TestcaseNonExistingFilePath)
+		_, parseErr := watcher.ParseFile(TestcaseNonExistingFilePath)
 		//_, computeErr := tokenizerService.Tokenizer.TokenizeTextData(document.Content)
 
 		assert.Error(t, parseErr, "Returned error while parsing file")

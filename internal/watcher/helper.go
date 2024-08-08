@@ -1,15 +1,14 @@
 package watcher
 
 import (
-	"context"
 	"log"
 	"sync"
 	"time"
 
-	"doc-notifier/internal/reader"
+	"doc-notifier/internal/models"
 )
 
-func (nw *NotifyWatcher) recognizeTriggeredDoc(documents []*reader.Document) {
+func (nw *NotifyWatcher) recognizeTriggeredDoc(documents []*models.Document) {
 	wg := sync.WaitGroup{}
 	for _, document := range documents {
 		wg.Add(1)
@@ -24,7 +23,7 @@ func (nw *NotifyWatcher) recognizeTriggeredDoc(documents []*reader.Document) {
 	wg.Wait()
 }
 
-func (nw *NotifyWatcher) recognizeCallback(document *reader.Document) {
+func (nw *NotifyWatcher) recognizeCallback(document *models.Document) {
 	document.SetQuality(0)
 	if err := nw.Ocr.Ocr.RecognizeFile(document); err != nil {
 		log.Println(err)
@@ -33,7 +32,7 @@ func (nw *NotifyWatcher) recognizeCallback(document *reader.Document) {
 
 	document.ComputeMd5Hash()
 	document.ComputeSsdeepHash()
-	document.SetEmbeddings([]*reader.Embeddings{})
+	document.SetEmbeddings([]*models.Embeddings{})
 
 	log.Println("Computing tokens for extracted text: ", document.DocumentName)
 	tokenVectors, _ := nw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
@@ -47,9 +46,5 @@ func (nw *NotifyWatcher) recognizeCallback(document *reader.Document) {
 		log.Println("Failed while storing document: ", err)
 	}
 
-	ctx := context.Background()
-	nw.Storage.LoadSummary(document)
-	if _, err := nw.Storage.Create(ctx, document); err != nil {
-		log.Println("Failed while storing metadata to psql: ", err)
-	}
+	nw.Summarizer.LoadSummary(document)
 }

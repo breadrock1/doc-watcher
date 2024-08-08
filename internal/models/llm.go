@@ -1,29 +1,6 @@
-package storage
+package models
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"log"
-	"strings"
-	"time"
-
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/sender"
-)
-
-type SummaryWrapper struct {
-	Content string `json:"content"`
-}
-
-type SummaryResponse struct {
-	Summary string `json:"summary"`
-	Class   string `json:"thematic"`
-}
-
-type ResponseFormat struct {
-	Type string `json:"type"`
-}
+import "fmt"
 
 type SummaryRequest struct {
 	NPredict         int             `json:"n_predict"`
@@ -52,10 +29,14 @@ type SummaryRequest struct {
 	PROMPT           string          `json:"prompt"`
 }
 
-func (s *Service) LoadSummary(document *reader.Document) {
+type ResponseFormat struct {
+	Type string `json:"type"`
+}
+
+func NewLLM(content string) *SummaryRequest {
 	insert := "```{\"summary\": \"summary of the content\", \"thematic\": \"determined class of document content\"}```"
 
-	text := fmt.Sprintf(`
+	promtp := fmt.Sprintf(`
 		You will be provided with the contents of a file along with its metadata. 
 		Provide a summary of the contents. The purpose of the summary is to organize files based on their content. 
 		To this end provide a concise but informative summary. Make the summary as specific to the file as possible. 
@@ -70,9 +51,9 @@ func (s *Service) LoadSummary(document *reader.Document) {
 
 		User: %s
 		Llama:
-	`, insert, document.Content)
+	`, insert, content)
 
-	summaryRequest := &SummaryRequest{
+	return &SummaryRequest{
 		NPredict:         400,
 		Temperature:      0.1,
 		Stop:             []string{"</s>", "Llama:", "User:"},
@@ -95,43 +76,7 @@ func (s *Service) LoadSummary(document *reader.Document) {
 		CachePROMPT:      false,
 		APIKey:           "",
 		SlotID:           -1,
-		PROMPT:           text,
+		PROMPT:           promtp,
 		RespFormat:       &ResponseFormat{Type: "json_object"},
 	}
-
-	jsonData, err := json.Marshal(summaryRequest)
-	if err != nil {
-		log.Println("Failed while marshaling doc: ", err)
-		return
-	}
-
-	reqBody := bytes.NewBuffer(jsonData)
-
-	method := "POST"
-	targetURL := fmt.Sprintf("%s/completion", s.LLMAddress)
-	mimeType := "application/json"
-	respData, recErr := sender.SendRequest(reqBody, &targetURL, &method, &mimeType, 300*time.Second)
-	if recErr != nil {
-		log.Println("failed send request: ", recErr)
-		return
-	}
-
-	var summaryWrapper *SummaryWrapper
-	if err := json.Unmarshal(respData, &summaryWrapper); err != nil {
-		log.Println("Failed while reading response reqBody: ", err)
-		return
-	}
-
-	var summaryResponse *SummaryResponse
-	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "\t", "")
-	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "\n", "")
-	summaryWrapper.Content = strings.ReplaceAll(summaryWrapper.Content, "`", "")
-
-	if err := json.Unmarshal([]byte(summaryWrapper.Content), &summaryResponse); err != nil {
-		log.Println("Failed while reading response reqBody: ", err)
-		return
-	}
-
-	document.Content = summaryResponse.Summary
-	document.SetDocumentClass(summaryResponse.Class)
 }

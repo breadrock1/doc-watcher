@@ -1,4 +1,4 @@
-package storage
+package postgress
 
 import (
 	"context"
@@ -7,17 +7,15 @@ import (
 	"log"
 
 	"doc-notifier/internal/config"
-	"doc-notifier/internal/reader"
-	_ "github.com/lib/pq"
+	"doc-notifier/internal/models"
 )
 
 type Service struct {
-	address    string
-	LLMAddress string
-	db         *sql.DB
+	dbAddress string
+	db        *sql.DB
 }
 
-func New(config *config.StorageConfig) *Service {
+func New(config *config.StorageConfig) Service {
 	address := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		config.Address,
@@ -28,14 +26,17 @@ func New(config *config.StorageConfig) *Service {
 		config.EnableSSL,
 	)
 
-	return &Service{
-		address:    address,
-		LLMAddress: config.AddressLLM,
+	return Service{
+		dbAddress: address,
 	}
 }
 
+func (s *Service) Close(_ context.Context) error {
+	return s.db.Close()
+}
+
 func (s *Service) Connect(ctx context.Context) error {
-	db, err := sql.Open("postgres", s.address)
+	db, err := sql.Open("postgres", s.dbAddress)
 	if err != nil {
 		log.Fatalln(err.Error())
 		return err
@@ -44,11 +45,7 @@ func (s *Service) Connect(ctx context.Context) error {
 	return s.db.PingContext(ctx)
 }
 
-func (s *Service) Close(_ context.Context) error {
-	return s.db.Close()
-}
-
-func (s *Service) Create(ctx context.Context, document *reader.Document) (int, error) {
+func (s *Service) Create(ctx context.Context, document *models.Document) (int, error) {
 	query := `
 		INSERT INTO documents (folder_id, folder_path, content, document_id, document_ssdeep, 
 		                       document_name, document_path, document_size, document_type, 

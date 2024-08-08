@@ -1,14 +1,12 @@
 package mocked
 
 import (
-	"encoding/json"
-	"log"
-
+	"doc-notifier/internal/models"
 	ocr "doc-notifier/internal/ocr/assistant"
-	"doc-notifier/internal/reader"
 	tokenizer "doc-notifier/internal/tokenizer/assistant"
-	"doc-notifier/internal/tokenizer/forms"
+	"encoding/json"
 	"github.com/labstack/echo/v4"
+	"log"
 )
 
 type DocumentForm struct {
@@ -34,7 +32,7 @@ func RecognizeFile(c echo.Context) error {
 }
 
 func StoreDocument(c echo.Context) error {
-	document := &reader.Document{}
+	document := &models.Document{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(document)
 
@@ -48,7 +46,7 @@ func StoreDocument(c echo.Context) error {
 }
 
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &tokenizer.EmbedAllForm{}
+	tokensForm := &models.EmbedAllForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 
@@ -58,7 +56,7 @@ func ComputeTokens(c echo.Context) error {
 		return c.JSON(403, tokensForm)
 	}
 
-	tokenizedVector := forms.ComputedTokens{
+	tokenizedVector := models.ComputedTokens{
 		Chunks:      1,
 		ChunkedText: []string{"test_file_1"},
 		Vectors:     [][]float64{{0.345, 0.045}},

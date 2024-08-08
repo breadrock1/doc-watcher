@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"doc-notifier/internal/config"
+	"doc-notifier/internal/models"
 	"doc-notifier/internal/sender"
-	"doc-notifier/internal/tokenizer/forms"
+	"github.com/labstack/echo/v4"
 )
 
 const EmbeddingsAssistantURL = "/embed"
@@ -33,8 +34,8 @@ func New(config *config.TokenizerConfig) *Service {
 	}
 }
 
-func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error) {
-	computedTokens := &forms.ComputedTokens{
+func (s *Service) TokenizeTextData(content string) (*models.ComputedTokens, error) {
+	computedTokens := &models.ComputedTokens{
 		Chunks:      0,
 		ChunkedText: []string{},
 		Vectors:     [][]float64{},
@@ -54,7 +55,7 @@ func (s *Service) TokenizeTextData(content string) (*forms.ComputedTokens, error
 }
 
 func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
-	textVectors := &EmbedAllForm{
+	textVectors := &models.EmbedAllForm{
 		Inputs:    content,
 		Truncate:  false,
 		Normalize: true,
@@ -70,16 +71,15 @@ func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 	log.Printf("Sending file to extract tokens")
 	reqBody := bytes.NewBuffer(jsonData)
 
-	method := "POST"
-	mimeType := "application/json"
+	mimeType := echo.MIMEApplicationJSON
 	targetURL := s.address + EmbeddingsAssistantURL
-	respData, err := sender.SendRequest(reqBody, &targetURL, &method, &mimeType, s.timeout)
+	respData, err := sender.POST(reqBody, targetURL, mimeType, s.timeout)
 	if err != nil {
 		log.Println("Failed while sending request: ", err)
 		return []float64{}, err
 	}
 
-	tokensDense := &forms.ComputedTokens{}
+	tokensDense := &models.ComputedTokens{}
 	_ = json.Unmarshal(respData, tokensDense)
 
 	tmp := tokensDense.Vectors

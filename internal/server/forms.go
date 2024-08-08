@@ -1,7 +1,7 @@
 package server
 
 import (
-	"doc-notifier/internal/reader"
+	"doc-notifier/internal/models"
 )
 
 // ResponseForm example
@@ -43,7 +43,7 @@ type AnalyseFilesForm struct {
 
 // UnrecognizedDocuments example
 type UnrecognizedDocuments struct {
-	Unrecognized []*reader.Document `json:"unrecognized"`
+	Unrecognized []*models.Document `json:"unrecognized"`
 }
 
 // MoveFilesForm example
