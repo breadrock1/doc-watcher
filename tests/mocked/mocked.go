@@ -1,10 +1,9 @@
 package mocked
 
 import (
+	"doc-notifier/internal/models"
 	"doc-notifier/internal/ocr/assistant"
-	"doc-notifier/internal/reader"
-	"doc-notifier/internal/tokenizer/forms"
-	"doc-notifier/internal/tokenizer/langchain"
+	tokenizer "doc-notifier/internal/tokenizer/assistant"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"log"
@@ -20,7 +19,7 @@ type TokenizerForm struct {
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
 	e.POST(assistant.RecognitionURL, RecognizeFile)
-	e.POST(langchain.ServiceURL, ComputeTokens)
+	e.POST(tokenizer.EmbeddingsAssistantURL, ComputeTokens)
 	e.PUT("/storage/folders/common-folder/documents/c31964293145484954679b19a114188e", StoreDocument)
 
 	return e
@@ -33,7 +32,7 @@ func RecognizeFile(c echo.Context) error {
 }
 
 func StoreDocument(c echo.Context) error {
-	document := &reader.Document{}
+	document := &models.Document{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(document)
 
@@ -64,7 +63,7 @@ func ComputeTokens(c echo.Context) error {
 		return c.JSON(403, tokensForm)
 	}
 
-	tokenizedVector := forms.ComputedTokens{
+	tokenizedVector := models.ComputedTokens{
 		Chunks:      1,
 		ChunkedText: []string{"test_file_1"},
 		Vectors:     [][]float64{{0.345, 0.045}},
