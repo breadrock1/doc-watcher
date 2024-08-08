@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/md5"
 	"fmt"
+
 	"github.com/glaslos/ssdeep"
 	"github.com/google/uuid"
 )

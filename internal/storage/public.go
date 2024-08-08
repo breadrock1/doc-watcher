@@ -5,7 +5,7 @@ import (
 
 	"doc-notifier/internal/config"
 	"doc-notifier/internal/models"
-	"doc-notifier/internal/storage/postqress"
+	"doc-notifier/internal/storage/postgress"
 )
 
 type Storage struct {

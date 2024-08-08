@@ -3,7 +3,6 @@ package assistant
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/labstack/echo/v4"
 	"log"
 	"math"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"doc-notifier/internal/config"
 	"doc-notifier/internal/models"
 	"doc-notifier/internal/sender"
+	"github.com/labstack/echo/v4"
 )
 
 const EmbeddingsAssistantURL = "/embed"
