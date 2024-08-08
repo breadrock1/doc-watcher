@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"doc-notifier/internal/models"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,7 +10,6 @@ import (
 
 	"doc-notifier/internal/config"
 	"doc-notifier/internal/ocr"
-	"doc-notifier/internal/reader"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
@@ -21,7 +21,6 @@ const TestcaseDirPath = "../testcases/"
 const IndexerDirPath = "../../indexer/"
 
 func TestWatcherManager(t *testing.T) {
-	fileReader := &watcher.Service{}
 	timeoutDuration := time.Duration(10) * time.Second
 	ocrService := ocr.New(&config.OcrConfig{
 		Mode:    "raw",
@@ -34,14 +33,14 @@ func TestWatcherManager(t *testing.T) {
 	})
 	tokenizerService := tokenizer.New(&config.TokenizerConfig{
 		Address:      "http://localhost:3451",
-		Mode:         "langchain",
-		ChunkSize:    1,
+		Mode:         "assistant",
+		ChunkSize:    500,
 		ChunkOverlap: 1,
 		ReturnChunks: false,
 		ChunkBySelf:  false,
 		Timeout:      timeoutDuration,
 	})
-	storeService := summarizer.New(&config.StorageConfig{
+	storeService, _ := summarizer.New(&config.StorageConfig{
 		DriverName: "postgres",
 		User:       "postgres",
 		Password:   "postgres",
@@ -51,10 +50,13 @@ func TestWatcherManager(t *testing.T) {
 		EnableSSL:  "disable",
 		AddressLLM: "http://localhost:8081",
 	})
-	watch := watcher.New(&config.WatcherConfig{
+
+	watcherConf := &config.WatcherConfig{
 		Address:            "0.0.0.0:2893",
 		WatchedDirectories: []string{IndexerDirPath},
-	}, fileReader, ocrService, searcherService, tokenizerService, storeService)
+	}
+
+	watch := watcher.New(watcherConf, ocrService, searcherService, tokenizerService, storeService)
 
 	t.Run("Append directory to watch", func(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})
@@ -89,7 +91,7 @@ func TestWatcherManager(t *testing.T) {
 
 	t.Run("Parse complex structure with OcrMetadata", func(t *testing.T) {
 		file, _ := os.ReadFile(TestcaseDirPath + "ocr_result.json")
-		var previews []reader.Document
+		var previews []models.Document
 		if err := json.Unmarshal(file, &previews); err != nil {
 			fmt.Println(err)
 		}

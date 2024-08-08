@@ -28,9 +28,6 @@ issues:
       linters:
         - revive
         - ineffassign
-    - path: langchain.go
-      linters:
-        - dupl
     - path: assistant.go
       linters:
         - dupl

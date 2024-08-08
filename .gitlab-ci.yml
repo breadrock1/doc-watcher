@@ -15,14 +15,8 @@ build:
   tags:
     - linux
   script:
-    - GOOS=linux GOARCH=amd64 go build -o doc-notifier
-
-lint:
-  stage: lint
-  script:
-    - golangci-lint run $(git ls-files | grep *.go)
+    - GOOS=linux GOARCH=amd64 make build
 
 test:
   stage: test
-  script:
-    - for test_module in $(git ls-files tests); do go test -v -count=1 $test_module; done
+  script: make test

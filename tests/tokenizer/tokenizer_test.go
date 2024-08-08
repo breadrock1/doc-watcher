@@ -20,8 +20,8 @@ func TestComputeContentTokens(t *testing.T) {
 	timeoutDuration := time.Duration(10) * time.Second
 	tokenizerService := tokenizer.New(&config.TokenizerConfig{
 		Address:      "http://localhost:3451",
-		Mode:         "langchain",
-		ChunkSize:    1,
+		Mode:         "assistant",
+		ChunkSize:    500,
 		ChunkOverlap: 1,
 		ReturnChunks: false,
 		ChunkBySelf:  false,

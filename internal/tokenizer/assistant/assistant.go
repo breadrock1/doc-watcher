@@ -36,7 +36,7 @@ func New(config *config.TokenizerConfig) *Service {
 
 func (s *Service) TokenizeTextData(content string) (*models.ComputedTokens, error) {
 	computedTokens := &models.ComputedTokens{
-		Chunks:      1,
+		Chunks:      0,
 		ChunkedText: []string{},
 		Vectors:     [][]float64{},
 	}
@@ -79,10 +79,10 @@ func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 		return []float64{}, err
 	}
 
-	tokensDense := &[][]float64{}
+	tokensDense := &models.ComputedTokens{}
 	_ = json.Unmarshal(respData, tokensDense)
 
-	tmp := *tokensDense
+	tmp := tokensDense.Vectors
 	return tmp[0], nil
 }
 
