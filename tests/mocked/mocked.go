@@ -2,7 +2,7 @@ package mocked
 
 import (
 	"doc-notifier/internal/models"
-	"doc-notifier/internal/ocr/assistant"
+	ocr "doc-notifier/internal/ocr/assistant"
 	tokenizer "doc-notifier/internal/tokenizer/assistant"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
@@ -18,7 +18,7 @@ type TokenizerForm struct {
 
 func CreateMockedServer() *echo.Echo {
 	e := echo.New()
-	e.POST(assistant.RecognitionURL, RecognizeFile)
+	e.POST(ocr.RecognitionURL, RecognizeFile)
 	e.POST(tokenizer.EmbeddingsAssistantURL, ComputeTokens)
 	e.PUT("/storage/folders/common-folder/documents/c31964293145484954679b19a114188e", StoreDocument)
 
@@ -45,21 +45,14 @@ func StoreDocument(c echo.Context) error {
 	return c.JSON(200, document)
 }
 
-type GetTokensForm struct {
-	Text              string `json:"text"`
-	ChunkSize         int    `json:"chunk_size"`
-	ChunkOverlap      int    `json:"chunk_overlap"`
-	ReturnChunkedText bool   `json:"return_chunked_text"`
-}
-
 func ComputeTokens(c echo.Context) error {
-	tokensForm := &GetTokensForm{}
+	tokensForm := &models.EmbedAllForm{}
 	decoder := json.NewDecoder(c.Request().Body)
 	_ = decoder.Decode(tokensForm)
 
-	log.Println("Got request to tokenize doc: ", tokensForm.Text)
-	if tokensForm.Text != "test_file_1" {
-		log.Println("Non correct doc: ", tokensForm.Text)
+	log.Println("Got request to tokenize doc: ", tokensForm.Inputs)
+	if tokensForm.Inputs != "test_file_1" {
+		log.Println("Non correct doc: ", tokensForm.Inputs)
 		return c.JSON(403, tokensForm)
 	}
 
