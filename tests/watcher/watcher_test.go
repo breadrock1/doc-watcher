@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"doc-notifier/internal/models"
+	"doc-notifier/internal/watcher/native"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
-	"doc-notifier/internal/watcher"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +56,7 @@ func TestWatcherManager(t *testing.T) {
 		WatchedDirectories: []string{IndexerDirPath},
 	}
 
-	watch := watcher.New(watcherConf, ocrService, searcherService, tokenizerService, storeService)
+	watch := native.New(watcherConf, ocrService, searcherService, tokenizerService, storeService)
 
 	t.Run("Append directory to watch", func(t *testing.T) {
 		err := watch.AppendDirectories([]string{TestcaseDirPath})

@@ -16,6 +16,7 @@ import (
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
+	"doc-notifier/internal/watcher/native"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 	ocrService := ocr.New(&serviceConfig.Ocr)
 	searchService := searcher.New(&serviceConfig.Searcher)
 	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
-	watchService := watcher.New(
+	watchService := native.New(
 		&serviceConfig.Watcher,
 		ocrService,
 		searchService,
@@ -54,7 +55,7 @@ func main() {
 		}
 	}()
 
-	go watchService.RunWatchers()
+	go watchService.Watcher.RunWatchers()
 
 	<-ctx.Done()
 	cancel()
@@ -68,8 +69,8 @@ func awaitSystemSignals(cancel context.CancelFunc) {
 	cancel()
 }
 
-func shutdownServices(ctx context.Context, httpServ *server.Service, watchServ *watcher.NotifyWatcher) {
-	watchServ.TerminateWatchers()
+func shutdownServices(ctx context.Context, httpServ *server.Service, watchServ *watcher.Service) {
+	watchServ.Watcher.TerminateWatchers()
 	if err := httpServ.StopServer(ctx); err != nil {
 		log.Println(err)
 	}

@@ -13,10 +13,10 @@ import (
 type Service struct {
 	server  *echo.Echo
 	office  *office.Service
-	watcher *watcher.NotifyWatcher
+	watcher *watcher.Service
 }
 
-func New(nw *watcher.NotifyWatcher, officeService *office.Service) *Service {
+func New(nw *watcher.Service, officeService *office.Service) *Service {
 	server := &Service{
 		office:  officeService,
 		watcher: nw,
@@ -35,14 +35,14 @@ func (s *Service) setupServer() {
 
 	_ = s.CreateHelloGroup()
 	_ = s.CreateFilesGroup()
-	_ = s.CreateFoldersGroup()
-	_ = s.CreateWatcherGroup()
+	//_ = s.CreateFoldersGroup()
+	//_ = s.CreateWatcherGroup()
 
 	s.server.GET("/swagger/*", echoSwagger.WrapHandler)
 }
 
 func (s *Service) RunServer(_ context.Context) error {
-	return s.server.Start(s.watcher.Address)
+	return s.server.Start(s.watcher.Watcher.GetAddress())
 }
 
 func (s *Service) StopServer(ctx context.Context) error {

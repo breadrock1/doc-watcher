@@ -1,4 +1,4 @@
-package watcher
+package native
 
 import (
 	"errors"
@@ -14,6 +14,7 @@ import (
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
+	"doc-notifier/internal/watcher"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -37,14 +38,13 @@ func New(
 	searcherService *searcher.Service,
 	tokenService *tokenizer.Service,
 	summarizeService *summarizer.Service,
-
-) *NotifyWatcher {
+) *watcher.Service {
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal("Stopped watching: ", err)
 	}
 
-	return &NotifyWatcher{
+	watcherInst := &NotifyWatcher{
 		stopCh:        make(chan bool),
 		Address:       config.Address,
 		PauseWatchers: false,
@@ -55,6 +55,12 @@ func New(
 		Tokenizer:     tokenService,
 		Summarizer:    summarizeService,
 	}
+
+	return &watcher.Service{Watcher: watcherInst}
+}
+
+func (nw *NotifyWatcher) GetAddress() string {
+	return nw.Address
 }
 
 func (nw *NotifyWatcher) RunWatchers() {
@@ -143,7 +149,7 @@ func (nw *NotifyWatcher) execProcessingPipeline(event *fsnotify.Event) {
 		return
 	}
 
-	triggeredFiles := ParseCaughtFiles(absFilePath)
+	triggeredFiles := watcher.ParseCaughtFiles(absFilePath)
 	nw.recognizeTriggeredDoc(triggeredFiles)
 }
 
