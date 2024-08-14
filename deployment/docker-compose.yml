@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  file_storage:
+    image: minio/minio
+    restart: unless-stopped
+    command: server --address ":9000" --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "minio-root"
+      MINIO_ROOT_PASSWORD: "minio-root"
+
+  summarize_db:
+    image: postgres:13.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: summarize
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
