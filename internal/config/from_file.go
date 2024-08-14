@@ -35,6 +35,13 @@ func FromFile(filePath string) (*Config, error) {
 
 	viperInstance.SetDefault("office.Address", "http://localhost:8087")
 
+	viperInstance.SetDefault("minio.Address", "0.0.0.0:2894")
+	viperInstance.SetDefault("minio.MinioEndpoint", "localhost:9000")
+	viperInstance.SetDefault("minio.BucketName", "indexer")
+	viperInstance.SetDefault("minio.MinioRootUser", "<access-id>")
+	viperInstance.SetDefault("minio.MinioRootPassword", "<secret-key>")
+	viperInstance.SetDefault("minio.MinioUseSSL", false)
+
 	if err := viperInstance.ReadInConfig(); err != nil {
 		confErr := fmt.Errorf("failed while reading config file %s: %w", filePath, err)
 		return config, confErr

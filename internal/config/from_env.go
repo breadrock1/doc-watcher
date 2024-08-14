@@ -93,6 +93,21 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 	officeAddress := loadString("OFFICE_SERVICE_ADDRESS")
 	officeConfig := OfficeConfig{Address: officeAddress}
 
+	minioAddress := loadString("MINIO_WATCHER_ADDRESS")
+	minioEndpoint := loadString("MINIO_CLOUD_ENDPOINT")
+	minioBucketName := loadString("MINIO_CLOUD_BUCKET_NAME")
+	minioRootUser := loadString("MINIO_CLOUD_ROOT_USER")
+	minioRootPassword := loadString("MINIO_CLOUD_ROOT_PASSWORD")
+	minioUseSSL := loadBool("MINIO_CLOUD_USE_SSL")
+	minioConfig := MinioConfig{
+		Address:           minioAddress,
+		MinioEndpoint:     minioEndpoint,
+		BucketName:        minioBucketName,
+		MinioRootUser:     minioRootUser,
+		MinioRootPassword: minioRootPassword,
+		MinioUseSSL:       minioUseSSL,
+	}
+
 	return &Config{
 		Logger:    loggerConfig,
 		Watcher:   watcherConfig,
@@ -101,6 +116,7 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		Tokenizer: tokenizerConfig,
 		Storage:   storageConfig,
 		Office:    officeConfig,
+		Minio:     minioConfig,
 	}, nil
 }
 

@@ -37,3 +37,11 @@ AddressLLM="http://localhost:8081"
 
 [office]
 Address="http://localhost:8087/example"
+
+[minio]
+Address="0.0.0.0:2894"
+MinioEndpoint="localhost:9000"
+BucketName="indexer"
+MinioRootUser="<access-id>"
+MinioRootPassword="<secret-key>"
+MinioUseSSL=false
