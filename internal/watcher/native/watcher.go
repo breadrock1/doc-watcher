@@ -2,6 +2,7 @@ package native
 
 import (
 	"bytes"
+	"doc-notifier/internal/models"
 	"errors"
 	"fmt"
 	"log"
@@ -100,6 +101,26 @@ func (nw *NotifyWatcher) RemoveDirectory(dirName string) error {
 
 func (nw *NotifyWatcher) GetWatchedDirectories() []string {
 	return nw.Watcher.WatchList()
+}
+
+func (mw *NotifyWatcher) GetHierarchy(_, dirName string) []*models.StorageItem {
+	indexerPath := fmt.Sprintf("./indexer/%s", dirName)
+	entries, err := os.ReadDir(indexerPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dirObjects := make([]*models.StorageItem, 0)
+	for _, e := range entries {
+		e.Type()
+		dirObjects = append(dirObjects, &models.StorageItem{
+			FileName:      e.Name(),
+			DirectoryName: dirName,
+			IsDirectory:   e.Type() == os.ModeDir,
+		})
+	}
+
+	return dirObjects
 }
 
 func (nw *NotifyWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
