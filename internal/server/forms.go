@@ -64,3 +64,15 @@ type RemoveFilesError struct {
 	Message   string   `json:"message" example:"File not found"`
 	FilePaths []string `json:"file_paths" example:"./indexer/upload/test.txt"`
 }
+
+// DownloadFile example
+type DownloadFile struct {
+	Bucket   string `json:"bucket" example:"test-bucket"`
+	FileName string `json:"file_name" example:"test-file.docx"`
+}
+
+// HierarchyForm example
+type HierarchyForm struct {
+	Bucket        string `json:"bucket" example:"test-bucket"`
+	DirectoryName string `json:"directory" example:"test-folder/"`
+}

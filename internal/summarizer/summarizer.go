@@ -37,7 +37,7 @@ func New(config *config.StorageConfig) (*Service, error) {
 	dbStore := storage.New(config)
 	if err := dbStore.Connect(context.Background()); err != nil {
 		log.Println("failed to connect to db: ", err.Error())
-		return nil, err
+		//return nil, err
 	}
 
 	return &Service{

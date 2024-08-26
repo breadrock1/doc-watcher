@@ -1,9 +1,13 @@
 package native
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"math"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -22,7 +26,7 @@ type NotifyWatcher struct {
 	stopCh chan bool
 
 	Address       string
-	PauseWatchers bool
+	pauseWatchers bool
 	directories   []string
 	Watcher       *fsnotify.Watcher
 
@@ -47,7 +51,7 @@ func New(
 	watcherInst := &NotifyWatcher{
 		stopCh:        make(chan bool),
 		Address:       config.Address,
-		PauseWatchers: false,
+		pauseWatchers: false,
 		directories:   config.WatchedDirectories,
 		Ocr:           ocrService,
 		Watcher:       notifyWatcher,
@@ -70,14 +74,53 @@ func (nw *NotifyWatcher) RunWatchers() {
 	<-nw.stopCh
 }
 
+func (nw *NotifyWatcher) IsPausedWatchers() bool {
+	return nw.pauseWatchers
+}
+
+func (nw *NotifyWatcher) PauseWatchers(flag bool) {
+	nw.pauseWatchers = flag
+}
+
 func (nw *NotifyWatcher) TerminateWatchers() {
 	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
+func (nw *NotifyWatcher) CreateDirectory(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.Mkdir(folderPath, os.ModePerm)
+}
+
+func (nw *NotifyWatcher) RemoveDirectory(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.RemoveAll(folderPath)
+}
+
 func (nw *NotifyWatcher) GetWatchedDirectories() []string {
 	return nw.Watcher.WatchList()
+}
+
+func (nw *NotifyWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
+	filePath := fmt.Sprintf("./indexer/watcher/%s/%s", bucket, fileName)
+	return os.WriteFile(filePath, fileData.Bytes(), os.ModePerm)
+}
+
+func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buffer, error) {
+	var fileBuffer bytes.Buffer
+	filePath := path.Join(bucket, objName)
+	fileHandler, err := os.Open(filePath)
+	if err != nil {
+		return fileBuffer, err
+	}
+
+	_, err = fileHandler.Read(fileBuffer.Bytes())
+	if err != nil {
+		return fileBuffer, err
+	}
+
+	return fileBuffer, nil
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
@@ -116,7 +159,7 @@ func (nw *NotifyWatcher) launchProcessEventLoop() {
 				return
 			}
 
-			if nw.PauseWatchers {
+			if nw.pauseWatchers {
 				return
 			}
 

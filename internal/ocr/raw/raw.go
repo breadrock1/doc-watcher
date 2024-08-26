@@ -15,8 +15,8 @@ func New() *Service {
 	return &Service{}
 }
 
-func (s *Service) RecognizeFile(document *models.Document) error {
-	bytesData, err := os.ReadFile(document.DocumentPath)
+func (s *Service) RecognizeFile(document *models.Document, filePath string) error {
+	bytesData, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Println("Failed while reading file: ", err)
 		return err

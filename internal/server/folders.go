@@ -1,13 +1,10 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
 	"mime/multipart"
-	"os"
-	"path"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,20 +13,14 @@ func (s *Service) CreateFoldersGroup() error {
 	group := s.server.Group("/watcher/folders")
 
 	group.GET("/", s.GetWatchedDirectories)
+	group.POST("/create", s.CreateFolder)
+	group.POST("/delete", s.RemoveFolder)
 	group.POST("/attach", s.AttachDirectories)
 	group.POST("/detach", s.DetachDirectories)
 	group.POST("/upload", s.UploadFilesToWatcher)
-	group.POST("/create", s.CreateFolder)
-	group.POST("/delete", s.RemoveFolder)
-
-	return nil
-}
-
-func (s *Service) CreateWatcherGroup() error {
-	group := s.server.Group("/watcher")
-
-	group.GET("/run", s.RunWatchers)
-	group.GET("/pause", s.PauseWatchers)
+	group.POST("/download", s.LoadFileFromWatcher)
+	group.POST("/update", s.UpdateWatchedFile)
+	group.POST("/hierarchy", s.GetUserHierarchy)
 
 	return nil
 }
@@ -44,7 +35,7 @@ func (s *Service) CreateWatcherGroup() error {
 // @Failure	503 {object} ServerErrorForm "Server does not available"
 // @Router /watcher/folders/ [get]
 func (s *Service) GetWatchedDirectories(c echo.Context) error {
-	watcherDirs := s.watcher.GetWatchedDirectories()
+	watcherDirs := s.watcher.Watcher.GetWatchedDirectories()
 	return c.JSON(200, watcherDirs)
 }
 
@@ -67,8 +58,7 @@ func (s *Service) CreateFolder(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	folderPath := path.Join("./indexer", jsonForm.FolderName)
-	if err := os.Mkdir(folderPath, os.ModePerm); err != nil {
+	if err := s.watcher.Watcher.CreateDirectory(jsonForm.FolderName); err != nil {
 		respErr := createStatusResponse(208, err.Error())
 		return c.JSON(208, respErr)
 	}
@@ -95,8 +85,7 @@ func (s *Service) RemoveFolder(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	folderPath := path.Join("./indexer", jsonForm.FolderName)
-	if err := os.RemoveAll(folderPath); err != nil {
+	if err := s.watcher.Watcher.RemoveDirectory(jsonForm.FolderName); err != nil {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}
@@ -124,7 +113,7 @@ func (s *Service) AttachDirectories(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	if err := s.watcher.AppendDirectories(jsonForm.Paths); err != nil {
+	if err := s.watcher.Watcher.AppendDirectories(jsonForm.Paths); err != nil {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}
@@ -152,48 +141,11 @@ func (s *Service) DetachDirectories(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	if err := s.watcher.RemoveDirectories(jsonForm.Paths); err != nil {
+	if err := s.watcher.Watcher.RemoveDirectories(jsonForm.Paths); err != nil {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}
 
-	return c.JSON(200, createStatusResponse(200, "Ok"))
-}
-
-// PauseWatchers
-// @Summary Pause all watchers
-// @Description Pause all watchers
-// @ID watcher-pause
-// @Tags watcher
-// @Produce  json
-// @Success 200 {object} ResponseForm "Ok"
-// @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Failure	503 {object} ServerErrorForm "Server does not available"
-// @Router /watcher/pause [get]
-func (s *Service) PauseWatchers(c echo.Context) error {
-	if s.watcher.PauseWatchers {
-		okResp := createStatusResponse(204, "Already paused")
-		return c.JSON(204, okResp)
-	}
-
-	s.watcher.PauseWatchers = true
-
-	okResp := createStatusResponse(200, "Ok")
-	return c.JSON(200, okResp)
-}
-
-// RunWatchers
-// @Summary Run all watchers
-// @Description Run all watchers
-// @ID watcher-run
-// @Tags watcher
-// @Produce  json
-// @Success 200 {object} ResponseForm "Ok"
-// @Failure	400 {object} BadRequestForm "Bad Request message"
-// @Failure	503 {object} ServerErrorForm "Server does not available"
-// @Router /watcher/run [get]
-func (s *Service) RunWatchers(c echo.Context) error {
-	s.watcher.PauseWatchers = false
 	return c.JSON(200, createStatusResponse(200, "Ok"))
 }
 
@@ -205,12 +157,14 @@ func (s *Service) RunWatchers(c echo.Context) error {
 // @Accept  multipart/form
 // @Produce  json
 // @Param files formData file true "Files multipart form"
-// @Success 200 {array} []reader.Document "Ok"
+// @Param bucket query string true "Bucket name to upload"
+// @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
 // @Failure	503 {object} ServerErrorForm "Server does not available"
 // @Router /watcher/folders/upload [post]
 func (s *Service) UploadFilesToWatcher(c echo.Context) error {
 	var uploadErr error
+	var fileData bytes.Buffer
 	var multipartForm *multipart.Form
 
 	if multipartForm, uploadErr = c.MultipartForm(); uploadErr != nil {
@@ -218,9 +172,24 @@ func (s *Service) UploadFilesToWatcher(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
+	bucketName := c.QueryParam("bucket")
 	for _, fileForm := range multipartForm.File["files"] {
-		filePath := fmt.Sprintf("./indexer/watcher/%s", fileForm.Filename)
-		if uploadErr = s.writeMultipart(fileForm, filePath); uploadErr != nil {
+
+		fileName := fileForm.Filename
+		fileHandler, uploadErr := fileForm.Open()
+		if uploadErr != nil {
+			log.Println(uploadErr)
+			continue
+		}
+
+		_, uploadErr = fileData.ReadFrom(fileHandler)
+		if uploadErr != nil {
+			log.Println(uploadErr)
+			continue
+		}
+
+		uploadErr = s.watcher.Watcher.UploadFile(bucketName, fileName, fileData)
+		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
@@ -229,24 +198,72 @@ func (s *Service) UploadFilesToWatcher(c echo.Context) error {
 	return c.JSON(200, createStatusResponse(200, "Ok"))
 }
 
-func (s *Service) writeMultipart(fileForm *multipart.FileHeader, filePath string) error {
-	var respErr error
-
-	srcStream, respErr := fileForm.Open()
-	if respErr != nil {
-		return fmt.Errorf("failed to open opens file header: %e", respErr)
+// LoadFileFromWatcher
+// @Summary Load file from watcher directory
+// @Description Load file from watcher directory
+// @ID watcher-download
+// @Tags watcher
+// @Accept  multipart/form
+// @Produce  json
+// @Param jsonQuery body DownloadFile true "Download file form"
+// @Success 200 {object} models.Document "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/download [post]
+func (s *Service) LoadFileFromWatcher(c echo.Context) error {
+	jsonForm := &DownloadFile{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
-	defer func() { _ = srcStream.Close() }()
 
-	dstStream, respErr := os.Create(filePath)
-	if respErr != nil {
-		return fmt.Errorf("failed to create file: %e", respErr)
-	}
-	defer func() { _ = dstStream.Close() }()
-
-	if _, respErr = io.Copy(dstStream, srcStream); respErr != nil {
-		return fmt.Errorf("failed to write data: %e", respErr)
+	fileData, err := s.watcher.Watcher.DownloadFile(jsonForm.Bucket, jsonForm.FileName)
+	if err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
 	}
 
-	return nil
+	return c.Blob(200, echo.MIMEMultipartForm, fileData.Bytes())
+}
+
+// UpdateWatchedFile
+// @Summary Update file into watcher directory
+// @Description Update file into watcher directory
+// @ID watcher-update
+// @Tags watcher
+// @Accept  multipart/form
+// @Produce  json
+// @Param files formData file true "Files (multipart/form) to updated"
+// @Param bucket query string true "Bucket name to upload"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/update [post]
+func (s *Service) UpdateWatchedFile(c echo.Context) error {
+	return s.UploadFilesToWatcher(c)
+}
+
+// GetUserHierarchy
+// @Summary Get bucket fs hierarchy
+// @Description Get bucket fs hierarchy
+// @ID watcher-hierarchy
+// @Tags watcher
+// @Accept  multipart/form
+// @Produce  json
+// @Param jsonQuery body HierarchyForm true "Hierarchy form"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/hierarchy [post]
+func (s *Service) GetUserHierarchy(c echo.Context) error {
+	jsonForm := &HierarchyForm{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	listObjects := s.watcher.Watcher.GetHierarchy(jsonForm.Bucket, jsonForm.DirectoryName)
+	return c.JSON(200, listObjects)
 }

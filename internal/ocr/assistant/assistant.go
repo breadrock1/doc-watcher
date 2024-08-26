@@ -28,9 +28,7 @@ func New(config *config.OcrConfig) *Service {
 	}
 }
 
-func (s *Service) RecognizeFile(document *models.Document) error {
-	filePath := document.DocumentPath
-
+func (s *Service) RecognizeFile(document *models.Document, filePath string) error {
 	var recErr error
 	var fileHandle *os.File
 	if fileHandle, recErr = os.Open(filePath); recErr != nil {
