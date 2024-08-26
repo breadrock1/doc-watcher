@@ -2,8 +2,6 @@ module doc-notifier
 
 go 1.21
 
-toolchain go1.22.3
-
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/glaslos/ssdeep v0.3.3
