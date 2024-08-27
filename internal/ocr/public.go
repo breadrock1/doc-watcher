@@ -12,7 +12,7 @@ type Service struct {
 }
 
 type Recognizer interface {
-	RecognizeFile(document *models.Document) error
+	RecognizeFile(document *models.Document, filePath string) error
 }
 
 func New(config *config.OcrConfig) *Service {

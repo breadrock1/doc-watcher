@@ -16,7 +16,7 @@ import (
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
-	"doc-notifier/internal/watcher/native"
+	"doc-notifier/internal/watcher/minio"
 )
 
 func main() {
@@ -34,8 +34,8 @@ func main() {
 	ocrService := ocr.New(&serviceConfig.Ocr)
 	searchService := searcher.New(&serviceConfig.Searcher)
 	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
-	watchService := native.New(
-		&serviceConfig.Watcher,
+	watchService := minio.New(
+		&serviceConfig.Minio,
 		ocrService,
 		searchService,
 		tokenService,

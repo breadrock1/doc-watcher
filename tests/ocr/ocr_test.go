@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"path"
 	"testing"
 	"time"
 
@@ -23,8 +24,9 @@ func TestReadRawFileData(t *testing.T) {
 	})
 
 	t.Run("Read existing file", func(t *testing.T) {
-		document := watcher.ParseCaughtFiles(TestcaseDirPath + "directory/test_file_1.txt")[0]
-		err := ocrService.Ocr.RecognizeFile(document)
+		filePath := path.Join(TestcaseDirPath, "directory/test_file_1.txt")
+		document := watcher.ParseCaughtFiles(filePath)[0]
+		err := ocrService.Ocr.RecognizeFile(document, filePath)
 
 		assert.NoError(t, err, "Returned non null error pointer")
 		assert.Equal(t, document.Content, "test_file_1", "Returned non equal file data")
@@ -39,7 +41,8 @@ func TestReadRawFileData(t *testing.T) {
 		documents := watcher.ParseCaughtFiles(TestcaseOtherDirPath)
 		assert.NotEmpty(t, documents, "Returned non-null file data")
 
-		err := ocrService.Ocr.RecognizeFile(documents[0])
+		filePath := path.Join(TestcaseOtherDirPath, documents[0].DocumentName)
+		err := ocrService.Ocr.RecognizeFile(documents[0], filePath)
 		assert.NoError(t, err, "Returned null error pointer for non file ptr")
 		assert.NotEmpty(t, documents[0].Content, "Returned non-null file data")
 	})

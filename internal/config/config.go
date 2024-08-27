@@ -10,6 +10,7 @@ type Config struct {
 	Tokenizer TokenizerConfig
 	Storage   StorageConfig
 	Office    OfficeConfig
+	Minio     MinioConfig
 }
 
 type LoggerConfig struct {
@@ -58,4 +59,13 @@ type StorageConfig struct {
 type OfficeConfig struct {
 	Address    string
 	WatcherDir string
+}
+
+type MinioConfig struct {
+	Address           string
+	MinioEndpoint     string
+	BucketName        string
+	MinioRootUser     string
+	MinioRootPassword string
+	MinioUseSSL       bool
 }

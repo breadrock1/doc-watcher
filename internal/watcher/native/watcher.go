@@ -1,9 +1,14 @@
-package watcher
+package native
 
 import (
+	"bytes"
+	"doc-notifier/internal/models"
 	"errors"
+	"fmt"
 	"log"
 	"math"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -14,6 +19,7 @@ import (
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
+	"doc-notifier/internal/watcher"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -21,7 +27,7 @@ type NotifyWatcher struct {
 	stopCh chan bool
 
 	Address       string
-	PauseWatchers bool
+	pauseWatchers bool
 	directories   []string
 	Watcher       *fsnotify.Watcher
 
@@ -37,17 +43,16 @@ func New(
 	searcherService *searcher.Service,
 	tokenService *tokenizer.Service,
 	summarizeService *summarizer.Service,
-
-) *NotifyWatcher {
+) *watcher.Service {
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal("Stopped watching: ", err)
 	}
 
-	return &NotifyWatcher{
+	watcherInst := &NotifyWatcher{
 		stopCh:        make(chan bool),
 		Address:       config.Address,
-		PauseWatchers: false,
+		pauseWatchers: false,
 		directories:   config.WatchedDirectories,
 		Ocr:           ocrService,
 		Watcher:       notifyWatcher,
@@ -55,6 +60,12 @@ func New(
 		Tokenizer:     tokenService,
 		Summarizer:    summarizeService,
 	}
+
+	return &watcher.Service{Watcher: watcherInst}
+}
+
+func (nw *NotifyWatcher) GetAddress() string {
+	return nw.Address
 }
 
 func (nw *NotifyWatcher) RunWatchers() {
@@ -64,14 +75,73 @@ func (nw *NotifyWatcher) RunWatchers() {
 	<-nw.stopCh
 }
 
+func (nw *NotifyWatcher) IsPausedWatchers() bool {
+	return nw.pauseWatchers
+}
+
+func (nw *NotifyWatcher) PauseWatchers(flag bool) {
+	nw.pauseWatchers = flag
+}
+
 func (nw *NotifyWatcher) TerminateWatchers() {
 	dirs := nw.Watcher.WatchList()
 	_ = nw.RemoveDirectories(dirs)
 	nw.stopCh <- true
 }
 
+func (nw *NotifyWatcher) CreateDirectory(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.Mkdir(folderPath, os.ModePerm)
+}
+
+func (nw *NotifyWatcher) RemoveDirectory(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.RemoveAll(folderPath)
+}
+
 func (nw *NotifyWatcher) GetWatchedDirectories() []string {
 	return nw.Watcher.WatchList()
+}
+
+func (mw *NotifyWatcher) GetHierarchy(_, dirName string) []*models.StorageItem {
+	indexerPath := fmt.Sprintf("./indexer/%s", dirName)
+	entries, err := os.ReadDir(indexerPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dirObjects := make([]*models.StorageItem, 0)
+	for _, e := range entries {
+		e.Type()
+		dirObjects = append(dirObjects, &models.StorageItem{
+			FileName:      e.Name(),
+			DirectoryName: dirName,
+			IsDirectory:   e.Type() == os.ModeDir,
+		})
+	}
+
+	return dirObjects
+}
+
+func (nw *NotifyWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
+	filePath := fmt.Sprintf("./indexer/watcher/%s/%s", bucket, fileName)
+	return os.WriteFile(filePath, fileData.Bytes(), os.ModePerm)
+}
+
+func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buffer, error) {
+	var fileBuffer bytes.Buffer
+	filePath := path.Join(bucket, objName)
+	fileHandler, err := os.Open(filePath)
+	if err != nil {
+		return fileBuffer, err
+	}
+
+	_, err = fileHandler.Read(fileBuffer.Bytes())
+	if err != nil {
+		return fileBuffer, err
+	}
+
+	return fileBuffer, nil
 }
 
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
@@ -110,7 +180,7 @@ func (nw *NotifyWatcher) launchProcessEventLoop() {
 				return
 			}
 
-			if nw.PauseWatchers {
+			if nw.pauseWatchers {
 				return
 			}
 
@@ -143,7 +213,7 @@ func (nw *NotifyWatcher) execProcessingPipeline(event *fsnotify.Event) {
 		return
 	}
 
-	triggeredFiles := ParseCaughtFiles(absFilePath)
+	triggeredFiles := watcher.ParseCaughtFiles(absFilePath)
 	nw.recognizeTriggeredDoc(triggeredFiles)
 }
 

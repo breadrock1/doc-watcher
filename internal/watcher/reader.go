@@ -76,7 +76,7 @@ func ParseFile(filePath string) (*models.Document, error) {
 	document.DocumentPath = absFilePath
 	document.DocumentName = fileInfo.Name()
 	document.DocumentSize = fileInfo.Size()
-	document.DocumentType = parseDocumentType(fileExt)
+	document.DocumentType = ParseDocumentType(fileExt)
 	document.DocumentExtension = fileExt
 	document.DocumentPermissions = int32(fileInfo.Mode().Perm())
 	document.DocumentModified = modifiedTime.Format(timeFormat)
@@ -107,7 +107,7 @@ func parseBucketName(filePath string) string {
 	return bucketNameRes2
 }
 
-func parseDocumentType(extension string) string {
+func ParseDocumentType(extension string) string {
 	mimeType := mime.TypeByExtension(extension)
 	attributes := strings.Split(mimeType, "/")
 	switch attributes[0] {
