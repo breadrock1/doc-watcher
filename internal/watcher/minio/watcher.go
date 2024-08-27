@@ -206,7 +206,6 @@ func (mw *MinioWatcher) launchProcessEventLoop() {
 		suffix       = ""
 		eventsFilter = []string{
 			"s3:ObjectCreated:*",
-			"s3:ObjectAccessed:*",
 			"s3:ObjectRemoved:*",
 		}
 	)
