@@ -137,6 +137,12 @@ func (mw *MinioWatcher) RemoveDirectory(dirName string) error {
 	return mw.mc.RemoveBucket(ctx, dirName)
 }
 
+func (mw *MinioWatcher) RemoveFile(bucket string, fileName string) error {
+	ctx := context.Background()
+	opts := minio.RemoveObjectOptions{}
+	return mw.mc.RemoveObject(ctx, bucket, fileName, opts)
+}
+
 func (mw *MinioWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
 	ctx := context.Background()
 	dataLen := int64(fileData.Len())
