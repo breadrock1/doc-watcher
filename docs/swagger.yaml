@@ -117,6 +117,15 @@ definitions:
         example: test-folder/
         type: string
     type: object
+  server.RemoveFile:
+    properties:
+      bucket:
+        example: test-bucket
+        type: string
+      file_name:
+        example: test-file.docx
+        type: string
+    type: object
   server.ResponseForm:
     properties:
       message:
@@ -339,6 +348,34 @@ paths:
       tags:
       - watcher
   /watcher/folders/remove:
+    delete:
+      description: Remove file from bucket
+      operationId: watcher-remove
+      parameters:
+      - description: File to remove
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.RemoveFile'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Remove file from bucket
+      tags:
+      - watcher
     post:
       description: Remove folder
       operationId: folder-remove
