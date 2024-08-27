@@ -346,6 +346,48 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Remove file from bucket",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Remove file from bucket",
+                "operationId": "watcher-remove",
+                "parameters": [
+                    {
+                        "description": "File to remove",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.RemoveFile"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/server.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
             }
         },
         "/watcher/folders/update": {
@@ -728,6 +770,19 @@ const docTemplate = `{
                 "directory": {
                     "type": "string",
                     "example": "test-folder/"
+                }
+            }
+        },
+        "server.RemoveFile": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string",
+                    "example": "test-bucket"
+                },
+                "file_name": {
+                    "type": "string",
+                    "example": "test-file.docx"
                 }
             }
         },

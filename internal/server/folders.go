@@ -20,6 +20,7 @@ func (s *Service) CreateFoldersGroup() error {
 	group.POST("/upload", s.UploadFilesToWatcher)
 	group.POST("/download", s.LoadFileFromWatcher)
 	group.POST("/update", s.UpdateWatchedFile)
+	group.DELETE("/remove", s.RemoveFile)
 	group.POST("/hierarchy", s.GetUserHierarchy)
 
 	return nil
@@ -174,19 +175,20 @@ func (s *Service) UploadFilesToWatcher(c echo.Context) error {
 
 	bucketName := c.QueryParam("bucket")
 	for _, fileForm := range multipartForm.File["files"] {
-
 		fileName := fileForm.Filename
 		fileHandler, uploadErr := fileForm.Open()
 		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
+		defer fileHandler.Close()
 
 		_, uploadErr = fileData.ReadFrom(fileHandler)
 		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
+		defer fileData.Reset()
 
 		uploadErr = s.watcher.Watcher.UploadFile(bucketName, fileName, fileData)
 		if uploadErr != nil {
@@ -223,6 +225,7 @@ func (s *Service) LoadFileFromWatcher(c echo.Context) error {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}
+	defer fileData.Reset()
 
 	return c.Blob(200, echo.MIMEMultipartForm, fileData.Bytes())
 }
@@ -242,6 +245,28 @@ func (s *Service) LoadFileFromWatcher(c echo.Context) error {
 // @Router /watcher/folders/update [post]
 func (s *Service) UpdateWatchedFile(c echo.Context) error {
 	return s.UploadFilesToWatcher(c)
+}
+
+// RemoveFile
+// @Summary Remove file from bucket
+// @Description Remove file from bucket
+// @ID watcher-remove
+// @Tags watcher
+// @Produce  json
+// @Param jsonQuery body RemoveFile true "File to remove"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/folders/remove [delete]
+func (s *Service) RemoveFile(c echo.Context) error {
+	jsonForm := &RemoveFile{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	return s.watcher.Watcher.RemoveFile(jsonForm.Bucket, jsonForm.FileName)
 }
 
 // GetUserHierarchy

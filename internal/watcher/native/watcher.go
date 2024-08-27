@@ -144,6 +144,11 @@ func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buff
 	return fileBuffer, nil
 }
 
+func (nw *NotifyWatcher) RemoveFile(bucket string, fileName string) error {
+	filePath := path.Join("./indexer", bucket, fileName)
+	return os.RemoveAll(filePath)
+}
+
 func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }

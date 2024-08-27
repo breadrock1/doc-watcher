@@ -71,6 +71,12 @@ type DownloadFile struct {
 	FileName string `json:"file_name" example:"test-file.docx"`
 }
 
+// RemoveFile example
+type RemoveFile struct {
+	Bucket   string `json:"bucket" example:"test-bucket"`
+	FileName string `json:"file_name" example:"test-file.docx"`
+}
+
 // HierarchyForm example
 type HierarchyForm struct {
 	Bucket        string `json:"bucket" example:"test-bucket"`

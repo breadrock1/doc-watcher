@@ -22,6 +22,7 @@ type WatcherService interface {
 	RemoveDirectory(dirName string) error
 	UploadFile(bucket string, fileName string, fileData bytes.Buffer) error
 	DownloadFile(bucket string, objName string) (bytes.Buffer, error)
+	RemoveFile(bucket string, fileName string) error
 	AppendDirectories(directories []string) error
 	RemoveDirectories(directories []string) error
 }
