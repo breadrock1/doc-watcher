@@ -50,19 +50,19 @@ type UnrecognizedDocuments struct {
 type MoveFilesForm struct {
 	TargetDirectory string   `json:"location" example:"common-folder"`
 	SourceDirectory string   `json:"src_folder_id" example:"unrecognized"`
-	DocumentPaths   []string `json:"document_ids" example:"./indexer/upload/test.txt"`
+	DocumentPaths   []string `json:"document_ids" example:"./indexer/watcher/test.txt"`
 }
 
 // RemoveFilesForm example
 type RemoveFilesForm struct {
-	DocumentPaths []string `json:"document_paths" example:"./indexer/upload/test.txt"`
+	DocumentPaths []string `json:"document_paths" example:"./indexer/watcher/test.txt"`
 }
 
 // RemoveFilesError example
 type RemoveFilesError struct {
 	Code      int      `json:"code" example:"403"`
 	Message   string   `json:"message" example:"File not found"`
-	FilePaths []string `json:"file_paths" example:"./indexer/upload/test.txt"`
+	FilePaths []string `json:"file_paths" example:"./indexer/watcher/test.txt"`
 }
 
 // DownloadFile example

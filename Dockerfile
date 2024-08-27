@@ -4,15 +4,15 @@ WORKDIR /app
 
 COPY . .
 
-RUN go mod download && go build -o ./doc-notifier ./cmd/notifier
+RUN go mod download && make build
 
 FROM golang:1.21-alpine
 
 WORKDIR /app
 
 COPY --from=builder /app/doc-notifier .
-RUN mkdir indexer && mkdir upload
+RUN mkdir indexer && mkdir uploads
 
-CMD ["/app/doc-notifier", "-e"]
+CMD ["/app/bin/doc-notifier-minio", "-e"]
 
 EXPOSE 2893
