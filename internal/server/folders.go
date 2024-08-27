@@ -174,19 +174,20 @@ func (s *Service) UploadFilesToWatcher(c echo.Context) error {
 
 	bucketName := c.QueryParam("bucket")
 	for _, fileForm := range multipartForm.File["files"] {
-
 		fileName := fileForm.Filename
 		fileHandler, uploadErr := fileForm.Open()
 		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
+		defer fileHandler.Close()
 
 		_, uploadErr = fileData.ReadFrom(fileHandler)
 		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
+		defer fileData.Reset()
 
 		uploadErr = s.watcher.Watcher.UploadFile(bucketName, fileName, fileData)
 		if uploadErr != nil {
@@ -223,6 +224,7 @@ func (s *Service) LoadFileFromWatcher(c echo.Context) error {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}
+	defer fileData.Reset()
 
 	return c.Blob(200, echo.MIMEMultipartForm, fileData.Bytes())
 }
