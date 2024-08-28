@@ -179,6 +179,10 @@ func (s *Service) UploadFile(c echo.Context) error {
 	}
 
 	bucketName := c.Param("bucket")
+	if multipartForm.File["files"] == nil {
+		return c.JSON(400, createStatusResponse(400, "Empty File body"))
+	}
+
 	for _, fileForm := range multipartForm.File["files"] {
 		fileName := fileForm.Filename
 		fileHandler, uploadErr := fileForm.Open()
