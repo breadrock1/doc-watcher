@@ -65,6 +65,10 @@ func New(
 	return &watcher.Service{Watcher: watcherInst}
 }
 
+func (mw *MinioWatcher) GetAddress() string {
+	return mw.Address
+}
+
 func (mw *MinioWatcher) RunWatchers() {
 	go mw.launchProcessEventLoop()
 	<-mw.stopCh
@@ -80,93 +84,6 @@ func (mw *MinioWatcher) PauseWatchers(flag bool) {
 
 func (mw *MinioWatcher) TerminateWatchers() {
 	mw.stopCh <- true
-}
-
-func (mw *MinioWatcher) GetAddress() string {
-	return mw.Address
-}
-
-func (mw *MinioWatcher) GetWatchedDirectories() []string {
-	ctx := context.Background()
-	buckets, err := mw.mc.ListBuckets(ctx)
-	if err != nil {
-		return make([]string, 0)
-	}
-
-	bucketNames := make([]string, len(buckets))
-	for _, bucketInfo := range buckets {
-		bucketNames = append(bucketNames, bucketInfo.Name)
-	}
-
-	return bucketNames
-}
-
-func (mw *MinioWatcher) GetHierarchy(bucket, dirName string) []*models.StorageItem {
-	ctx := context.Background()
-	opts := minio.ListObjectsOptions{
-		UseV1:     true,
-		Prefix:    dirName,
-		Recursive: false,
-	}
-
-	dirObjects := make([]*models.StorageItem, 0)
-	for obj := range mw.mc.ListObjects(ctx, bucket, opts) {
-		if obj.Err != nil {
-			log.Println(obj.Err)
-			continue
-		}
-
-		dirObjects = append(dirObjects, &models.StorageItem{
-			FileName:      obj.Key,
-			DirectoryName: dirName,
-			IsDirectory:   len(obj.ETag) == 0,
-		})
-	}
-
-	return dirObjects
-}
-
-func (mw *MinioWatcher) CreateDirectory(dirName string) error {
-	ctx := context.Background()
-	opts := minio.MakeBucketOptions{}
-	return mw.mc.MakeBucket(ctx, dirName, opts)
-}
-
-func (mw *MinioWatcher) RemoveDirectory(dirName string) error {
-	ctx := context.Background()
-	return mw.mc.RemoveBucket(ctx, dirName)
-}
-
-func (mw *MinioWatcher) RemoveFile(bucket string, fileName string) error {
-	ctx := context.Background()
-	opts := minio.RemoveObjectOptions{}
-	return mw.mc.RemoveObject(ctx, bucket, fileName, opts)
-}
-
-func (mw *MinioWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
-	ctx := context.Background()
-	dataLen := int64(fileData.Len())
-	opts := minio.PutObjectOptions{}
-	_, err := mw.mc.PutObject(ctx, bucket, fileName, &fileData, dataLen, opts)
-	return err
-}
-
-func (mw *MinioWatcher) DownloadFile(bucket string, objName string) (bytes.Buffer, error) {
-	var objBody bytes.Buffer
-
-	ctx := context.Background()
-	opts := minio.GetObjectOptions{}
-	obj, err := mw.mc.GetObject(ctx, bucket, objName, opts)
-	if err != nil {
-		return objBody, err
-	}
-
-	_, rErr := objBody.ReadFrom(obj)
-	if rErr != nil {
-		return objBody, err
-	}
-
-	return objBody, nil
 }
 
 func (mw *MinioWatcher) AppendDirectories(directories []string) error {
@@ -204,6 +121,118 @@ func (mw *MinioWatcher) RemoveDirectories(directories []string) error {
 	}
 
 	return nil
+}
+
+func (mw *MinioWatcher) GetBuckets() []string {
+	ctx := context.Background()
+	buckets, err := mw.mc.ListBuckets(ctx)
+	if err != nil {
+		return make([]string, 0)
+	}
+
+	bucketNames := make([]string, len(buckets))
+	for _, bucketInfo := range buckets {
+		bucketNames = append(bucketNames, bucketInfo.Name)
+	}
+
+	return bucketNames
+}
+
+func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageItem {
+	ctx := context.Background()
+	opts := minio.ListObjectsOptions{
+		UseV1:     true,
+		Prefix:    dirName,
+		Recursive: false,
+	}
+
+	dirObjects := make([]*models.StorageItem, 0)
+	for obj := range mw.mc.ListObjects(ctx, bucket, opts) {
+		if obj.Err != nil {
+			log.Println(obj.Err)
+			continue
+		}
+
+		dirObjects = append(dirObjects, &models.StorageItem{
+			FileName:      obj.Key,
+			DirectoryName: dirName,
+			IsDirectory:   len(obj.ETag) == 0,
+		})
+	}
+
+	return dirObjects
+}
+
+func (mw *MinioWatcher) CreateBucket(dirName string) error {
+	ctx := context.Background()
+	opts := minio.MakeBucketOptions{}
+	return mw.mc.MakeBucket(ctx, dirName, opts)
+}
+
+func (mw *MinioWatcher) RemoveBucket(dirName string) error {
+	ctx := context.Background()
+	return mw.mc.RemoveBucket(ctx, dirName)
+}
+
+func (mw *MinioWatcher) RemoveFile(bucket string, fileName string) error {
+	ctx := context.Background()
+	opts := minio.RemoveObjectOptions{}
+	return mw.mc.RemoveObject(ctx, bucket, fileName, opts)
+}
+
+func (mw *MinioWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
+	ctx := context.Background()
+	dataLen := int64(fileData.Len())
+	opts := minio.PutObjectOptions{}
+	_, err := mw.mc.PutObject(ctx, bucket, fileName, &fileData, dataLen, opts)
+	return err
+}
+
+func (mw *MinioWatcher) CopyFile(bucket, srcPath, dstPath string) error {
+	ctx := context.Background()
+	srcOpts := minio.CopySrcOptions{Bucket: bucket, Object: srcPath}
+	dstOpts := minio.CopyDestOptions{Bucket: bucket, Object: dstPath}
+	_, err := mw.mc.CopyObject(ctx, dstOpts, srcOpts)
+	if err != nil {
+		log.Println("failed to copy object: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (mw *MinioWatcher) MoveFile(bucket, srcPath, dstPath string) error {
+	copyErr := mw.CopyFile(bucket, srcPath, dstPath)
+	if copyErr != nil {
+		log.Println("failed to copy file: ", copyErr)
+		return copyErr
+	}
+
+	removeErr := mw.RemoveFile(bucket, srcPath)
+	if removeErr != nil {
+		log.Println("failed to remove old file: ", removeErr)
+		return removeErr
+	}
+
+	return nil
+}
+
+func (mw *MinioWatcher) DownloadFile(bucket string, objName string) (bytes.Buffer, error) {
+	var objBody bytes.Buffer
+
+	ctx := context.Background()
+	opts := minio.GetObjectOptions{}
+	obj, err := mw.mc.GetObject(ctx, bucket, objName, opts)
+	if err != nil {
+		return objBody, err
+	}
+
+	_, rErr := objBody.ReadFrom(obj)
+	if rErr != nil {
+		return objBody, err
+	}
+
+	return objBody, nil
 }
 
 func (mw *MinioWatcher) launchProcessEventLoop() {

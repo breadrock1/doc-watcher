@@ -31,9 +31,9 @@ type WatcherDirectoriesForm struct {
 	Paths []string `json:"paths" example:"./indexer/test_folder"`
 }
 
-// FolderNameForm example
-type FolderNameForm struct {
-	FolderName string `json:"folder_name" example:"test_folder"`
+// BucketNameForm example
+type BucketNameForm struct {
+	BucketName string `json:"bucket_name" example:"test-bucket"`
 }
 
 // AnalyseFilesForm example
@@ -67,18 +67,21 @@ type RemoveFilesError struct {
 
 // DownloadFile example
 type DownloadFile struct {
-	Bucket   string `json:"bucket" example:"test-bucket"`
 	FileName string `json:"file_name" example:"test-file.docx"`
 }
 
 // RemoveFile example
 type RemoveFile struct {
-	Bucket   string `json:"bucket" example:"test-bucket"`
 	FileName string `json:"file_name" example:"test-file.docx"`
 }
 
-// HierarchyForm example
-type HierarchyForm struct {
-	Bucket        string `json:"bucket" example:"test-bucket"`
+// ListFilesForm example
+type ListFilesForm struct {
 	DirectoryName string `json:"directory" example:"test-folder/"`
+}
+
+// CopyFileForm example
+type CopyFileForm struct {
+	SrcPath string `json:"src_path" example:"old-test-document.docx"`
+	DstPath string `json:"dst_path" example:"test-document.docx"`
 }
