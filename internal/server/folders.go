@@ -259,7 +259,7 @@ func (s *Service) DownloadFile(c echo.Context) error {
 // @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"
 // @Failure	503 {object} ServerErrorForm "Server does not available"
-// @Router /storage/{bucket}/file/remove [delete]
+// @Router /storage/{bucket}/file/remove [post]
 func (s *Service) RemoveFile(c echo.Context) error {
 	bucketName := c.Param("bucket")
 

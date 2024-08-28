@@ -331,7 +331,7 @@ const docTemplate = `{
             }
         },
         "/storage/{bucket}/file/remove": {
-            "delete": {
+            "post": {
                 "description": "Remove file from storage",
                 "produces": [
                     "application/json"
