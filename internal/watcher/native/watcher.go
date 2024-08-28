@@ -2,7 +2,6 @@ package native
 
 import (
 	"bytes"
-	"doc-notifier/internal/models"
 	"errors"
 	"fmt"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"doc-notifier/internal/config"
+	"doc-notifier/internal/models"
 	"doc-notifier/internal/ocr"
 	"doc-notifier/internal/searcher"
 	"doc-notifier/internal/summarizer"
@@ -89,21 +89,19 @@ func (nw *NotifyWatcher) TerminateWatchers() {
 	nw.stopCh <- true
 }
 
-func (nw *NotifyWatcher) CreateDirectory(dirName string) error {
-	folderPath := path.Join("./indexer", dirName)
-	return os.Mkdir(folderPath, os.ModePerm)
+func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.Watcher.Add)
 }
 
-func (nw *NotifyWatcher) RemoveDirectory(dirName string) error {
-	folderPath := path.Join("./indexer", dirName)
-	return os.RemoveAll(folderPath)
+func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
+	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
-func (nw *NotifyWatcher) GetWatchedDirectories() []string {
+func (nw *NotifyWatcher) GetBuckets() []string {
 	return nw.Watcher.WatchList()
 }
 
-func (mw *NotifyWatcher) GetHierarchy(_, dirName string) []*models.StorageItem {
+func (nw *NotifyWatcher) GetListFiles(_, dirName string) []*models.StorageItem {
 	indexerPath := fmt.Sprintf("./indexer/%s", dirName)
 	entries, err := os.ReadDir(indexerPath)
 	if err != nil {
@@ -123,9 +121,58 @@ func (mw *NotifyWatcher) GetHierarchy(_, dirName string) []*models.StorageItem {
 	return dirObjects
 }
 
+func (nw *NotifyWatcher) CreateBucket(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.Mkdir(folderPath, os.ModePerm)
+}
+
+func (nw *NotifyWatcher) RemoveBucket(dirName string) error {
+	folderPath := path.Join("./indexer", dirName)
+	return os.RemoveAll(folderPath)
+}
+
+func (nw *NotifyWatcher) RemoveFile(bucket string, fileName string) error {
+	filePath := path.Join("./indexer", bucket, fileName)
+	return os.RemoveAll(filePath)
+}
+
 func (nw *NotifyWatcher) UploadFile(bucket string, fileName string, fileData bytes.Buffer) error {
 	filePath := fmt.Sprintf("./indexer/watcher/%s/%s", bucket, fileName)
 	return os.WriteFile(filePath, fileData.Bytes(), os.ModePerm)
+}
+
+func (nw *NotifyWatcher) CopyFile(bucket, srcPath, dstPath string) error {
+	src := path.Join(bucket, srcPath)
+	data, err := os.ReadFile(src)
+	if err != nil {
+		log.Println("failed to open src file: ", err)
+		return err
+	}
+
+	dst := path.Join(bucket, dstPath)
+	err = os.WriteFile(dst, data, 0644)
+	if err != nil {
+		log.Println("failed to write dst file: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (nw *NotifyWatcher) MoveFile(bucket, srcPath, dstPath string) error {
+	copyErr := nw.CopyFile(bucket, srcPath, dstPath)
+	if copyErr != nil {
+		log.Println("failed to copy file: ", copyErr)
+		return copyErr
+	}
+
+	removeErr := nw.RemoveFile(bucket, srcPath)
+	if removeErr != nil {
+		log.Println("failed to remove old file: ", removeErr)
+		return removeErr
+	}
+
+	return nil
 }
 
 func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buffer, error) {
@@ -142,19 +189,6 @@ func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buff
 	}
 
 	return fileBuffer, nil
-}
-
-func (nw *NotifyWatcher) RemoveFile(bucket string, fileName string) error {
-	filePath := path.Join("./indexer", bucket, fileName)
-	return os.RemoveAll(filePath)
-}
-
-func (nw *NotifyWatcher) AppendDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.Watcher.Add)
-}
-
-func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
-	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
 func (nw *NotifyWatcher) launchProcessEventLoop() {

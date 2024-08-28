@@ -34,7 +34,7 @@ func (s *Service) setupServer() {
 	s.server.Use(middleware.Recover())
 
 	_ = s.CreateHelloGroup()
-	_ = s.CreateFoldersGroup()
+	_ = s.CreateStorageGroup()
 	_ = s.CreateWatcherGroup()
 
 	s.server.GET("/swagger/*", echoSwagger.WrapHandler)
