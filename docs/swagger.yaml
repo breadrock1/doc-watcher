@@ -1,89 +1,4 @@
 definitions:
-  models.Artifacts:
-    properties:
-      group_json_name:
-        type: string
-      group_name:
-        type: string
-      group_values:
-        items:
-          properties:
-            json_name:
-              type: string
-            name:
-              type: string
-            type:
-              type: string
-            value:
-              type: string
-          type: object
-        type: array
-    type: object
-  models.Document:
-    properties:
-      content:
-        type: string
-      document_class:
-        type: string
-      document_created:
-        type: string
-      document_extension:
-        type: string
-      document_id:
-        type: string
-      document_modified:
-        type: string
-      document_name:
-        type: string
-      document_path:
-        type: string
-      document_permissions:
-        type: integer
-      document_size:
-        type: integer
-      document_ssdeep:
-        type: string
-      document_type:
-        type: string
-      embeddings:
-        items:
-          $ref: '#/definitions/models.Embeddings'
-        type: array
-      folder_id:
-        type: string
-      folder_path:
-        type: string
-      ocr_metadata:
-        $ref: '#/definitions/models.OcrMetadata'
-      quality_recognition:
-        type: integer
-    type: object
-  models.Embeddings:
-    properties:
-      chunk_id:
-        type: string
-      text_chunk:
-        type: string
-      vector:
-        items:
-          type: number
-        type: array
-    type: object
-  models.OcrMetadata:
-    properties:
-      artifacts:
-        items:
-          $ref: '#/definitions/models.Artifacts'
-        type: array
-      doc_type:
-        type: string
-      job_id:
-        type: string
-      pages_count:
-        type: integer
-      text:
-        type: string
-    type: object
   server.BadRequestForm:
     properties:
       message:
@@ -93,35 +8,35 @@ definitions:
         example: 400
         type: integer
     type: object
-  server.DownloadFile:
+  server.BucketNameForm:
     properties:
-      bucket:
+      bucket_name:
         example: test-bucket
         type: string
+    type: object
+  server.CopyFileForm:
+    properties:
+      dst_path:
+        example: test-document.docx
+        type: string
+      src_path:
+        example: old-test-document.docx
+        type: string
+    type: object
+  server.DownloadFile:
+    properties:
       file_name:
         example: test-file.docx
         type: string
     type: object
-  server.FolderNameForm:
+  server.ListFilesForm:
     properties:
-      folder_name:
-        example: test_folder
-        type: string
-    type: object
-  server.HierarchyForm:
-    properties:
-      bucket:
-        example: test-bucket
-        type: string
       directory:
         example: test-folder/
         type: string
     type: object
   server.RemoveFile:
     properties:
-      bucket:
-        example: test-bucket
-        type: string
       file_name:
         example: test-file.docx
         type: string
@@ -174,10 +89,287 @@ paths:
       summary: Hello
       tags:
       - hello
-  /watcher/folders/:
+  /storage/{bucket}:
+    delete:
+      description: Remove bucket from storage
+      operationId: remove-bucket
+      parameters:
+      - description: Bucket name to remove
+        in: path
+        name: bucket
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Remove bucket from storage
+      tags:
+      - storage
+  /storage/{bucket}/file/copy:
+    post:
+      consumes:
+      - application/json
+      description: Copy file to another location into bucket
+      operationId: copy-file
+      parameters:
+      - description: Bucket name of src file
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Params to copy file
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.CopyFileForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Copy file to another location into bucket
+      tags:
+      - storage
+  /storage/{bucket}/file/download:
+    post:
+      consumes:
+      - application/json
+      description: Download file from storage
+      operationId: download-file
+      parameters:
+      - description: Bucket name to download file
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Parameters to download file
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.DownloadFile'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            type: file
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Download file from storage
+      tags:
+      - storage
+  /storage/{bucket}/file/move:
+    post:
+      consumes:
+      - application/json
+      description: Move file to another location into bucket
+      operationId: move-file
+      parameters:
+      - description: Bucket name of src file
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Params to move file
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.CopyFileForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Move file to another location into bucket
+      tags:
+      - storage
+  /storage/{bucket}/file/remove:
+    delete:
+      description: Remove file from storage
+      operationId: remove-file
+      parameters:
+      - description: Bucket name to remove file
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Parameters to remove file
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.RemoveFile'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Remove file from storage
+      tags:
+      - storage
+  /storage/{bucket}/file/upload:
+    post:
+      consumes:
+      - multipart/form
+      description: Upload files to storage
+      operationId: upload-files
+      parameters:
+      - description: Bucket name to upload files
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Files multipart form
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Upload files to storage
+      tags:
+      - storage
+  /storage/{bucket}/files:
+    post:
+      consumes:
+      - application/json
+      description: Get files list into bucket
+      operationId: get-list-files
+      parameters:
+      - description: Bucket name to get list files
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Parameters to get list files
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.ListFilesForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Get files list into bucket
+      tags:
+      - storage
+  /storage/bucket:
+    put:
+      consumes:
+      - application/json
+      description: Create new bucket into storage
+      operationId: create-bucket
+      parameters:
+      - description: Bucket name to create
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Bucket name to create
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.BucketNameForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Create new bucket into storage
+      tags:
+      - storage
+  /storage/buckets:
     get:
-      description: Get watched directories list
-      operationId: folders-all
+      description: Get watched bucket list
+      operationId: get-buckets
       produces:
       - application/json
       responses:
@@ -191,10 +383,10 @@ paths:
           description: Server does not available
           schema:
             $ref: '#/definitions/server.ServerErrorForm'
-      summary: Get watched directories list
+      summary: Get watched bucket list
       tags:
-      - watcher
-  /watcher/folders/attach:
+      - storage
+  /watcher/attach:
     post:
       consumes:
       - application/json
@@ -225,36 +417,7 @@ paths:
       summary: Attach new directory to watcher
       tags:
       - watcher
-  /watcher/folders/create:
-    post:
-      description: Create folder to store documents
-      operationId: folder-create
-      parameters:
-      - description: Folder name to create
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.FolderNameForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Create folder to store documents
-      tags:
-      - files
-  /watcher/folders/detach:
+  /watcher/detach:
     post:
       consumes:
       - application/json
@@ -283,195 +446,6 @@ paths:
           schema:
             $ref: '#/definitions/server.ServerErrorForm'
       summary: Attach new directory to watcher
-      tags:
-      - watcher
-  /watcher/folders/download:
-    post:
-      consumes:
-      - multipart/form
-      description: Load file from watcher directory
-      operationId: watcher-download
-      parameters:
-      - description: Download file form
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.DownloadFile'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/models.Document'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Load file from watcher directory
-      tags:
-      - watcher
-  /watcher/folders/hierarchy:
-    post:
-      consumes:
-      - multipart/form
-      description: Get bucket fs hierarchy
-      operationId: watcher-hierarchy
-      parameters:
-      - description: Hierarchy form
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.HierarchyForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Get bucket fs hierarchy
-      tags:
-      - watcher
-  /watcher/folders/remove:
-    delete:
-      description: Remove file from bucket
-      operationId: watcher-remove
-      parameters:
-      - description: File to remove
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.RemoveFile'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Remove file from bucket
-      tags:
-      - watcher
-    post:
-      description: Remove folder
-      operationId: folder-remove
-      parameters:
-      - description: Folder name to remove
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.FolderNameForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Remove folder
-      tags:
-      - files
-  /watcher/folders/update:
-    post:
-      consumes:
-      - multipart/form
-      description: Update file into watcher directory
-      operationId: watcher-update
-      parameters:
-      - description: Files (multipart/form) to updated
-        in: formData
-        name: files
-        required: true
-        type: file
-      - description: Bucket name to upload
-        in: query
-        name: bucket
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Update file into watcher directory
-      tags:
-      - watcher
-  /watcher/folders/upload:
-    post:
-      consumes:
-      - multipart/form
-      description: Upload file to watcher directory
-      operationId: watcher-upload
-      parameters:
-      - description: Files multipart form
-        in: formData
-        name: files
-        required: true
-        type: file
-      - description: Bucket name to upload
-        in: query
-        name: bucket
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Upload file to watcher directory
       tags:
       - watcher
   /watcher/is-pause:
