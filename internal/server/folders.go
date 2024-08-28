@@ -178,7 +178,7 @@ func (s *Service) UploadFile(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	bucketName := c.QueryParam("bucket")
+	bucketName := c.Param("bucket")
 	for _, fileForm := range multipartForm.File["files"] {
 		fileName := fileForm.Filename
 		fileHandler, uploadErr := fileForm.Open()
