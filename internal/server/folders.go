@@ -20,7 +20,7 @@ func (s *Service) CreateStorageGroup() error {
 	group.POST("/:bucket/file/move", s.MoveFile)
 	group.POST("/:bucket/file/upload", s.UploadFile)
 	group.POST("/:bucket/file/download", s.DownloadFile)
-	group.DELETE("/:bucket/file/remove", s.RemoveFile)
+	group.POST("/:bucket/file/remove", s.RemoveFile)
 
 	group.POST("/:bucket/files", s.GetListFiles)
 
