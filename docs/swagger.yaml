@@ -226,7 +226,7 @@ paths:
       tags:
       - storage
   /storage/{bucket}/file/remove:
-    delete:
+    post:
       description: Remove file from storage
       operationId: remove-file
       parameters:
