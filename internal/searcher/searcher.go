@@ -19,9 +19,10 @@ type Service struct {
 }
 
 func New(config *config.SearcherConfig) *Service {
+	timeout := config.Timeout * time.Second
 	return &Service{
 		Address: config.Address,
-		Timeout: config.Timeout,
+		Timeout: timeout,
 	}
 }
 

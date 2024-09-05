@@ -274,7 +274,7 @@ func (mw *MinioWatcher) extractDocumentFromEvent(event notification.Info) {
 
 		fileExt := path.Ext(fileName)
 
-		createdAt := time.Now().Format(time.RFC3339)
+		createdAt := time.Now().UTC().Format(time.RFC3339)
 		modifiedAt := createdAt
 
 		document := &models.Document{}

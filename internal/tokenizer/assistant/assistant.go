@@ -25,9 +25,10 @@ type Service struct {
 }
 
 func New(config *config.TokenizerConfig) *Service {
+	timeoutReq := config.Timeout * time.Second
 	return &Service{
 		address:      config.Address,
-		timeout:      config.Timeout,
+		timeout:      timeoutReq,
 		ChunkSize:    config.ChunkSize,
 		ChunkOverlap: config.ChunkOverlap,
 		ReturnChunks: config.ReturnChunks,

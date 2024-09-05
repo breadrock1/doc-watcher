@@ -22,9 +22,10 @@ type Service struct {
 }
 
 func New(config *config.OcrConfig) *Service {
+	timeoutReq := config.Timeout * time.Second
 	return &Service{
 		address: config.Address,
-		timeout: config.Timeout,
+		timeout: timeoutReq,
 	}
 }
 
