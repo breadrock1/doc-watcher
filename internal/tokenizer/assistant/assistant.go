@@ -80,11 +80,15 @@ func (s *Service) loadTextDataTokens(content string) ([]float64, error) {
 		return []float64{}, err
 	}
 
-	tokensDense := &models.ComputedTokens{}
-	_ = json.Unmarshal(respData, tokensDense)
+	tokens := make([][]float64, 0)
+	_ = json.Unmarshal(respData, &tokens)
 
-	tmp := tokensDense.Vectors
-	return tmp[0], nil
+	if len(tokens) < 1 {
+		log.Println("returned empty tokens from tokenizer service")
+		return make([]float64, 0), nil
+	}
+
+	return tokens[0], nil
 }
 
 func (s *Service) splitContent(content string, chunkSize int) []string {
