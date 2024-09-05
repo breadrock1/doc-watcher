@@ -56,11 +56,5 @@ func ComputeTokens(c echo.Context) error {
 		return c.JSON(403, tokensForm)
 	}
 
-	tokenizedVector := models.ComputedTokens{
-		Chunks:      1,
-		ChunkedText: []string{"test_file_1"},
-		Vectors:     [][]float64{{0.345, 0.045}},
-	}
-
-	return c.JSON(200, tokenizedVector)
+	return c.JSON(200, [][]float64{{0.345, 0.045}})
 }
