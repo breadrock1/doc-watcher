@@ -190,20 +190,20 @@ func (s *Service) UploadFile(c echo.Context) error {
 			log.Println(uploadErr)
 			continue
 		}
-		defer func(fileHandler multipart.File) {
+		defer func() {
 			err := fileHandler.Close()
 			if err != nil {
 				log.Println("failed to close file handler: ", err)
 				return
 			}
-		}(fileHandler)
+		}()
 
+		fileData.Reset()
 		_, uploadErr = fileData.ReadFrom(fileHandler)
 		if uploadErr != nil {
 			log.Println(uploadErr)
 			continue
 		}
-		defer fileData.Reset()
 
 		uploadErr = s.watcher.Watcher.UploadFile(bucketName, fileName, fileData)
 		if uploadErr != nil {
