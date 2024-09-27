@@ -48,7 +48,7 @@ definitions:
     properties:
       file_names:
         example:
-        - '["test-file.docx"]'
+        - test-file.docx
         items:
           type: string
         type: array
@@ -523,11 +523,6 @@ paths:
       description: Clean processing documents
       operationId: clean-documents
       parameters:
-      - description: Bucket name of src file
-        in: path
-        name: bucket
-        required: true
-        type: string
       - description: File names to clean processing status
         in: body
         name: jsonQuery

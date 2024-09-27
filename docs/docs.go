@@ -660,13 +660,6 @@ const docTemplate = `{
                 "operationId": "clean-documents",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bucket name of src file",
-                        "name": "bucket",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
                         "description": "File names to clean processing status",
                         "name": "jsonQuery",
                         "in": "body",
@@ -856,7 +849,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"test-file.docx\"]"
+                        "test-file.docx"
                     ]
                 }
             }
