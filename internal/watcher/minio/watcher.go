@@ -156,11 +156,11 @@ func (mw *MinioWatcher) CleanProcessingDocuments(files []string) error {
 	return nil
 }
 
-func (mw *MinioWatcher) GetBuckets() []string {
+func (mw *MinioWatcher) GetBuckets() ([]string, error) {
 	ctx := context.Background()
 	buckets, err := mw.mc.ListBuckets(ctx)
 	if err != nil {
-		return make([]string, 0)
+		return nil, err
 	}
 
 	bucketNames := make([]string, len(buckets))
@@ -168,10 +168,10 @@ func (mw *MinioWatcher) GetBuckets() []string {
 		bucketNames = append(bucketNames, bucketInfo.Name)
 	}
 
-	return bucketNames
+	return bucketNames, nil
 }
 
-func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageItem {
+func (mw *MinioWatcher) GetListFiles(bucket, dirName string) ([]*models.StorageItem, error) {
 	ctx := context.Background()
 	opts := minio.ListObjectsOptions{
 		UseV1:     true,
@@ -179,10 +179,14 @@ func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageIt
 		Recursive: false,
 	}
 
+	if mw.mc.IsOffline() {
+		return nil, errors.New("cloud is offline")
+	}
+
 	dirObjects := make([]*models.StorageItem, 0)
 	for obj := range mw.mc.ListObjects(ctx, bucket, opts) {
 		if obj.Err != nil {
-			log.Println(obj.Err)
+			log.Println("failed to get object: ", obj.Err)
 			continue
 		}
 
@@ -193,7 +197,7 @@ func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageIt
 		})
 	}
 
-	return dirObjects
+	return dirObjects, nil
 }
 
 func (mw *MinioWatcher) CreateBucket(dirName string) error {
@@ -357,19 +361,17 @@ func (mw *MinioWatcher) recognizeDocument(document *models.Document) {
 	document.ComputeSsdeepHash()
 	document.SetEmbeddings([]*models.Embeddings{})
 
-	log.Println(mw.recFiles)
+	log.Println("Computing tokens for extracted text: ", document.DocumentName)
+	tokenVectors, _ := mw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
+	for chunkID, chunkData := range tokenVectors.Vectors {
+		text := tokenVectors.ChunkedText[chunkID]
+		document.AppendContentVector(text, chunkData)
+	}
 
-	//log.Println("Computing tokens for extracted text: ", document.DocumentName)
-	//tokenVectors, _ := mw.Tokenizer.Tokenizer.TokenizeTextData(document.Content)
-	//for chunkID, chunkData := range tokenVectors.Vectors {
-	//	text := tokenVectors.ChunkedText[chunkID]
-	//	document.AppendContentVector(text, chunkData)
-	//}
-	//
-	//log.Println("Storing document to searcher: ", document.DocumentName)
-	//if err := mw.Searcher.StoreDocument(document); err != nil {
-	//	log.Println("Failed while storing document: ", err)
-	//}
-	//
-	//mw.Summarizer.LoadSummary(document)
+	log.Println("Storing document to searcher: ", document.DocumentName)
+	if err := mw.Searcher.StoreDocument(document); err != nil {
+		log.Println("Failed while storing document: ", err)
+	}
+
+	mw.Summarizer.LoadSummary(document)
 }

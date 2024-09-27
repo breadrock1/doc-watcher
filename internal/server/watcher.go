@@ -159,7 +159,6 @@ func (s *Service) FetchProcessingDocuments(c echo.Context) error {
 // @ID clean-documents
 // @Tags watcher
 // @Accept  json
-// @Param bucket path string true "Bucket name of src file"
 // @Param jsonQuery body FetchDocumentsList true "File names to clean processing status"
 // @Success 200 {object} ResponseForm "Ok"
 // @Failure	400 {object} BadRequestForm "Bad Request message"

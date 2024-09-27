@@ -129,15 +129,15 @@ func (nw *NotifyWatcher) CleanProcessingDocuments(files []string) error {
 	return nil
 }
 
-func (nw *NotifyWatcher) GetBuckets() []string {
-	return nw.Watcher.WatchList()
+func (nw *NotifyWatcher) GetBuckets() ([]string, error) {
+	return nw.Watcher.WatchList(), nil
 }
 
-func (nw *NotifyWatcher) GetListFiles(_, dirName string) []*models.StorageItem {
+func (nw *NotifyWatcher) GetListFiles(_, dirName string) ([]*models.StorageItem, error) {
 	indexerPath := fmt.Sprintf("./indexer/%s", dirName)
 	entries, err := os.ReadDir(indexerPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	dirObjects := make([]*models.StorageItem, 0)
@@ -150,7 +150,7 @@ func (nw *NotifyWatcher) GetListFiles(_, dirName string) []*models.StorageItem {
 		})
 	}
 
-	return dirObjects
+	return dirObjects, nil
 }
 
 func (nw *NotifyWatcher) CreateBucket(dirName string) error {

@@ -28,5 +28,6 @@ func (s *Service) RecognizeFile(document *models.Document, filePath string) erro
 	}
 
 	document.SetContentData(stringData)
+	document.SetQuality(10000)
 	return nil
 }

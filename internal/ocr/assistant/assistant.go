@@ -61,6 +61,6 @@ func (s *Service) RecognizeFile(document *models.Document, filePath string) erro
 		return fmt.Errorf("returned empty content data")
 	}
 
-	document.QualityRecognized = 10000
+	document.SetQuality(10000)
 	return nil
 }

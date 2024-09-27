@@ -37,7 +37,12 @@ func (s *Service) CreateStorageGroup() error {
 // @Failure	503 {object} ServerErrorForm "Server does not available"
 // @Router /storage/buckets [get]
 func (s *Service) GetBuckets(c echo.Context) error {
-	watcherDirs := s.watcher.Watcher.GetBuckets()
+	watcherDirs, err := s.watcher.Watcher.GetBuckets()
+	if err != nil {
+		log.Println("failed to get buckets from cloud: ", err.Error())
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
 	return c.JSON(200, watcherDirs)
 }
 
@@ -296,6 +301,11 @@ func (s *Service) GetListFiles(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	listObjects := s.watcher.Watcher.GetListFiles(bucketName, jsonForm.DirectoryName)
+	listObjects, err := s.watcher.Watcher.GetListFiles(bucketName, jsonForm.DirectoryName)
+	if err != nil {
+		log.Println("failed to get list files: ", err.Error())
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
 	return c.JSON(200, listObjects)
 }
