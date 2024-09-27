@@ -22,6 +22,8 @@ type WatcherService interface {
 	TerminateWatchers()
 	AppendDirectories(directories []string) error
 	RemoveDirectories(directories []string) error
+	FetchProcessingDocuments(files []string) *models.ProcessingDocuments
+	CleanProcessingDocuments(files []string) error
 }
 
 type StorageService interface {
