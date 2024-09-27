@@ -647,6 +647,104 @@ const docTemplate = `{
                 }
             }
         },
+        "/watcher/processing/clean": {
+            "post": {
+                "description": "Clean processing documents",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Clean processing documents",
+                "operationId": "clean-documents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket name of src file",
+                        "name": "bucket",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File names to clean processing status",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.FetchDocumentsList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/server.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
+        "/watcher/processing/fetch": {
+            "post": {
+                "description": "Load processing/unrecognized/done documents by names list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "watcher"
+                ],
+                "summary": "Fetch processing documents",
+                "operationId": "fetch-documents",
+                "parameters": [
+                    {
+                        "description": "File names to fetch processing status",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.FetchDocumentsList"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/models.ProcessingDocuments"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
         "/watcher/run": {
             "get": {
                 "description": "Run all watchers",
@@ -682,6 +780,29 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.ProcessingDocuments": {
+            "type": "object",
+            "properties": {
+                "done": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "processing": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "unrecognized": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "server.BadRequestForm": {
             "type": "object",
             "properties": {
@@ -723,6 +844,20 @@ const docTemplate = `{
                 "file_name": {
                     "type": "string",
                     "example": "test-file.docx"
+                }
+            }
+        },
+        "server.FetchDocumentsList": {
+            "type": "object",
+            "properties": {
+                "file_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"test-file.docx\"]"
+                    ]
                 }
             }
         },
