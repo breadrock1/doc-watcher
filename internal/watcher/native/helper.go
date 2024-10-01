@@ -24,7 +24,7 @@ func (nw *NotifyWatcher) recognizeTriggeredDoc(documents []*models.Document) {
 }
 
 func (nw *NotifyWatcher) recognizeCallback(document *models.Document) {
-	nw.recFiles[document.DocumentName] = document
+	nw.recFiles.Set(document.DocumentName, document, 10*time.Minute)
 	document.SetQuality(0)
 	if err := nw.Ocr.Ocr.RecognizeFile(document, document.DocumentPath); err != nil {
 		log.Println(err)
