@@ -36,4 +36,5 @@ type StorageService interface {
 	UploadFile(bucket string, fileName string, fileData bytes.Buffer) error
 	DownloadFile(bucket string, objName string) (bytes.Buffer, error)
 	RemoveFile(bucket string, fileName string) error
+	GetShareURL(bucket string, fileName string) (string, error)
 }
