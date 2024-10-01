@@ -21,6 +21,7 @@ func (s *Service) CreateStorageGroup() error {
 	group.POST("/:bucket/file/upload", s.UploadFile)
 	group.POST("/:bucket/file/download", s.DownloadFile)
 	group.POST("/:bucket/file/remove", s.RemoveFile)
+	group.POST("/:bucket/file/share", s.GetFileShareURL)
 
 	group.POST("/:bucket/files", s.GetListFiles)
 
@@ -251,6 +252,39 @@ func (s *Service) DownloadFile(c echo.Context) error {
 	defer fileData.Reset()
 
 	return c.Blob(200, echo.MIMEMultipartForm, fileData.Bytes())
+}
+
+// GetFileShareURL
+// @Summary Get share URL for file
+// @Description Get share URL for file
+// @ID share-file
+// @Tags storage
+// @Accept  json
+// @Produce json
+// @Param bucket path string true "Bucket name to share file"
+// @Param jsonQuery body GetFileShareParams true "Parameters to share file"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /storage/{bucket}/file/share [post]
+func (s *Service) GetFileShareURL(c echo.Context) error {
+	bucketName := c.Param("bucket")
+
+	jsonForm := &GetFileShareParams{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	url, err := s.watcher.Watcher.GetShareURL(bucketName, jsonForm.FileName)
+	if err != nil {
+		log.Println("failed to get share url: ", err.Error())
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	return c.JSON(200, createStatusResponse(200, url))
 }
 
 // RemoveFile

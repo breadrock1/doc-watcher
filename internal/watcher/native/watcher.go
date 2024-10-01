@@ -223,6 +223,10 @@ func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buff
 	return fileBuffer, nil
 }
 
+func (nw *NotifyWatcher) GetShareURL(bucket string, fileName string) (string, error) {
+	return "", nil
+}
+
 func (nw *NotifyWatcher) launchProcessEventLoop() {
 	var (
 		mu      = &sync.RWMutex{}

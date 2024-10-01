@@ -2,7 +2,7 @@ version: '3'
 
 services:
   file_storage:
-    image: minio/minio
+    image: minio/minio:latest
     restart: unless-stopped
     command: server --address ":2898" --console-address ":2899" /data
     ports:
@@ -11,8 +11,6 @@ services:
     environment:
       MINIO_ROOT_USER: 'minio-root'
       MINIO_ROOT_PASSWORD: 'minio-root'
-      MINIO_ACCESS_KEY: '0TOUjvrbLX1Hf0CQmGaB'
-      MINIO_SECRET_KEY: 'K6hgghVAsem3m1UcdfYLHkIDOoTXo1IOdvkcja7F'
     networks:
       - default
 
