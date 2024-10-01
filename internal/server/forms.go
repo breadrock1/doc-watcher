@@ -70,6 +70,13 @@ type DownloadFile struct {
 	FileName string `json:"file_name" example:"test-file.docx"`
 }
 
+// GetFileShareParams example
+type GetFileShareParams struct {
+	FileName      string `json:"file_name" example:"test-file.docx"`
+	FileDirPath   string `json:"dir_path" example:"test-folder/"`
+	ExpireSeconds int32  `json:"expire_secs" example:"3600"`
+}
+
 // RemoveFile example
 type RemoveFile struct {
 	FileName string `json:"file_name" example:"test-file.docx"`
