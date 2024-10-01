@@ -62,8 +62,9 @@ func TestWatcherManager(t *testing.T) {
 		err := watch.Watcher.AppendDirectories([]string{TestcaseDirPath})
 		assert.NoError(t, err, "Failed while appending dir to watch")
 
-		dirs := watch.Watcher.GetBuckets()
+		dirs, err := watch.Watcher.GetBuckets()
 		assert.Equal(t, len(dirs), 1, "Not equal appended dirs")
+		assert.Empty(t, err, "Not null error to get buckets")
 
 		err = watch.Watcher.RemoveDirectories([]string{TestcaseDirPath})
 		assert.NoError(t, err, "Failed while detach dir to watch")
@@ -74,8 +75,9 @@ func TestWatcherManager(t *testing.T) {
 		err := watch.Watcher.AppendDirectories(dirs)
 		assert.NoError(t, err, "Failed while appending dir to watch")
 
-		attached := watch.Watcher.GetBuckets()
+		attached, err := watch.Watcher.GetBuckets()
 		assert.Equal(t, len(dirs), len(attached), "Not equal appended dirs")
+		assert.Empty(t, err, "Not null error to get buckets")
 
 		err = watch.Watcher.RemoveDirectories(dirs)
 		assert.NoError(t, err, "Failed while detach dir to watch")

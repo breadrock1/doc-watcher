@@ -1,4 +1,19 @@
 definitions:
+  models.ProcessingDocuments:
+    properties:
+      done:
+        items:
+          type: string
+        type: array
+      processing:
+        items:
+          type: string
+        type: array
+      unrecognized:
+        items:
+          type: string
+        type: array
+    type: object
   server.BadRequestForm:
     properties:
       message:
@@ -28,6 +43,15 @@ definitions:
       file_name:
         example: test-file.docx
         type: string
+    type: object
+  server.FetchDocumentsList:
+    properties:
+      file_names:
+        example:
+        - test-file.docx
+        items:
+          type: string
+        type: array
     type: object
   server.ListFilesForm:
     properties:
@@ -490,6 +514,66 @@ paths:
           schema:
             $ref: '#/definitions/server.ServerErrorForm'
       summary: Pause all watchers
+      tags:
+      - watcher
+  /watcher/processing/clean:
+    post:
+      consumes:
+      - application/json
+      description: Clean processing documents
+      operationId: clean-documents
+      parameters:
+      - description: File names to clean processing status
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.FetchDocumentsList'
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Clean processing documents
+      tags:
+      - watcher
+  /watcher/processing/fetch:
+    post:
+      consumes:
+      - application/json
+      description: Load processing/unrecognized/done documents by names list
+      operationId: fetch-documents
+      parameters:
+      - description: File names to fetch processing status
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.FetchDocumentsList'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/models.ProcessingDocuments'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Fetch processing documents
       tags:
       - watcher
   /watcher/run:

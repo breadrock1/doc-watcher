@@ -24,7 +24,8 @@ import (
 )
 
 type MinioWatcher struct {
-	stopCh chan bool
+	stopCh   chan bool
+	recFiles map[string]*models.Document
 
 	Address       string
 	pauseWatchers bool
@@ -50,7 +51,9 @@ func New(
 	})
 
 	watcherInst := &MinioWatcher{
-		stopCh:        make(chan bool),
+		stopCh:   make(chan bool),
+		recFiles: make(map[string]*models.Document, 20),
+
 		Address:       config.Address,
 		pauseWatchers: false,
 
@@ -123,11 +126,41 @@ func (mw *MinioWatcher) RemoveDirectories(directories []string) error {
 	return nil
 }
 
-func (mw *MinioWatcher) GetBuckets() []string {
+func (mw *MinioWatcher) FetchProcessingDocuments(files []string) *models.ProcessingDocuments {
+	procDocs := &models.ProcessingDocuments{}
+	for _, file := range files {
+		document, ok := mw.recFiles[file]
+		if !ok {
+			continue
+		}
+
+		switch document.QualityRecognized {
+		case -1:
+			procDocs.Processing = append(procDocs.Processing, file)
+		case 0:
+			procDocs.Unrecognized = append(procDocs.Unrecognized, file)
+		default:
+			procDocs.Done = append(procDocs.Done, file)
+		}
+	}
+
+	return procDocs
+}
+
+func (mw *MinioWatcher) CleanProcessingDocuments(files []string) error {
+	// TODO: Add RWLock to escape data race!
+	for _, file := range files {
+		delete(mw.recFiles, file)
+	}
+
+	return nil
+}
+
+func (mw *MinioWatcher) GetBuckets() ([]string, error) {
 	ctx := context.Background()
 	buckets, err := mw.mc.ListBuckets(ctx)
 	if err != nil {
-		return make([]string, 0)
+		return nil, err
 	}
 
 	bucketNames := make([]string, len(buckets))
@@ -135,10 +168,10 @@ func (mw *MinioWatcher) GetBuckets() []string {
 		bucketNames = append(bucketNames, bucketInfo.Name)
 	}
 
-	return bucketNames
+	return bucketNames, nil
 }
 
-func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageItem {
+func (mw *MinioWatcher) GetListFiles(bucket, dirName string) ([]*models.StorageItem, error) {
 	ctx := context.Background()
 	opts := minio.ListObjectsOptions{
 		UseV1:     true,
@@ -146,10 +179,14 @@ func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageIt
 		Recursive: false,
 	}
 
+	if mw.mc.IsOffline() {
+		return nil, errors.New("cloud is offline")
+	}
+
 	dirObjects := make([]*models.StorageItem, 0)
 	for obj := range mw.mc.ListObjects(ctx, bucket, opts) {
 		if obj.Err != nil {
-			log.Println(obj.Err)
+			log.Println("failed to get object: ", obj.Err)
 			continue
 		}
 
@@ -160,7 +197,7 @@ func (mw *MinioWatcher) GetListFiles(bucket, dirName string) []*models.StorageIt
 		})
 	}
 
-	return dirObjects
+	return dirObjects, nil
 }
 
 func (mw *MinioWatcher) CreateBucket(dirName string) error {
@@ -290,8 +327,10 @@ func (mw *MinioWatcher) extractDocumentFromEvent(event notification.Info) {
 		document.DocumentCreated = createdAt
 		document.QualityRecognized = -1
 
+		mw.recFiles[fileName] = document
 		data, err := mw.DownloadFile(bucketName, fileName)
 		if err != nil {
+			document.QualityRecognized = 0
 			log.Println("failed to load file data: ", err.Error())
 			continue
 		}
@@ -302,6 +341,7 @@ func (mw *MinioWatcher) extractDocumentFromEvent(event notification.Info) {
 		document.Content = tmpFilePath
 		err = os.WriteFile(tmpFilePath, data.Bytes(), os.ModePerm)
 		if err != nil {
+			document.QualityRecognized = 0
 			log.Println("failed to write file: ", err)
 			continue
 		}

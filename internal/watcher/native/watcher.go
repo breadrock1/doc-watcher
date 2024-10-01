@@ -24,7 +24,8 @@ import (
 )
 
 type NotifyWatcher struct {
-	stopCh chan bool
+	stopCh   chan bool
+	recFiles map[string]*models.Document
 
 	Address       string
 	pauseWatchers bool
@@ -51,6 +52,7 @@ func New(
 
 	watcherInst := &NotifyWatcher{
 		stopCh:        make(chan bool),
+		recFiles:      make(map[string]*models.Document, 20),
 		Address:       config.Address,
 		pauseWatchers: false,
 		directories:   config.WatchedDirectories,
@@ -97,15 +99,45 @@ func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
 	return consumeWatcherDirectories(directories, nw.Watcher.Remove)
 }
 
-func (nw *NotifyWatcher) GetBuckets() []string {
-	return nw.Watcher.WatchList()
+func (nw *NotifyWatcher) FetchProcessingDocuments(files []string) *models.ProcessingDocuments {
+	procDocs := &models.ProcessingDocuments{}
+	for _, file := range files {
+		document, ok := nw.recFiles[file]
+		if !ok {
+			continue
+		}
+
+		switch document.QualityRecognized {
+		case -1:
+			procDocs.Processing = append(procDocs.Processing, file)
+		case 0:
+			procDocs.Unrecognized = append(procDocs.Unrecognized, file)
+		default:
+			procDocs.Done = append(procDocs.Done, file)
+		}
+	}
+
+	return procDocs
 }
 
-func (nw *NotifyWatcher) GetListFiles(_, dirName string) []*models.StorageItem {
+func (nw *NotifyWatcher) CleanProcessingDocuments(files []string) error {
+	// TODO: Add RWLock to escape data race!
+	for _, file := range files {
+		delete(nw.recFiles, file)
+	}
+
+	return nil
+}
+
+func (nw *NotifyWatcher) GetBuckets() ([]string, error) {
+	return nw.Watcher.WatchList(), nil
+}
+
+func (nw *NotifyWatcher) GetListFiles(_, dirName string) ([]*models.StorageItem, error) {
 	indexerPath := fmt.Sprintf("./indexer/%s", dirName)
 	entries, err := os.ReadDir(indexerPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	dirObjects := make([]*models.StorageItem, 0)
@@ -118,7 +150,7 @@ func (nw *NotifyWatcher) GetListFiles(_, dirName string) []*models.StorageItem {
 		})
 	}
 
-	return dirObjects
+	return dirObjects, nil
 }
 
 func (nw *NotifyWatcher) CreateBucket(dirName string) error {

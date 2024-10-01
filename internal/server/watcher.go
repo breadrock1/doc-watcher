@@ -14,6 +14,8 @@ func (s *Service) CreateWatcherGroup() error {
 	group.GET("/pause", s.PauseWatchers)
 	group.POST("/attach", s.AttachDirectories)
 	group.POST("/detach", s.DetachDirectories)
+	group.POST("/processing/fetch", s.FetchProcessingDocuments)
+	group.POST("/processing/clean", s.CleanProcessingDocuments)
 
 	return nil
 }
@@ -120,6 +122,57 @@ func (s *Service) DetachDirectories(c echo.Context) error {
 	}
 
 	if err := s.watcher.Watcher.RemoveDirectories(jsonForm.Paths); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	return c.JSON(200, createStatusResponse(200, "Ok"))
+}
+
+// FetchProcessingDocuments
+// @Summary Fetch processing documents
+// @Description Load processing/unrecognized/done documents by names list
+// @ID fetch-documents
+// @Tags watcher
+// @Accept  json
+// @Produce json
+// @Param jsonQuery body FetchDocumentsList true "File names to fetch processing status"
+// @Success 200 {object} models.ProcessingDocuments "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/processing/fetch [post]
+func (s *Service) FetchProcessingDocuments(c echo.Context) error {
+	jsonForm := &FetchDocumentsList{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	documents := s.watcher.Watcher.FetchProcessingDocuments(jsonForm.FileNames)
+	return c.JSON(200, documents)
+}
+
+// CleanProcessingDocuments
+// @Summary Clean processing documents
+// @Description Clean processing documents
+// @ID clean-documents
+// @Tags watcher
+// @Accept  json
+// @Param jsonQuery body FetchDocumentsList true "File names to clean processing status"
+// @Success 200 {object} ResponseForm "Ok"
+// @Failure	400 {object} BadRequestForm "Bad Request message"
+// @Failure	503 {object} ServerErrorForm "Server does not available"
+// @Router /watcher/processing/clean [post]
+func (s *Service) CleanProcessingDocuments(c echo.Context) error {
+	jsonForm := &FetchDocumentsList{}
+	decoder := json.NewDecoder(c.Request().Body)
+	if err := decoder.Decode(jsonForm); err != nil {
+		respErr := createStatusResponse(400, err.Error())
+		return c.JSON(400, respErr)
+	}
+
+	if err := s.watcher.Watcher.CleanProcessingDocuments(jsonForm.FileNames); err != nil {
 		respErr := createStatusResponse(400, err.Error())
 		return c.JSON(400, respErr)
 	}

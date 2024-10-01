@@ -22,13 +22,15 @@ type WatcherService interface {
 	TerminateWatchers()
 	AppendDirectories(directories []string) error
 	RemoveDirectories(directories []string) error
+	FetchProcessingDocuments(files []string) *models.ProcessingDocuments
+	CleanProcessingDocuments(files []string) error
 }
 
 type StorageService interface {
-	GetBuckets() []string
+	GetBuckets() ([]string, error)
 	CopyFile(bucket, srcPath, dstPath string) error
 	MoveFile(bucket, srcPath, dstPath string) error
-	GetListFiles(bucket, dirName string) []*models.StorageItem
+	GetListFiles(bucket, dirName string) ([]*models.StorageItem, error)
 	CreateBucket(dirName string) error
 	RemoveBucket(dirName string) error
 	UploadFile(bucket string, fileName string, fileData bytes.Buffer) error

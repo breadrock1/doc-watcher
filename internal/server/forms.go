@@ -85,3 +85,8 @@ type CopyFileForm struct {
 	SrcPath string `json:"src_path" example:"old-test-document.docx"`
 	DstPath string `json:"dst_path" example:"test-document.docx"`
 }
+
+// FetchDocumentsList example
+type FetchDocumentsList struct {
+	FileNames []string `json:"file_names" example:"test-file.docx"`
+}
