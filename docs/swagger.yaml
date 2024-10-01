@@ -53,6 +53,18 @@ definitions:
           type: string
         type: array
     type: object
+  server.GetFileShareParams:
+    properties:
+      dir_path:
+        example: test-folder/
+        type: string
+      expire_secs:
+        example: 3600
+        type: integer
+      file_name:
+        example: test-file.docx
+        type: string
+    type: object
   server.ListFilesForm:
     properties:
       directory:
@@ -281,6 +293,42 @@ paths:
           schema:
             $ref: '#/definitions/server.ServerErrorForm'
       summary: Remove file from storage
+      tags:
+      - storage
+  /storage/{bucket}/file/share:
+    post:
+      consumes:
+      - application/json
+      description: Get share URL for file
+      operationId: share-file
+      parameters:
+      - description: Bucket name to share file
+        in: path
+        name: bucket
+        required: true
+        type: string
+      - description: Parameters to share file
+        in: body
+        name: jsonQuery
+        required: true
+        schema:
+          $ref: '#/definitions/server.GetFileShareParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/server.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/server.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/server.ServerErrorForm'
+      summary: Get share URL for file
       tags:
       - storage
   /storage/{bucket}/file/upload:

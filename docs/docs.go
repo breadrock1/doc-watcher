@@ -381,6 +381,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/storage/{bucket}/file/share": {
+            "post": {
+                "description": "Get share URL for file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "storage"
+                ],
+                "summary": "Get share URL for file",
+                "operationId": "share-file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bucket name to share file",
+                        "name": "bucket",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Parameters to share file",
+                        "name": "jsonQuery",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.GetFileShareParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "schema": {
+                            "$ref": "#/definitions/server.ResponseForm"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request message",
+                        "schema": {
+                            "$ref": "#/definitions/server.BadRequestForm"
+                        }
+                    },
+                    "503": {
+                        "description": "Server does not available",
+                        "schema": {
+                            "$ref": "#/definitions/server.ServerErrorForm"
+                        }
+                    }
+                }
+            }
+        },
         "/storage/{bucket}/file/upload": {
             "post": {
                 "description": "Upload files to storage",
@@ -851,6 +905,23 @@ const docTemplate = `{
                     "example": [
                         "test-file.docx"
                     ]
+                }
+            }
+        },
+        "server.GetFileShareParams": {
+            "type": "object",
+            "properties": {
+                "dir_path": {
+                    "type": "string",
+                    "example": "test-folder/"
+                },
+                "expire_secs": {
+                    "type": "integer",
+                    "example": 3600
+                },
+                "file_name": {
+                    "type": "string",
+                    "example": "test-file.docx"
                 }
             }
         },
