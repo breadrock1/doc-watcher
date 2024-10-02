@@ -1,17 +1,17 @@
 package main
 
 import (
-	"doc-notifier/internal/models"
-	"doc-notifier/internal/searcher"
-	"doc-notifier/internal/tokenizer"
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 
 	"doc-notifier/cmd"
+	"doc-notifier/internal/models"
 	"doc-notifier/internal/ocr"
+	"doc-notifier/internal/searcher"
+	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
+	"github.com/joho/godotenv"
 )
 
 func main() {
