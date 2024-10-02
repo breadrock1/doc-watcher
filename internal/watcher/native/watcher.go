@@ -21,11 +21,12 @@ import (
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
 	"github.com/fsnotify/fsnotify"
+	"github.com/patrickmn/go-cache"
 )
 
 type NotifyWatcher struct {
 	stopCh   chan bool
-	recFiles map[string]*models.Document
+	recFiles *cache.Cache
 
 	Address       string
 	pauseWatchers bool
@@ -52,7 +53,7 @@ func New(
 
 	watcherInst := &NotifyWatcher{
 		stopCh:        make(chan bool),
-		recFiles:      make(map[string]*models.Document, 20),
+		recFiles:      cache.New(10*time.Minute, 30*time.Minute),
 		Address:       config.Address,
 		pauseWatchers: false,
 		directories:   config.WatchedDirectories,
@@ -102,11 +103,12 @@ func (nw *NotifyWatcher) RemoveDirectories(directories []string) error {
 func (nw *NotifyWatcher) FetchProcessingDocuments(files []string) *models.ProcessingDocuments {
 	procDocs := &models.ProcessingDocuments{}
 	for _, file := range files {
-		document, ok := nw.recFiles[file]
+		obj, ok := nw.recFiles.Get(file)
 		if !ok {
 			continue
 		}
 
+		document := obj.(*models.Document)
 		switch document.QualityRecognized {
 		case -1:
 			procDocs.Processing = append(procDocs.Processing, file)
@@ -123,7 +125,7 @@ func (nw *NotifyWatcher) FetchProcessingDocuments(files []string) *models.Proces
 func (nw *NotifyWatcher) CleanProcessingDocuments(files []string) error {
 	// TODO: Add RWLock to escape data race!
 	for _, file := range files {
-		delete(nw.recFiles, file)
+		nw.recFiles.Delete(file)
 	}
 
 	return nil

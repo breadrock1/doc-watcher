@@ -21,11 +21,12 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio-go/v7/pkg/notification"
+	"github.com/patrickmn/go-cache"
 )
 
 type MinioWatcher struct {
 	stopCh   chan bool
-	recFiles map[string]*models.Document
+	recFiles *cache.Cache
 
 	Address       string
 	pauseWatchers bool
@@ -52,7 +53,7 @@ func New(
 
 	watcherInst := &MinioWatcher{
 		stopCh:   make(chan bool),
-		recFiles: make(map[string]*models.Document, 20),
+		recFiles: cache.New(10*time.Minute, 30*time.Minute),
 
 		Address:       config.Address,
 		pauseWatchers: false,
@@ -128,12 +129,14 @@ func (mw *MinioWatcher) RemoveDirectories(directories []string) error {
 
 func (mw *MinioWatcher) FetchProcessingDocuments(files []string) *models.ProcessingDocuments {
 	procDocs := &models.ProcessingDocuments{}
+
 	for _, file := range files {
-		document, ok := mw.recFiles[file]
+		obj, ok := mw.recFiles.Get(file)
 		if !ok {
 			continue
 		}
 
+		document := obj.(*models.Document)
 		switch document.QualityRecognized {
 		case -1:
 			procDocs.Processing = append(procDocs.Processing, file)
@@ -150,7 +153,7 @@ func (mw *MinioWatcher) FetchProcessingDocuments(files []string) *models.Process
 func (mw *MinioWatcher) CleanProcessingDocuments(files []string) error {
 	// TODO: Add RWLock to escape data race!
 	for _, file := range files {
-		delete(mw.recFiles, file)
+		mw.recFiles.Delete(file)
 	}
 
 	return nil
@@ -338,7 +341,7 @@ func (mw *MinioWatcher) extractDocumentFromEvent(event notification.Info) {
 		document.DocumentCreated = createdAt
 		document.QualityRecognized = -1
 
-		mw.recFiles[fileName] = document
+		mw.recFiles.Set(fileName, document, 10*time.Minute)
 		data, err := mw.DownloadFile(bucketName, fileName)
 		if err != nil {
 			document.QualityRecognized = 0
