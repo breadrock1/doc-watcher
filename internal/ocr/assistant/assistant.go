@@ -39,7 +39,7 @@ func (s *Service) RecognizeFile(document *models.Document, filePath string) erro
 
 	var reqBody bytes.Buffer
 	var writer *multipart.Writer
-	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody); recErr != nil {
+	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody, "file"); recErr != nil {
 		return fmt.Errorf("failed create form file: %e", recErr)
 	}
 

@@ -71,10 +71,10 @@ func sendRequest(client *http.Client, req *http.Request) ([]byte, error) {
 	return respData, nil
 }
 
-func CreateFormFile(fileHandle *os.File, reqBody *bytes.Buffer) (*multipart.Writer, error) {
+func CreateFormFile(fileHandle *os.File, reqBody *bytes.Buffer, fieldName string) (*multipart.Writer, error) {
 	writer := multipart.NewWriter(reqBody)
 	filePath := filepath.Base(fileHandle.Name())
-	formFile, err := writer.CreateFormFile("file", filePath)
+	formFile, err := writer.CreateFormFile(fieldName, filePath)
 	if err != nil {
 		log.Println("Failed while creating form file: ", err)
 		return nil, err
