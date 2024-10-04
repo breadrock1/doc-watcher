@@ -141,14 +141,14 @@ func sendFileToCloud(filePath string, targetURL string) error {
 	var reqBody bytes.Buffer
 	var writer *multipart.Writer
 	if writer, recErr = sender.CreateFormFile(fileHandle, &reqBody, "files"); recErr != nil {
-		return fmt.Errorf("failed create form file: %e", recErr.Error())
+		return fmt.Errorf("failed create form file: %e", recErr)
 	}
 
 	log.Printf("sending file %s to recognize", filePath)
 
 	mimeType := writer.FormDataContentType()
 	if _, recErr = sender.POST(&reqBody, targetURL, mimeType, 300*time.Second); recErr != nil {
-		return fmt.Errorf("failed send request: %e", recErr.Error())
+		return fmt.Errorf("failed send request: %e", recErr)
 	}
 
 	time.Sleep(5 * time.Second)

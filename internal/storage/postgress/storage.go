@@ -73,7 +73,7 @@ func (s *Service) Create(ctx context.Context, document *models.Document) (int, e
 	var id int
 	row := s.db.QueryRowContext(ctx, query, args...)
 	if row.Err() != nil {
-		return 0, fmt.Errorf("db exec: %s", row.Err().Error())
+		return 0, fmt.Errorf("db exec: %s", row.Err())
 	}
 	return id, nil
 }
