@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"doc-notifier/internal/watcher"
 	"fmt"
 	"log"
 	"math"
@@ -23,43 +24,14 @@ const CloudBucketName = "common-folder"
 func main() {
 	_ = godotenv.Load()
 
-	exportDirPath := loadString("EXPORTER_DIRECTORY_PATH")
+	watchDirPath := loadString("WATCHER_DIRECTORY_PATH")
 	serviceAddress := loadString("DOC_NOTIFIER_ADDRESS")
-
-	//serviceConfig := cmd.Execute()
-	//ocrService := ocr.New(&serviceConfig.Ocr)
-	//tokenService := tokenizer.New(&serviceConfig.Tokenizer)
-	//searchService := searcher.New(&serviceConfig.Searcher)
-	//allDocuments := watcher.ParseCaughtFiles(exportDirPath)
-	//
-	//log.Printf("Caught %d files into directory %s", len(allDocuments), exportDirPath)
-	//for _, document := range watcher.ParseCaughtFiles(exportDirPath) {
-	//	log.Println("indexing file: ", document.DocumentPath)
-	//	if err := ocrService.Ocr.RecognizeFile(document, document.DocumentPath); err != nil {
-	//		log.Println("failed to recognize file: ", document.DocumentPath)
-	//		continue
-	//	}
-	//
-	//	document.ComputeMd5Hash()
-	//	document.ComputeSsdeepHash()
-	//	document.SetEmbeddings([]*models.Embeddings{})
-	//
-	//	log.Println("computing tokens for extracted text: ", document.DocumentName)
-	//	tokenVectors, _ := tokenService.Tokenizer.TokenizeTextData(document.Content)
-	//	for chunkID, chunkData := range tokenVectors.Vectors {
-	//		text := tokenVectors.ChunkedText[chunkID]
-	//		document.AppendContentVector(text, chunkData)
-	//	}
-	//
-	//	log.Println("storing document to searcher: ", document.DocumentName)
-	//	if err := searchService.StoreDocument(document); err != nil {
-	//		log.Println("failed while storing document: ", err)
-	//	}
-	//}
+	exportDirPath := loadString("EXPORTER_DIRECTORY_PATH")
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go launchProcessEventLoop(exportDirPath, serviceAddress)
+	go launchProcessEventLoop(watchDirPath, serviceAddress)
+	go launchExporterLoop(exportDirPath, serviceAddress)
 	<-sigs
 }
 
@@ -71,6 +43,18 @@ func loadString(envName string) string {
 		return ""
 	}
 	return value
+}
+
+func launchExporterLoop(directory string, uploadAddr string) {
+	allDocuments := watcher.ParseCaughtFiles(directory)
+	log.Printf("exporter: caught %d files into directory %s", len(allDocuments), directory)
+
+	for _, document := range watcher.ParseCaughtFiles(directory) {
+		if err := sendFileToCloud(document.DocumentPath, uploadAddr); err != nil {
+			log.Println("exporter: failed to send file to cloud storage: ", err.Error())
+		}
+		time.Sleep(7 * time.Second)
+	}
 }
 
 func launchProcessEventLoop(directory string, uploadAddr string) {
@@ -91,11 +75,11 @@ func launchProcessEventLoop(directory string, uploadAddr string) {
 
 	notifyWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal("Stopped watching: ", err.Error())
+		log.Fatal("watcher: stopped watching: ", err.Error())
 	}
 
 	if err := notifyWatcher.Add(directory); err != nil {
-		log.Fatal("failed to append directory: ", err.Error())
+		log.Fatal("watcher: failed to append directory: ", err.Error())
 	}
 
 	for {
@@ -104,7 +88,7 @@ func launchProcessEventLoop(directory string, uploadAddr string) {
 			if !ok {
 				return
 			}
-			log.Println("Caught error: ", err.Error())
+			log.Println("watcher: caught error: ", err.Error())
 
 		case event, ok := <-notifyWatcher.Events:
 			if !ok {
@@ -136,12 +120,12 @@ func launchProcessEventLoop(directory string, uploadAddr string) {
 func execProcessingPipeline(event *fsnotify.Event, uploadAddr string) {
 	absFilePath, err := filepath.Abs(event.Name)
 	if err != nil {
-		log.Println("failed while getting abs path of file: ", err.Error())
+		log.Println("watcher: failed while getting abs path of file: ", err.Error())
 		return
 	}
 
 	if err := sendFileToCloud(absFilePath, uploadAddr); err != nil {
-		log.Println("failed to send file to cloud: ", err.Error())
+		log.Println("watcher: failed to send file to cloud: ", err.Error())
 		return
 	}
 }
