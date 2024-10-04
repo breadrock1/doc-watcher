@@ -11,8 +11,14 @@ build:
 	go build -v -o $(BIN_MINIO_NOTIFIER) ./cmd/minio
 	go build -v -o $(BIN_DIR_EXPORTER) ./cmd/exporter
 
-run: build
-	$(BIN_NOTIFIER) -c ./configs/config.toml
+run-native: build
+	$(BIN_NATIVE_NOTIFIER) -c ./configs/config.toml
+
+run-minio: build
+	$(BIN_MINIO_NOTIFIER) -c ./configs/config.toml
+
+run-exporter: build
+	$(BIN_DIR_EXPORTER) -e
 
 test:
 	go test -race ./...
