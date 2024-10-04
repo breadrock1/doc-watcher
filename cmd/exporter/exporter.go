@@ -48,9 +48,10 @@ func loadString(envName string) string {
 func launchExporterLoop(directory string, uploadAddr string) {
 	allDocuments := watcher.ParseCaughtFiles(directory)
 	log.Printf("exporter: caught %d files into directory %s", len(allDocuments), directory)
+	uploadFileURL := fmt.Sprintf("%s/storage/%s/file/upload", uploadAddr, CloudBucketName)
 
 	for _, document := range watcher.ParseCaughtFiles(directory) {
-		if err := sendFileToCloud(document.DocumentPath, uploadAddr); err != nil {
+		if err := sendFileToCloud(document.DocumentPath, uploadFileURL); err != nil {
 			log.Println("exporter: failed to send file to cloud storage: ", err.Error())
 		}
 		time.Sleep(7 * time.Second)
