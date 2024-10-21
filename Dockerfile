@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as builder
+FROM golang:1.21-alpine AS builder
 
 RUN apk update && apk add --no-cache gcc libc-dev make
 
@@ -8,13 +8,15 @@ COPY . .
 
 RUN go mod download && make build
 
-FROM golang:1.21-alpine
+
+FROM alpine:latest
 
 WORKDIR /app
 
 COPY --from=builder /app .
+
 RUN mkdir -p indexer && mkdir -p uploads
 
-CMD ["/app/bin/doc-notifier-minio", "-e"]
-
 EXPOSE 2893
+
+ENTRYPOINT [ "/app/bin/doc-notifier-minio", "-e" ]
