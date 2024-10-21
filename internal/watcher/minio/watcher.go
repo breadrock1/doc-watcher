@@ -385,6 +385,9 @@ func (mw *MinioWatcher) recognizeDocument(document *models.Document) {
 	log.Println("Storing document to searcher: ", document.DocumentName)
 	if err := mw.Searcher.StoreDocument(document); err != nil {
 		log.Println("Failed while storing document: ", err)
+		if obj, ok := mw.recFiles.Get(document.DocumentName); ok {
+			obj.(*models.Document).QualityRecognized = 0
+		}
 	}
 
 	mw.Summarizer.LoadSummary(document)
