@@ -49,3 +49,8 @@ BucketName="common-folder"
 MinioRootUser="0TOUjvrbLX1Hf0CQmGaB"
 MinioRootPassword="K6hgghVAsem3m1UcdfYLHkIDOoTXo1IOdvkcja7F"
 MinioUseSSL=false
+
+[samba]
+Address="0.0.0.0:445"
+Username="admin"
+Password="admin"

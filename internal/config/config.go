@@ -11,6 +11,7 @@ type Config struct {
 	Storage   StorageConfig
 	Office    OfficeConfig
 	Minio     MinioConfig
+	Samba     SambaConfig
 }
 
 type LoggerConfig struct {
@@ -68,4 +69,10 @@ type MinioConfig struct {
 	MinioRootUser     string
 	MinioRootPassword string
 	MinioUseSSL       bool
+}
+
+type SambaConfig struct {
+	Address  string
+	Username string
+	Password string
 }

@@ -108,6 +108,15 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		MinioUseSSL:       minioUseSSL,
 	}
 
+	sambaAddress := loadString("SAMBA_ADDRESS")
+	sambaUsername := loadString("SAMBA_USERNAME")
+	sambaPassword := loadString("SAMBA_PASSWORD}")
+	sambaConfig := SambaConfig{
+		Address:  sambaAddress,
+		Username: sambaUsername,
+		Password: sambaPassword,
+	}
+
 	return &Config{
 		Logger:    loggerConfig,
 		Watcher:   watcherConfig,
@@ -117,6 +126,7 @@ func LoadEnv(enableDotenv bool) (*Config, error) {
 		Storage:   storageConfig,
 		Office:    officeConfig,
 		Minio:     minioConfig,
+		Samba:     sambaConfig,
 	}, nil
 }
 

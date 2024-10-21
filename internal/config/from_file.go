@@ -42,6 +42,10 @@ func FromFile(filePath string) (*Config, error) {
 	viperInstance.SetDefault("minio.MinioRootPassword", "<secret-key>")
 	viperInstance.SetDefault("minio.MinioUseSSL", false)
 
+	viperInstance.SetDefault("samba.Address", "0.0.0.0:445")
+	viperInstance.SetDefault("samba.Username", "admin")
+	viperInstance.SetDefault("samba.Password", "admin")
+
 	if err := viperInstance.ReadInConfig(); err != nil {
 		confErr := fmt.Errorf("failed while reading config file %s: %w", filePath, err)
 		return config, confErr
