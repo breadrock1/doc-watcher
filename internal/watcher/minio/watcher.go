@@ -275,10 +275,11 @@ func (mw *MinioWatcher) DownloadFile(bucket string, objName string) (bytes.Buffe
 	return objBody, nil
 }
 
-func (mw *MinioWatcher) GetShareURL(bucket string, fileName string) (string, error) {
+func (mw *MinioWatcher) GetShareURL(bucket string, fileName string, expired int32) (string, error) {
 	ctx := context.Background()
 
-	url, err := mw.mc.PresignedGetObject(ctx, bucket, fileName, 900*24*time.Hour, map[string][]string{})
+	expiredDur := time.Second * time.Duration(expired)
+	url, err := mw.mc.PresignedGetObject(ctx, bucket, fileName, expiredDur, map[string][]string{})
 	if err != nil {
 		return "", err
 	}

@@ -277,7 +277,8 @@ func (s *Service) GetFileShareURL(c echo.Context) error {
 		return c.JSON(400, respErr)
 	}
 
-	url, err := s.watcher.Watcher.GetShareURL(bucketName, jsonForm.FileName)
+	expired := jsonForm.ExpireSeconds
+	url, err := s.watcher.Watcher.GetShareURL(bucketName, jsonForm.FileName, expired)
 	if err != nil {
 		log.Println("failed to get share url: ", err.Error())
 		respErr := createStatusResponse(400, err.Error())

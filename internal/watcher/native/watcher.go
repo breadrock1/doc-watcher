@@ -20,6 +20,7 @@ import (
 	"doc-notifier/internal/summarizer"
 	"doc-notifier/internal/tokenizer"
 	"doc-notifier/internal/watcher"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/patrickmn/go-cache"
 )
@@ -225,7 +226,7 @@ func (nw *NotifyWatcher) DownloadFile(bucket string, objName string) (bytes.Buff
 	return fileBuffer, nil
 }
 
-func (nw *NotifyWatcher) GetShareURL(bucket string, fileName string) (string, error) {
+func (nw *NotifyWatcher) GetShareURL(bucket string, fileName string, expired int32) (string, error) {
 	return "", nil
 }
 
