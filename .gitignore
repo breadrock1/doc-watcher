@@ -28,3 +28,6 @@ Thumbs.db
 *.bak
 
 .env
+.env.production
+
+/indexer
