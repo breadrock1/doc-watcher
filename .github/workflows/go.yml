@@ -1,0 +1,34 @@
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request_target:
+    types: [ assigned, opened, synchronize ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Build
+        run: make build
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: tests
+        run: make test
