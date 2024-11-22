@@ -2,6 +2,7 @@
 .github
 .gitignore
 .env
+.env.production
 
 .golangci.yml
 
@@ -10,3 +11,5 @@
 *.sh
 
 LICENSE
+
+indexer/

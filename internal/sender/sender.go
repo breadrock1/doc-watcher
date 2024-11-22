@@ -2,93 +2,65 @@ package sender
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
-	"log"
-	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
-func GET(url string) ([]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Println("failed to send GET request:", err)
-		return nil, err
-	}
-
-	return io.ReadAll(resp.Body)
-}
-
 func PUT(body *bytes.Buffer, url, mime string, timeout time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPut, url, body)
 	if err != nil {
-		log.Println("failed to create PUT request:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set(echo.HeaderContentType, mime)
 
+	req.Header.Set(echo.HeaderContentType, mime)
 	client := &http.Client{Timeout: timeout}
-	return sendRequest(client, req)
+	return SendRequest(client, req)
 }
 
 func POST(body *bytes.Buffer, url, mime string, timeout time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
-		log.Println("failed to create POST request:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set(echo.HeaderContentType, mime)
 
+	req.Header.Set(echo.HeaderContentType, mime)
 	client := &http.Client{Timeout: timeout}
-	return sendRequest(client, req)
+	return SendRequest(client, req)
 }
 
-func sendRequest(client *http.Client, req *http.Request) ([]byte, error) {
+func SendRequest(client *http.Client, req *http.Request) ([]byte, error) {
 	response, err := client.Do(req)
 	if err != nil {
-		log.Println("failed to send request:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer func() { _ = response.Body.Close() }()
 
 	respData, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Println("failed to read response body: ", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	if response.StatusCode > 200 {
-		msg := fmt.Sprintf("failed response %s: %s", response.Status, string(respData))
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("non success response %s: %s", response.Status, string(respData))
 	}
 
 	return respData, nil
 }
 
-func CreateFormFile(fileHandle *os.File, reqBody *bytes.Buffer, fieldName string) (*multipart.Writer, error) {
-	writer := multipart.NewWriter(reqBody)
-	filePath := filepath.Base(fileHandle.Name())
-	formFile, err := writer.CreateFormFile(fieldName, filePath)
-	if err != nil {
-		log.Println("Failed while creating form file: ", err)
-		return nil, err
-	}
+func BuildTargetURL(enableSSL bool, host, path string) string {
+	httpSchema := GetHttpSchema(enableSSL)
+	targetURL := fmt.Sprintf("%s://%s%s", httpSchema, host, path)
+	return targetURL
+}
 
-	if _, err = io.Copy(formFile, fileHandle); err != nil {
-		log.Println("Failed while coping file form part to file handle: ", err)
-		return nil, err
+func GetHttpSchema(enableSSL bool) string {
+	if enableSSL {
+		return "https"
+	} else {
+		return "http"
 	}
-
-	if err = writer.Close(); err != nil {
-		log.Println("Failed while closing req body writer: ", err)
-		return nil, err
-	}
-
-	return writer, nil
 }

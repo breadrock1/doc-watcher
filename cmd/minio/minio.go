@@ -7,55 +7,40 @@ import (
 	"os/signal"
 	"syscall"
 
-	"doc-notifier/cmd"
-	"doc-notifier/internal/logger"
-	"doc-notifier/internal/ocr"
-	"doc-notifier/internal/office"
-	"doc-notifier/internal/searcher"
-	"doc-notifier/internal/server"
-	"doc-notifier/internal/summarizer"
-	"doc-notifier/internal/tokenizer"
-	"doc-notifier/internal/watcher"
-	"doc-notifier/internal/watcher/minio"
+	"doc-watcher/cmd"
+	"doc-watcher/internal/embeddings/sovavec"
+	"doc-watcher/internal/ocr/sovaocr"
+	"doc-watcher/internal/searcher"
+	"doc-watcher/internal/server"
+	"doc-watcher/internal/server/httpserv"
+	"doc-watcher/internal/watcher"
+	"doc-watcher/internal/watcher/minio"
 )
 
 func main() {
-	serviceConfig := cmd.Execute()
+	servConfig := cmd.Execute()
 
-	if serviceConfig.Logger.EnableFileLog {
-		logger.EnableFileLogTranslating()
-	}
-
-	summarizeService, err := summarizer.New(&serviceConfig.Storage)
-	if err != nil {
-		log.Fatalln("failed to init summarize: ", err.Error())
-	}
-
-	ocrService := ocr.New(&serviceConfig.Ocr)
-	searchService := searcher.New(&serviceConfig.Searcher)
-	tokenService := tokenizer.New(&serviceConfig.Tokenizer)
+	ocrService := sovaocr.New(&servConfig.Ocr)
+	searchService := searcher.New(&servConfig.Searcher)
+	embedService := sovavec.New(&servConfig.Embeddings)
 	watchService := minio.New(
-		&serviceConfig.Minio,
+		&servConfig.Watcher,
 		ocrService,
 		searchService,
-		tokenService,
-		summarizeService,
+		embedService,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go awaitSystemSignals(cancel)
 
-	officeService := office.New(&serviceConfig.Office)
-	httpServer := server.New(watchService, officeService)
+	httpServer := httpserv.New(&servConfig.Server, watchService)
 	go func() {
-		err := httpServer.RunServer(ctx)
-		if err != nil {
-			log.Println(err)
-			cancel()
+		if err := httpServer.Server.Start(ctx); err != nil {
+			log.Printf("failed to start server: %w", err)
 		}
 	}()
 
-	go watchService.Watcher.RunWatchers()
+	go watchService.Watcher.RunWatchers(ctx)
 
 	<-ctx.Done()
 	cancel()
@@ -69,9 +54,9 @@ func awaitSystemSignals(cancel context.CancelFunc) {
 	cancel()
 }
 
-func shutdownServices(ctx context.Context, httpServ *server.Service, watchServ *watcher.Service) {
-	watchServ.Watcher.TerminateWatchers()
-	if err := httpServ.StopServer(ctx); err != nil {
+func shutdownServices(ctx context.Context, httpServ *server.Server, watchServ *watcher.Service) {
+	watchServ.Watcher.TerminateWatchers(ctx)
+	if err := httpServ.Server.Shutdown(ctx); err != nil {
 		log.Println(err)
 	}
 }
