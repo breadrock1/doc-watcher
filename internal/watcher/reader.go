@@ -1,13 +1,8 @@
 package watcher
 
 import (
-	"fmt"
-	"log"
 	"mime"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 )
 
 var (
@@ -48,28 +43,4 @@ func extractApplicationMimeType(attribute string) string {
 	}
 
 	return "document"
-}
-
-func GetEntityFiles(filePath string) []string {
-	<-time.After(time.Second)
-
-	var files []string
-	if err := filepath.Walk(filePath, VisitEntity(&files)); err != nil {
-		log.Println("files walking error: ", err)
-	}
-	return files
-}
-
-func VisitEntity(files *[]string) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("failed to visit entity: %w", err)
-		}
-
-		if !info.IsDir() {
-			*files = append(*files, path)
-		}
-
-		return nil
-	}
 }
