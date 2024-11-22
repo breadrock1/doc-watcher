@@ -1,70 +1,24 @@
 version: '3'
 
 services:
-  file_storage:
+  file-storage:
     image: minio/minio:latest
     restart: unless-stopped
-    command: server --address ":2898" --console-address ":2899" /data
+    command: server --address ":9000" --console-address ":9001" /data
     ports:
-      - '2898:2898'
-      - '2899:2899'
+      - '2898:9000'
+      - '2899:9001'
     environment:
       MINIO_ROOT_USER: 'minio-root'
       MINIO_ROOT_PASSWORD: 'minio-root'
-    networks:
-      - default
 
-  summarize_db:
-    image: postgres:13.4
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: summarize
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST_AUTH_METHOD: trust
-    ports:
-      - '5432:5432'
-
-  doc-notifier:
+  doc-watcher:
     build:
       dockerfile: Dockerfile
     restart: on-failure
-    environment:
-      - LOGGER_FILE_PATH=./logs/app.log
-      - LOGGER_ENABLE_FILE_LOG=false
-      - DOC_NOTIFIER_SERVICE_ADDRESS=0.0.0.0:2893
-      - DOC_NOTIFIER_WATCHED_DIRS=./indexer/watcher
-      - OCR_SERVICE_ADDRESS=http://textrecognition:8004
-      - OCR_SERVICE_MODE=assistant
-      - OCR_SERVICE_TIMEOUT=300
-      - DOC_SEARCHER_SERVICE_ADDRESS=http://doc-searcher:2892
-      - DOC_SEARCHER_SERVICE_TIMEOUT=300
-      - TOKENIZER_SERVICE_ADDRESS=http://embeddingsserver:8001
-      - TOKENIZER_SERVICE_MODE=none
-      - TOKENIZER_RETURN_CHUNKS=false
-      - TOKENIZER_CHUNK_SIZE=800
-      - TOKENIZER_CHUNK_OVERLAP=100
-      - TOKENIZER_TIMEOUT_SECONDS=300
-      - TOKENIZER_CHUNK_BY_SELF=false
-      - STORAGE_DRIVER_NAME=postgres
-      - STORAGE_USERNAME=metabase
-      - STORAGE_PASSWORD=metabase
-      - STORAGE_ADDRESS=localhost
-      - STORAGE_PORT=5432
-      - STORAGE_DB_NAME=documents
-      - STORAGE_ENABLE_SSL=disable
-      - STORAGE_LLM_ADDRESS=http://localhost:8081
-      - OFFICE_SERVICE_ADDRESS=http://localhost:8087/example
-      - MINIO_WATCHER_ADDRESS=0.0.0.0:2893
-      - MINIO_CLOUD_ENDPOINT=localhost:9000
-      - MINIO_CLOUD_BUCKET_NAME=indexer
-      - MINIO_CLOUD_ROOT_USER=<access-id>
-      - MINIO_CLOUD_ROOT_PASSWORD=<secret-key>
-      - MINIO_CLOUD_USE_SSL=false
+    env_file:
+      - '.env.production'
     ports:
       - '2893:2893'
-    networks:
-      - default
     volumes:
-      - ./doc-notifier/indexer/:/app/indexer
+      - './doc-watcher/indexer/:/app/indexer'

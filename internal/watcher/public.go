@@ -1,40 +1,29 @@
 package watcher
 
-import (
-	"bytes"
-	"doc-notifier/internal/models"
-)
+import "context"
 
 type Service struct {
-	Watcher CombinedInterface
+	Watcher IWatcher
 }
 
-type CombinedInterface interface {
-	WatcherService
-	StorageService
+type IWatcher interface {
+	IDirectories
+	ILaunch
+	IProcessing
 }
 
-type WatcherService interface {
-	GetAddress() string
-	RunWatchers()
-	PauseWatchers(flag bool)
-	IsPausedWatchers() bool
-	TerminateWatchers()
-	AppendDirectories(directories []string) error
-	RemoveDirectories(directories []string) error
-	FetchProcessingDocuments(files []string) *models.ProcessingDocuments
-	CleanProcessingDocuments(files []string) error
+type ILaunch interface {
+	RunWatchers(ctx context.Context)
+	TerminateWatchers(ctx context.Context)
 }
 
-type StorageService interface {
-	GetBuckets() ([]string, error)
-	CopyFile(bucket, srcPath, dstPath string) error
-	MoveFile(bucket, srcPath, dstPath string) error
-	GetListFiles(bucket, dirName string) ([]*models.StorageItem, error)
-	CreateBucket(dirName string) error
-	RemoveBucket(dirName string) error
-	UploadFile(bucket string, fileName string, fileData bytes.Buffer) error
-	DownloadFile(bucket string, objName string) (bytes.Buffer, error)
-	RemoveFile(bucket string, fileName string) error
-	GetShareURL(bucket string, fileName string, expired int32) (string, error)
+type IDirectories interface {
+	GetWatchedDirs(ctx context.Context) ([]string, error)
+	AttachDirectory(ctx context.Context, dir string) error
+	DetachDirectory(ctx context.Context, dir string) error
+}
+
+type IProcessing interface {
+	CleanProcessingDocuments(ctx context.Context, files []string) error
+	FetchProcessingDocuments(ctx context.Context, files []string) *ProcessingDocuments
 }

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"doc-notifier/internal/config"
+	"doc-watcher/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +12,7 @@ var serviceConfig *config.Config
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:   "./notifier",
+	Use:   "./doc-watcher",
 	Short: "Launch internal service to load endpoints from watcher directory",
 	Long: `
 		Launch internal service to load endpoints from watcher directory.
@@ -48,7 +48,7 @@ func Execute() *config.Config {
 
 func init() {
 	flags := rootCmd.Flags()
-	flags.StringP("config", "c", "./configs/config.toml", "Parse options from config file.")
+	flags.StringP("config", "c", "./configs/production.toml", "Parse options from config file.")
 	flags.BoolP("from-env", "e", false, "Parse options from env.")
 	flags.BoolP("with-dotenv", "j", false, "Parse options from existing .env file.")
 }
