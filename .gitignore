@@ -30,4 +30,5 @@ Thumbs.db
 .env
 .env.production
 
+/bin
 /indexer
