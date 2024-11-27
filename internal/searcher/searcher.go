@@ -37,8 +37,7 @@ func (s *Service) StoreDocument(doc *watcher.Document) error {
 	buildURL.WriteString(s.config.Address)
 	buildURL.WriteString("/storage/folders/")
 	buildURL.WriteString(doc.FolderID)
-	buildURL.WriteString("/documents/")
-	buildURL.WriteString(doc.DocumentID)
+	buildURL.WriteString("/documents/create")
 	targetURL := buildURL.String()
 
 	log.Printf("storing document %s to index %s", doc.DocumentID, doc.FolderID)
@@ -67,9 +66,8 @@ func (s *Service) StoreVector(doc *watcher.Document) error {
 	buildURL.WriteString(s.config.Address)
 	buildURL.WriteString("/storage/folders/")
 	buildURL.WriteString(folderID)
-	buildURL.WriteString("/documents/")
-	buildURL.WriteString(doc.DocumentID)
-	buildURL.WriteString("?document_type=vectors")
+	buildURL.WriteString("/documents/create")
+	buildURL.WriteString("?folder_type=vectors")
 	targetURL := buildURL.String()
 
 	log.Printf("storing document %s to index %s", doc.DocumentID, doc.FolderID)
