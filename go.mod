@@ -1,6 +1,6 @@
 module doc-watcher
 
-go 1.22.3
+go 1.22.7
 
 require (
 	github.com/glaslos/ssdeep v0.3.3
