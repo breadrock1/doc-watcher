@@ -1,99 +1,11 @@
 definitions:
-  reader.Artifacts:
+  httpserv.AttachDirectoryForm:
     properties:
-      group_json_name:
-        type: string
-      group_name:
-        type: string
-      group_values:
-        items:
-          properties:
-            json_name:
-              type: string
-            name:
-              type: string
-            type:
-              type: string
-            value:
-              type: string
-          type: object
-        type: array
-    type: object
-  reader.Document:
-    properties:
-      content:
-        type: string
-      document_class:
-        type: string
-      document_created:
-        type: string
-      document_extension:
-        type: string
-      document_id:
-        type: string
-      document_modified:
-        type: string
-      document_name:
-        type: string
-      document_path:
-        type: string
-      document_permissions:
-        type: integer
-      document_size:
-        type: integer
-      document_ssdeep:
-        type: string
-      document_type:
-        type: string
-      embeddings:
-        items:
-          $ref: '#/definitions/reader.Embeddings'
-        type: array
-      folder_id:
-        type: string
-      folder_path:
-        type: string
-      ocr_metadata:
-        $ref: '#/definitions/reader.OcrMetadata'
-      quality_recognition:
-        type: integer
-    type: object
-  reader.Embeddings:
-    properties:
-      chunk_id:
-        type: string
-      text_chunk:
-        type: string
-      vector:
-        items:
-          type: number
-        type: array
-    type: object
-  reader.OcrMetadata:
-    properties:
-      artifacts:
-        items:
-          $ref: '#/definitions/reader.Artifacts'
-        type: array
-      doc_type:
-        type: string
-      job_id:
-        type: string
-      pages_count:
-        type: integer
-      text:
+      bucket_name:
+        example: test-folder
         type: string
     type: object
-  server.AnalyseFilesForm:
-    properties:
-      document_ids:
-        example:
-        - 886f7e11874040ca8b8461fb4cd1aa2c
-        items:
-          type: string
-        type: array
-    type: object
-  server.BadRequestForm:
+  httpserv.BadRequestForm:
     properties:
       message:
         example: Bad Request message
@@ -102,52 +14,16 @@ definitions:
         example: 400
         type: integer
     type: object
-  server.FolderNameForm:
+  httpserv.FetchDocumentsList:
     properties:
-      folder_name:
-        example: test_folder
-        type: string
-    type: object
-  server.MoveFilesForm:
-    properties:
-      document_ids:
+      file_names:
         example:
-        - ./indexer/upload/test.txt
-        items:
-          type: string
-        type: array
-      location:
-        example: common-folder
-        type: string
-      src_folder_id:
-        example: unrecognized
-        type: string
-    type: object
-  server.RemoveFilesError:
-    properties:
-      code:
-        example: 403
-        type: integer
-      file_paths:
-        example:
-        - ./indexer/upload/test.txt
-        items:
-          type: string
-        type: array
-      message:
-        example: File not found
-        type: string
-    type: object
-  server.RemoveFilesForm:
-    properties:
-      document_paths:
-        example:
-        - ./indexer/upload/test.txt
+        - test-file.docx
         items:
           type: string
         type: array
     type: object
-  server.ResponseForm:
+  httpserv.ResponseForm:
     properties:
       message:
         example: Done
@@ -156,7 +32,7 @@ definitions:
         example: 200
         type: integer
     type: object
-  server.ServerErrorForm:
+  httpserv.ServerErrorForm:
     properties:
       message:
         example: Server Error message
@@ -165,18 +41,17 @@ definitions:
         example: 503
         type: integer
     type: object
-  server.UnrecognizedDocuments:
+  watcher.ProcessingDocuments:
     properties:
-      unrecognized:
+      done:
         items:
-          $ref: '#/definitions/reader.Document'
+          type: string
         type: array
-    type: object
-  server.WatcherDirectoriesForm:
-    properties:
-      paths:
-        example:
-        - ./indexer/test_folder
+      processing:
+        items:
+          type: string
+        type: array
+      unrecognized:
         items:
           type: string
         type: array
@@ -184,63 +59,16 @@ definitions:
 info:
   contact: {}
 paths:
-  /hello/:
-    get:
-      description: Check service is available
-      operationId: hello
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Hello
-      tags:
-      - hello
-  /watcher/files/analyse:
-    post:
+  /watcher/{bucket}/detach:
+    delete:
       consumes:
       - application/json
-      description: Analyse uploaded files by ids
-      operationId: files-analyse
+      description: Attach new directory to watcher
+      operationId: folders-detach
       parameters:
-      - description: Document ids to analyse
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.AnalyseFilesForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Analyse uploaded files by ids
-      tags:
-      - files
-  /watcher/files/artifacts:
-    get:
-      description: Get available artifacts
-      operationId: files-artifacts
-      parameters:
-      - description: document_type
-        in: query
-        name: document_type
+      - description: Folder ids
+        in: path
+        name: bucket
         required: true
         type: string
       produces:
@@ -249,211 +77,20 @@ paths:
         "200":
           description: Ok
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/httpserv.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/server.BadRequestForm'
+            $ref: '#/definitions/httpserv.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Get available artifacts
-      tags:
-      - files
-  /watcher/files/download:
-    post:
-      description: Download file by path
-      operationId: files-download
-      parameters:
-      - description: Path to file
-        in: formData
-        name: file_path
-        required: true
-        type: string
-      produces:
-      - multipart/form
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Download file by path
-      tags:
-      - files
-  /watcher/files/move:
-    post:
-      consumes:
-      - application/json
-      description: Moving files to target directory
-      operationId: moving
-      parameters:
-      - description: Document ids to move
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.MoveFilesForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Moving files to target directory
-      tags:
-      - files
-  /watcher/files/remove:
-    post:
-      consumes:
-      - application/json
-      description: Remove files from directory
-      operationId: files-remove
-      parameters:
-      - description: Document paths to remove
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.RemoveFilesForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.RemoveFilesError'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Remove files from directory
-      tags:
-      - files
-  /watcher/files/unrecognized:
-    get:
-      description: Get unrecognized documents
-      operationId: files-unrecognized
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.UnrecognizedDocuments'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Get unrecognized documents
-      tags:
-      - files
-  /watcher/files/upload:
-    post:
-      consumes:
-      - multipart/form
-      description: Upload files to analyse
-      operationId: files-upload
-      parameters:
-      - description: Files multipart form
-        in: formData
-        name: files
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Upload files to analyse
-      tags:
-      - files
-  /watcher/files/upload-from-office:
-    post:
-      description: Upload files to analyse from onlyoffice
-      operationId: files-upload-office
-      parameters:
-      - description: File name to download from office
-        in: query
-        name: fileName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Upload files to analyse from onlyoffice
-      tags:
-      - files
-  /watcher/folders/:
-    get:
-      description: Get watched directories list
-      operationId: folders-all
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            items:
-              type: string
-            type: array
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Get watched directories list
+            $ref: '#/definitions/httpserv.ServerErrorForm'
+      summary: Attach new directory to watcher
       tags:
       - watcher
-  /watcher/folders/attach:
-    post:
+  /watcher/attach:
+    put:
       consumes:
       - application/json
       description: Attach new directory to watcher
@@ -464,168 +101,83 @@ paths:
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/server.WatcherDirectoriesForm'
+          $ref: '#/definitions/httpserv.AttachDirectoryForm'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/server.ResponseForm'
+            $ref: '#/definitions/httpserv.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/server.BadRequestForm'
+            $ref: '#/definitions/httpserv.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/server.ServerErrorForm'
+            $ref: '#/definitions/httpserv.ServerErrorForm'
       summary: Attach new directory to watcher
       tags:
       - watcher
-  /watcher/folders/create:
-    post:
-      description: Create folder to store documents
-      operationId: folder-create
-      parameters:
-      - description: Folder name to create
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.FolderNameForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Create folder to store documents
-      tags:
-      - files
-  /watcher/folders/detach:
+  /watcher/processing/clean:
     post:
       consumes:
       - application/json
-      description: Attach new directory to watcher
-      operationId: folders-detach
+      description: Clean processing documents
+      operationId: clean-documents
       parameters:
-      - description: Folder ids
+      - description: File names to clean processing status
         in: body
         name: jsonQuery
         required: true
         schema:
-          $ref: '#/definitions/server.WatcherDirectoriesForm'
-      produces:
-      - application/json
+          $ref: '#/definitions/httpserv.FetchDocumentsList'
       responses:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/server.ResponseForm'
+            $ref: '#/definitions/httpserv.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/server.BadRequestForm'
+            $ref: '#/definitions/httpserv.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Attach new directory to watcher
+            $ref: '#/definitions/httpserv.ServerErrorForm'
+      summary: Clean processing documents
       tags:
       - watcher
-  /watcher/folders/remove:
-    post:
-      description: Remove folder
-      operationId: folder-remove
-      parameters:
-      - description: Folder name to remove
-        in: body
-        name: jsonQuery
-        required: true
-        schema:
-          $ref: '#/definitions/server.FolderNameForm'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Remove folder
-      tags:
-      - files
-  /watcher/folders/upload:
+  /watcher/processing/fetch:
     post:
       consumes:
-      - multipart/form
-      description: Upload file to watcher directory
-      operationId: watcher-upload
+      - application/json
+      description: Load processing/unrecognized/done documents by names list
+      operationId: fetch-documents
       parameters:
-      - description: Files multipart form
-        in: formData
-        name: files
+      - description: File names to fetch processing status
+        in: body
+        name: jsonQuery
         required: true
-        type: file
+        schema:
+          $ref: '#/definitions/httpserv.FetchDocumentsList'
       produces:
       - application/json
       responses:
         "200":
           description: Ok
           schema:
-            items:
-              items:
-                $ref: '#/definitions/reader.Document'
-              type: array
-            type: array
+            $ref: '#/definitions/watcher.ProcessingDocuments'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/server.BadRequestForm'
+            $ref: '#/definitions/httpserv.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Upload file to watcher directory
-      tags:
-      - watcher
-  /watcher/pause:
-    get:
-      description: Pause all watchers
-      operationId: watcher-pause
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Ok
-          schema:
-            $ref: '#/definitions/server.ResponseForm'
-        "400":
-          description: Bad Request message
-          schema:
-            $ref: '#/definitions/server.BadRequestForm'
-        "503":
-          description: Server does not available
-          schema:
-            $ref: '#/definitions/server.ServerErrorForm'
-      summary: Pause all watchers
+            $ref: '#/definitions/httpserv.ServerErrorForm'
+      summary: Fetch processing documents
       tags:
       - watcher
   /watcher/run:
@@ -638,16 +190,38 @@ paths:
         "200":
           description: Ok
           schema:
-            $ref: '#/definitions/server.ResponseForm'
+            $ref: '#/definitions/httpserv.ResponseForm'
         "400":
           description: Bad Request message
           schema:
-            $ref: '#/definitions/server.BadRequestForm'
+            $ref: '#/definitions/httpserv.BadRequestForm'
         "503":
           description: Server does not available
           schema:
-            $ref: '#/definitions/server.ServerErrorForm'
+            $ref: '#/definitions/httpserv.ServerErrorForm'
       summary: Run all watchers
+      tags:
+      - watcher
+  /watcher/stop:
+    get:
+      description: Stop all watchers
+      operationId: watcher-stop
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ok
+          schema:
+            $ref: '#/definitions/httpserv.ResponseForm'
+        "400":
+          description: Bad Request message
+          schema:
+            $ref: '#/definitions/httpserv.BadRequestForm'
+        "503":
+          description: Server does not available
+          schema:
+            $ref: '#/definitions/httpserv.ServerErrorForm'
+      summary: Stop all watchers
       tags:
       - watcher
 swagger: "2.0"

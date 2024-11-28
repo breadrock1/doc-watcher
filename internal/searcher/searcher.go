@@ -5,50 +5,78 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
-	"doc-notifier/internal/config"
-	"doc-notifier/internal/models"
-	"doc-notifier/internal/sender"
+	"doc-watcher/internal/sender"
+	"doc-watcher/internal/watcher"
 	"github.com/labstack/echo/v4"
 )
 
+const DocumentJsonMime = echo.MIMEApplicationJSON
+
 type Service struct {
-	Address string
-	Timeout time.Duration
+	config *Config
 }
 
-func New(config *config.SearcherConfig) *Service {
+func New(config *Config) *Service {
 	return &Service{
-		Address: config.Address,
-		Timeout: config.Timeout,
+		config: config,
 	}
 }
 
-func (s *Service) StoreDocument(document *models.Document) error {
-	jsonData, err := json.Marshal(document)
+func (s *Service) StoreDocument(doc *watcher.Document) error {
+	jsonData, err := json.Marshal(doc)
 	if err != nil {
-		log.Println("Failed while marshaling doc: ", err)
-		return err
+		return fmt.Errorf("failed while marshaling doc: %w", err)
 	}
+
+	buildURL := strings.Builder{}
+	buildURL.WriteString(sender.GetHttpSchema(s.config.EnableSSL))
+	buildURL.WriteString("://")
+	buildURL.WriteString(s.config.Address)
+	buildURL.WriteString("/storage/folders/")
+	buildURL.WriteString(doc.FolderID)
+	buildURL.WriteString("/documents/create")
+	targetURL := buildURL.String()
+
+	log.Printf("storing document %s to index %s", doc.DocumentID, doc.FolderID)
 
 	reqBody := bytes.NewBuffer(jsonData)
-	targetURL := fmt.Sprintf("%s/storage/folders/%s/documents/%s", s.Address, document.FolderID, document.DocumentID)
-	log.Printf("Storing document %s to elastic", document.FolderID)
-
-	mimeType := echo.MIMEApplicationJSON
-	_, err = sender.PUT(reqBody, targetURL, mimeType, s.Timeout)
+	timeoutReq := time.Duration(300) * time.Second
+	_, err = sender.PUT(reqBody, targetURL, DocumentJsonMime, timeoutReq)
 	if err != nil {
-		log.Println("Failed while sending request: ", err)
 		return err
 	}
 
-	reqBody = bytes.NewBuffer(jsonData)
-	folderID := fmt.Sprintf("%s-vector", document.FolderID)
-	targetURL = fmt.Sprintf("%s/storage/folders/%s/documents/%s?document_type=vectors", s.Address, folderID, document.DocumentID)
-	_, err = sender.PUT(reqBody, targetURL, mimeType, s.Timeout)
+	return nil
+}
+
+func (s *Service) StoreVector(doc *watcher.Document) error {
+	jsonData, err := json.Marshal(doc)
 	if err != nil {
-		log.Println("Failed while sending request: ", err)
+		return fmt.Errorf("failed while marshaling doc: %w", err)
+	}
+
+	folderID := fmt.Sprintf("%s-vector", doc.FolderID)
+
+	buildURL := strings.Builder{}
+	buildURL.WriteString(sender.GetHttpSchema(s.config.EnableSSL))
+	buildURL.WriteString("://")
+	buildURL.WriteString(s.config.Address)
+	buildURL.WriteString("/storage/folders/")
+	buildURL.WriteString(folderID)
+	buildURL.WriteString("/documents/create")
+	buildURL.WriteString("?folder_type=vectors")
+	targetURL := buildURL.String()
+
+	log.Printf("storing document %s to index %s", doc.DocumentID, doc.FolderID)
+
+	reqBody := bytes.NewBuffer(jsonData)
+	timeoutReq := time.Duration(300) * time.Second
+	_, err = sender.PUT(reqBody, targetURL, DocumentJsonMime, timeoutReq)
+	if err != nil {
+		return err
 	}
 
 	return nil

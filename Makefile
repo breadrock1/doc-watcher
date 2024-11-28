@@ -1,16 +1,15 @@
 BIN_LINTER := "${GOPATH}/bin/golangci-lint"
-BIN_NOTIFIER := "./bin/doc-notifier"
-DOCKER_IMAGE := "doc-notifier:latest"
+BIN_MINIO_NOTIFIER := "./bin/doc-watcher"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 
 build:
-	go build -v -o $(BIN_NOTIFIER) ./cmd/notifier
+	go build -v -o $(BIN_MINIO_NOTIFIER) ./cmd/minio
 
 run: build
-	$(BIN_NOTIFIER) -c ./configs/config.toml
+	$(BIN_MINIO_NOTIFIER) -c ./configs/production.toml
 
 test:
-	go test -race ./...
+	go test -race ./tests/...
 
 .PHONY: build run test

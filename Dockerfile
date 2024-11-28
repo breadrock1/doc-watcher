@@ -1,18 +1,20 @@
-FROM golang:1.21-alpine as builder
+FROM golang:1.22-alpine AS builder
+
+RUN apk update && apk add --no-cache gcc libc-dev make
 
 WORKDIR /app
 
 COPY . .
 
-RUN go mod download && go build -o ./doc-notifier ./cmd/notifier
+RUN go mod download && make build
 
-FROM golang:1.21-alpine
+
+FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/doc-notifier .
-RUN mkdir indexer && mkdir upload
+COPY --from=builder /app .
 
-CMD ["/app/doc-notifier", "-e"]
+ENTRYPOINT [ "/app/bin/doc-watcher", "-e" ]
 
 EXPOSE 2893
